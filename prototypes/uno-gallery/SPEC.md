@@ -77,6 +77,26 @@ Afterhours game client away from its own art direction (`DESIGN.txt`).
   open ToggleSwitch, flip IsOn, check the XAML line, copy, switch to Material,
   search "zzz", resize to 390 px.
 
+## Library rail (second pass)
+
+- **Decision:** a sticky side rail holds search, sort, three facets and an
+  index. Below 1024 px it folds into an inline "Filters" disclosure and the
+  category headings in the grid act as the index.
+  - **Reason:** the index stays visible while you scroll, and the facets live
+    in one place instead of a toolbar plus the badges on each card.
+  - **Considered:** filter popovers in a top toolbar; a command palette with
+    filter tokens in search.
+  - **Tradeoff:** the grid drops from 3 to 2 columns at desktop width.
+- **Facets:** Category and Source combine with OR inside a facet and AND
+  across facets. "Has property" requires every chosen property. Each chip
+  shows the count it would produce, and a chip that would produce zero is
+  disabled, so filters cannot dead-end.
+- **Sort:** Category (grouped with headings), Name, Most properties. Kept per
+  viewer in local storage.
+- **Motion jobs:** cards that stay after a reorder glide to their new slot
+  (FLIP, 500 ms, base curve). An index click scrolls the card to centre,
+  focuses it and pulses a 2 px ring for 1.4 s. Reduced motion: instant.
+
 ## Implementation Plan
 
 - Vendor the skills and write this spec.

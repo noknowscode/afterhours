@@ -125,7 +125,7 @@ button { cursor: pointer; }
   font: 600 16px/24px var(--font); text-decoration: none; white-space: nowrap;
   transition: background-color 300ms var(--base), border-color 300ms var(--base), color 300ms var(--base), transform 300ms var(--base);
 }
-.btn:active { transform: scale(0.98); }
+.btn:active { transform: scale(0.96); }
 .btn-primary { background: var(--fg); color: var(--on-fg); }
 .btn-primary:hover { background: color-mix(in srgb, var(--fg) 84%, var(--bg)); }
 .btn-primary .ic { transition: transform 300ms var(--base); }
@@ -150,7 +150,7 @@ button { cursor: pointer; }
   transition: background-color 300ms var(--base), color 300ms var(--base), transform 300ms var(--base);
 }
 .seg button:hover { color: var(--fg); }
-.seg button:active { transform: scale(0.98); }
+.seg button:active { transform: scale(0.96); }
 .seg button[aria-pressed="true"], .seg button[aria-selected="true"] {
   background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
 }
@@ -223,7 +223,6 @@ button { cursor: pointer; }
 .hero-grid { display: grid; gap: var(--s600); align-items: center; }
 @media (min-width: 1024px) { .hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 520px); } }
 .hero-copy { display: grid; gap: var(--s300); justify-items: start; min-width: 0; }
-.eyebrow { display: inline-flex; align-items: center; gap: 8px; font: 500 14px/20px var(--font); color: var(--muted); }
 .pill { padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--r-full); font: 500 12px/16px var(--font); color: var(--muted); }
 .hero h1 {
   max-width: 680px; font-size: 36px; line-height: 40px; letter-spacing: -0.02em;
@@ -250,6 +249,12 @@ button { cursor: pointer; }
 @keyframes ring { from { transform: scale(1); opacity: .55; } to { transform: scale(2.6); opacity: 0; } }
 .anat figcaption { padding: 4px 8px; font: 400 14px/20px var(--font); color: var(--muted); }
 
+/* Icon swap: both icons stay in the DOM and cross fade */
+.swap { display: inline-grid; flex: none; }
+.swap .ic { grid-area: 1 / 1; width: 16px; height: 16px; transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1), transform 200ms cubic-bezier(0.2, 0, 0, 1), filter 200ms cubic-bezier(0.2, 0, 0, 1); }
+.swap .b, .done .swap .a { opacity: 0; transform: scale(0.25); filter: blur(4px); }
+.done .swap .b { opacity: 1; transform: none; filter: none; }
+
 /* Code */
 .code {
   margin: 0; padding: 12px; overflow-x: auto; font: 400 12px/16px var(--mono); tab-size: 4; white-space: pre;
@@ -274,8 +279,6 @@ section { scroll-margin-top: 80px; }
 .sec-head h2 { font-size: 30px; line-height: 36px; letter-spacing: -0.02em; }
 .sec-head p { max-width: 560px; color: var(--muted); margin-top: 8px; }
 
-.toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s200); margin-bottom: var(--s300); }
-.filters { display: flex; flex-wrap: wrap; gap: 8px; }
 .fchip {
   display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px;
   border: 1px solid var(--line); border-radius: var(--r-full); background: var(--bg); color: var(--muted);
@@ -283,9 +286,11 @@ section { scroll-margin-top: 80px; }
   transition: background-color 300ms var(--base), color 300ms var(--base), border-color 300ms var(--base), transform 300ms var(--base);
 }
 .fchip:hover { color: var(--fg); border-color: var(--line-strong); }
-.fchip:active { transform: scale(0.98); }
+.fchip:active { transform: scale(0.96); }
 .fchip[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--on-fg); }
-.fchip span { font: 400 12px/16px var(--mono); opacity: .7; }
+.fchip span { font: 400 12px/16px var(--mono); font-variant-numeric: tabular-nums; }
+.fchip:disabled { opacity: .45; cursor: default; }
+.fchip:disabled:active { transform: none; }
 .search { position: relative; width: 100%; max-width: 320px; }
 .search .ic { position: absolute; left: 12px; top: 10px; width: 20px; height: 20px; color: var(--faint); pointer-events: none; }
 .search input {
@@ -303,7 +308,70 @@ section { scroll-margin-top: 80px; }
 
 .grid { display: grid; gap: var(--s300); grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 640px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* Library: rail beside the grid on wide screens, an inline disclosure above it on narrow ones */
+.lib { display: grid; gap: var(--s300); }
+@media (min-width: 1024px) { .lib { grid-template-columns: 232px minmax(0, 1fr); gap: var(--s500); align-items: start; } }
+.rail { display: grid; gap: var(--s300); align-content: start; min-width: 0; }
+@media (min-width: 1024px) {
+  .rail {
+    position: sticky; top: 80px; max-height: calc(100vh - 96px); overflow-y: auto; overscroll-behavior: contain;
+    padding: 4px; margin: -4px; scrollbar-width: thin;
+  }
+}
+.rail-top { display: flex; gap: 8px; }
+.rail .search { max-width: none; flex: 1; min-width: 0; }
+.rail-toggle { display: none; }
+.rail-toggle .ic { width: 20px; height: 20px; }
+.rail-n { min-width: 20px; padding: 2px 4px; border-radius: var(--r-full); background: var(--fg); color: var(--on-fg); font: 500 12px/16px var(--mono); text-align: center; font-variant-numeric: tabular-nums; }
+.rail-panel { display: grid; gap: var(--s300); }
+.facet { display: grid; gap: 8px; min-width: 0; }
+.facet-h { font: 500 12px/16px var(--font); color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.rail-select { font-size: 16px; line-height: 24px; }
+.rail-clear { justify-self: start; }
+.rail-clear:disabled { opacity: .45; cursor: default; }
+.rail-clear:disabled:active { transform: none; }
+.rail-clear:disabled:hover { background: var(--bg); border-color: var(--line); }
+.index { display: grid; gap: 8px; }
+.index ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.ix-g { display: flex; justify-content: space-between; padding: 8px 8px 4px; font: 500 12px/16px var(--font); color: var(--muted); font-variant-numeric: tabular-nums; }
+.index li:first-child > .ix-g { padding-top: 0; }
+.ix-a {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 4px 8px; border-radius: var(--r-lg);
+  font: 400 14px/20px var(--mono); color: var(--muted); text-decoration: none;
+  transition: background-color 300ms var(--base), color 300ms var(--base);
+}
+.ix-a:hover { color: var(--fg); background: var(--raised); }
+.ix-a[aria-current="true"] { color: var(--fg); background: var(--raised); }
+.ix-ns { font: 400 12px/16px var(--font); color: var(--muted); }
+.ix-none { padding: 4px 8px; font-size: 14px; line-height: 20px; color: var(--muted); }
+@media (max-width: 1023px) {
+  .rail-toggle { display: inline-flex; }
+  .rail-panel:not(.open) { display: none; }
+  .index { display: none; }
+}
+.lib-main { display: grid; gap: var(--s200); min-width: 0; align-content: start; }
+.results { font-size: 14px; line-height: 20px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.group-h { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 8px; margin-top: var(--s200); font-size: 18px; line-height: 28px; }
+.grid > .group-h:first-child { margin-top: 0; }
+.group-h span:last-child { font: 400 12px/16px var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.card { scroll-margin-top: 96px; }
+.card:focus { outline: none; }
+.card:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.card.located { animation: located 1400ms var(--base); }
+@keyframes located { from { box-shadow: 0 0 0 2px var(--fg); } to { box-shadow: 0 0 0 2px transparent; } }
+
+/* Touch: extend small targets to 44px tall without overlapping neighbours */
+@media (pointer: coarse) {
+  .btn-sm, .fchip, .seg button, .icon-btn, .ix-a { position: relative; }
+  .btn-sm::after, .fchip::after, .seg button::after { content: ""; position: absolute; inset: -7px 0; }
+  .icon-btn::after { content: ""; position: absolute; inset: -6px; }
+  .chips { row-gap: 16px; }
+  .search kbd { display: none; }
+  .search input { padding-right: 12px; }
+  .ix-a { padding-block: 12px; }
+}
 .pgrid { display: grid; gap: var(--s300); grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1024px) { .pgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
@@ -327,7 +395,7 @@ section { scroll-margin-top: 80px; }
 .ns { padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--r-full); font: 500 12px/16px var(--font); color: var(--muted); white-space: nowrap; }
 .card-blurb { font-size: 14px; line-height: 20px; color: var(--muted); }
 .card-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
-.card-meta { font: 400 12px/16px var(--mono); color: var(--faint); }
+.card-meta { font: 400 12px/16px var(--mono); color: var(--faint); font-variant-numeric: tabular-nums; }
 
 .empty {
   display: grid; justify-items: center; gap: 12px; padding: var(--s700) var(--s300); text-align: center;
@@ -385,6 +453,8 @@ footer { padding-block: var(--s600); }
   transition: transform 500ms var(--base), opacity 300ms var(--base);
 }
 .sheet.shown .sheet-panel { opacity: 1; transform: none; }
+.sheet.closing .sheet-panel { transform: translateX(12px); transition-duration: 200ms; }
+.sheet.closing::backdrop { transition-duration: 200ms; }
 @media (min-width: 768px) {
   .sheet-panel { top: 8px; right: 8px; bottom: 8px; width: min(1040px, calc(100% - 16px)); border: 1px solid var(--line); border-radius: var(--r-2xl); padding-top: 0; }
 }
@@ -409,9 +479,10 @@ footer { padding-block: var(--s600); }
 .sh-toolbar .label { font: 400 12px/16px var(--mono); color: var(--faint); margin-right: 8px; }
 .sh-stage { height: 320px; border-radius: var(--r-xl); }
 .sh-stage.tall { height: 400px; }
-.sh-code { min-width: 0; border: 1px solid var(--line); border-radius: var(--r-xl); background: var(--surface); }
+.sh-code { min-width: 0; border: 1px solid var(--line); border-radius: var(--r-2xl); background: var(--surface); }
 .sh-code-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 8px 0; }
-.sh-code .seg { background: var(--raised); }
+.sh-code .seg { background: var(--raised); border-radius: var(--r-lg); }
+.sh-code .seg button { border-radius: var(--r); }
 .sh-code .code { max-height: 360px; overflow: auto; font-size: 14px; line-height: 20px; }
 .sh-code .code .ln { min-height: 20px; }
 .sh-note { padding: 0 12px 12px; font-size: 12px; line-height: 16px; color: var(--faint); }
@@ -513,7 +584,7 @@ footer { padding-block: var(--s600); }
 }
 .nb-b .ic { width: 16px; height: 16px; }
 .nb-b:hover { background: var(--p-fill2); color: var(--p-fg); }
-.nb-b:active, .nb-b.press { transform: scale(0.9); background: var(--p-fill2); color: var(--p-fg); }
+.nb-b:active, .nb-b.press { transform: scale(0.96); background: var(--p-fill2); color: var(--p-fg); }
 .nb-b:disabled { opacity: .35; cursor: default; }
 .nb .i-co { display: none; }
 .nb[data-spin="Compact"] .nb-spin { flex-direction: column-reverse; gap: 0; }
@@ -741,7 +812,7 @@ footer { padding-block: var(--s600); }
 .fv-sub { font-size: 12px; line-height: 16px; color: var(--p-muted); }
 .fv-ref { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--p-r); background: transparent; color: var(--p-fg); transition: background-color 200ms var(--base), transform 300ms var(--base); }
 .fv-ref:hover { background: var(--p-fill2); }
-.fv-ref:active, .fv-ref.press { transform: scale(0.9); background: var(--p-fill2); }
+.fv-ref:active, .fv-ref.press { transform: scale(0.96); background: var(--p-fill2); }
 .fv-ref .ic { width: 20px; height: 20px; }
 .fv-ref.spin .ic { animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -809,7 +880,7 @@ footer { padding-block: var(--s600); }
 <a class="skip" href="#controls">Skip to samples</a>
 
 <header class="nav" id="nav">
-  <a class="nav-brand" href="#top"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Uno Gallery</span></a>
+  <a class="nav-brand" href="#top"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Uno Gallery</span><span class="pill">Prototype</span></a>
   <nav class="nav-links" aria-label="Sections">
     <a href="#controls" data-spy="controls">Controls</a>
     <a href="#patterns" data-spy="patterns">Patterns</a>
@@ -838,7 +909,6 @@ footer { padding-block: var(--s600); }
   <section class="hero wrap" aria-labelledby="hero-h">
     <div class="hero-grid">
       <div class="hero-copy">
-        <span class="eyebrow">Uno Platform sample gallery <span class="pill">Prototype</span></span>
         <h1 id="hero-h">Try each control live,<br>then copy the XAML</h1>
         <p class="hero-sub">Fourteen samples from WinUI, Uno Toolkit and MVUX. Change a property and the preview, the XAML and the C# Markup update together.</p>
         <a class="btn btn-primary" href="#controls">Browse 14 samples <i data-ic="arrow-right"></i></a>
@@ -862,17 +932,36 @@ footer { padding-block: var(--s600); }
         <p>Every preview is the working control. Click it, drag it, type in it. Open a sample to edit properties and copy the code.</p>
       </div>
     </div>
-    <div class="toolbar">
-      <div class="filters" id="filters" role="group" aria-label="Filter by category"></div>
-      <label class="search"><span class="sr">Search controls</span><i data-ic="magnifying-glass"></i><input id="q" type="search" placeholder="Search controls" autocomplete="off" spellcheck="false"><kbd aria-hidden="true">/</kbd></label>
-    </div>
-    <p class="sr" id="result-status" aria-live="polite"></p>
-    <div class="grid" id="grid"></div>
-    <div class="empty" id="empty" hidden>
-      <i data-ic="magnifying-glass"></i>
-      <h3 id="empty-h">No controls match</h3>
-      <p>Search looks at control names, namespaces and property names. Try “toggle”, “list” or “SelectionMode”.</p>
-      <button class="btn btn-ghost btn-sm" id="empty-clear" type="button">Clear search and filters</button>
+    <div class="lib">
+      <aside class="rail" aria-label="Index and filters">
+        <div class="rail-top">
+          <label class="search"><span class="sr">Search controls</span><i data-ic="magnifying-glass"></i><input id="q" type="search" placeholder="Search controls" autocomplete="off" spellcheck="false"><kbd aria-hidden="true">/</kbd></label>
+          <button class="btn btn-ghost rail-toggle" id="rail-toggle" type="button" aria-expanded="false" aria-controls="rail-panel"><i data-ic="sliders-horizontal"></i>Filters<span class="rail-n" id="filter-n" hidden></span></button>
+        </div>
+        <div class="rail-panel" id="rail-panel">
+          <div class="facet"><label class="facet-h" for="sort">Sort by</label>
+            <select class="pf-in rail-select" id="sort"></select>
+          </div>
+          <div class="facet" role="group" aria-labelledby="f-cat-h"><span class="facet-h" id="f-cat-h">Category</span><div class="chips" id="f-cat"></div></div>
+          <div class="facet" role="group" aria-labelledby="f-src-h"><span class="facet-h" id="f-src-h">Source</span><div class="chips" id="f-src"></div></div>
+          <div class="facet" role="group" aria-labelledby="f-cap-h"><span class="facet-h" id="f-cap-h">Has property</span><div class="chips" id="f-cap"></div></div>
+          <button class="btn btn-ghost btn-sm rail-clear" id="clear" type="button" disabled><i data-ic="x"></i>Clear filters</button>
+        </div>
+        <nav class="index" aria-labelledby="index-h">
+          <span class="facet-h" id="index-h">Index</span>
+          <ol id="index"></ol>
+        </nav>
+      </aside>
+      <div class="lib-main">
+        <p class="results" id="result-status" aria-live="polite"></p>
+        <div class="grid" id="grid"></div>
+        <div class="empty" id="empty" hidden>
+          <i data-ic="magnifying-glass"></i>
+          <h3 id="empty-h">No controls match</h3>
+          <p>Search looks at control names, namespaces and property names. Try “toggle”, “list” or “SelectionMode”.</p>
+          <button class="btn btn-ghost btn-sm" id="empty-clear" type="button">Clear search and filters</button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -902,20 +991,20 @@ footer { padding-block: var(--s600); }
         <span class="step-n">Step 1</span>
         <h3>Create the app</h3>
         <p>Install the templates once, then create a project.</p>
-        <div class="cmd"><code>dotnet new install Uno.Templates</code><button class="icon-btn" type="button" data-copy="dotnet new install Uno.Templates" aria-label="Copy command"><i data-ic="copy"></i></button></div>
-        <div class="cmd"><code>dotnet new unoapp -o NightDrive</code><button class="icon-btn" type="button" data-copy="dotnet new unoapp -o NightDrive" aria-label="Copy command"><i data-ic="copy"></i></button></div>
+        <div class="cmd"><code>dotnet new install Uno.Templates</code><button class="icon-btn" type="button" data-copy="dotnet new install Uno.Templates" aria-label="Copy command"><span class="swap"><i data-ic="copy" class="a"></i><i data-ic="check" class="b"></i></span></button></div>
+        <div class="cmd"><code>dotnet new unoapp -o NightDrive</code><button class="icon-btn" type="button" data-copy="dotnet new unoapp -o NightDrive" aria-label="Copy command"><span class="swap"><i data-ic="copy" class="a"></i><i data-ic="check" class="b"></i></span></button></div>
       </li>
       <li class="step">
         <span class="step-n">Step 2</span>
         <h3>Turn on the features</h3>
         <p>Toolkit samples need Toolkit, FeedView needs MVUX, and the Material previews need Material in your project file.</p>
-        <div class="cmd"><code>&lt;UnoFeatures&gt;Material;Toolkit;MVUX;CSharpMarkup&lt;/UnoFeatures&gt;</code><button class="icon-btn" type="button" data-copy="&lt;UnoFeatures&gt;Material;Toolkit;MVUX;CSharpMarkup&lt;/UnoFeatures&gt;" aria-label="Copy line"><i data-ic="copy"></i></button></div>
+        <div class="cmd"><code>&lt;UnoFeatures&gt;Material;Toolkit;MVUX;CSharpMarkup&lt;/UnoFeatures&gt;</code><button class="icon-btn" type="button" data-copy="&lt;UnoFeatures&gt;Material;Toolkit;MVUX;CSharpMarkup&lt;/UnoFeatures&gt;" aria-label="Copy line"><span class="swap"><i data-ic="copy" class="a"></i><i data-ic="check" class="b"></i></span></button></div>
       </li>
       <li class="step">
         <span class="step-n">Step 3</span>
         <h3>Paste and run</h3>
         <p>Copy a sample into a page, then start the desktop head to check it before you deploy.</p>
-        <div class="cmd"><code>dotnet run -f net10.0-desktop</code><button class="icon-btn" type="button" data-copy="dotnet run -f net10.0-desktop" aria-label="Copy command"><i data-ic="copy"></i></button></div>
+        <div class="cmd"><code>dotnet run -f net10.0-desktop</code><button class="icon-btn" type="button" data-copy="dotnet run -f net10.0-desktop" aria-label="Copy command"><span class="swap"><i data-ic="copy" class="a"></i><i data-ic="check" class="b"></i></span></button></div>
       </li>
     </ol>
     <p class="sr" id="cmd-status" aria-live="polite"></p>
@@ -959,7 +1048,7 @@ footer { padding-block: var(--s600); }
         <div class="sh-code">
           <div class="sh-code-bar">
             <div class="seg" role="tablist" id="sh-tabs" aria-label="Code format"></div>
-            <button class="btn btn-ghost btn-sm" id="sh-copy" type="button"><span id="sh-copy-ic"></span><span id="sh-copy-l">Copy</span></button>
+            <button class="btn btn-ghost btn-sm" id="sh-copy" type="button"><span class="swap"><i data-ic="copy" class="a"></i><i data-ic="check" class="b"></i></span><span id="sh-copy-l">Copy</span></button>
           </div>
           <pre class="code" id="sh-code" tabindex="0" role="tabpanel"></pre>
           <p class="sh-note" id="sh-note"></p>
@@ -1826,38 +1915,118 @@ if (!reduce.matches) {
 }
 cards.forEach(c => io.observe(c.card));
 
-/* ---------- filters and search ---------- */
-const CATS = ['All', 'Input', 'Collections', 'Navigation', 'Status'];
-let cat = 'All';
-const q = $('#q');
-$('#filters').innerHTML = CATS.map(c => `<button type="button" class="fchip" data-cat="${c}" aria-pressed="${c === cat}">${c} <span>${c === 'All' ? SAMPLES.length : SAMPLES.filter(s => s.cat === c).length}</span></button>`).join('');
-$('#filters').addEventListener('click', e => { const b = e.target.closest('.fchip'); if (!b) return; cat = b.dataset.cat; applyFilter(); });
-q.addEventListener('input', () => applyFilter());
-q.addEventListener('keydown', e => { if (e.key === 'Escape' && q.value) { q.value = ''; applyFilter(); } });
-$('#empty-clear').addEventListener('click', () => { q.value = ''; cat = 'All'; applyFilter(); q.focus(); });
+/* ---------- library: rail index, facets and sort ---------- */
+const CATS = ['Input', 'Collections', 'Navigation', 'Status'];
+const hasProp = (...keys) => s => s.props.some(p => keys.includes(p.k));
+const FACETS = {
+  cat: CATS.map(c => [c, c, s => s.cat === c]),
+  src: [['winui', 'WinUI', s => s.ns === 'winui'], ['toolkit', 'Uno Toolkit', s => s.ns === 'toolkit']],
+  cap: [['selection', 'Selection', hasProp('SelectionMode', 'SelectedIndex')], ['header', 'Header', hasProp('Header')], ['enabled', 'IsEnabled', hasProp('IsEnabled')]],
+};
+const SORTS = {
+  category: ['Category', 'grouped by category', (a, b) => SAMPLES.indexOf(a) - SAMPLES.indexOf(b)],
+  name: ['Name, A to Z', 'sorted by name', (a, b) => a.name.localeCompare(b.name)],
+  props: ['Most properties', 'sorted by property count', (a, b) => b.props.length - a.props.length || a.name.localeCompare(b.name)],
+};
+const lib = { cat: new Set(), src: new Set(), cap: new Set(), sort: SORTS[store.get('sort')] ? store.get('sort') : 'category' };
+const q = $('#q'), sortSel = $('#sort'), panel = $('#rail-panel'), toggle = $('#rail-toggle');
+const hay = new Map(SAMPLES.map(s => [s, fold([s.name, s.blurb, s.tags, NS[s.ns].short, NS[s.ns].full, ...s.props.map(p => p.k)].join(' '))]));
+const test = (key, id, s) => FACETS[key].find(f => f[0] === id)[2](s);
+/* Category and Source combine with OR inside the facet; Has property requires every chosen property. */
+function passes(s, skip) {
+  const term = fold(q.value.trim());
+  if (term && !hay.get(s).includes(term)) return false;
+  for (const key of ['cat', 'src']) if (key !== skip && lib[key].size && ![...lib[key]].some(id => test(key, id, s))) return false;
+  return [...lib.cap].every(id => test('cap', id, s));
+}
+const facetCount = (key, id) => SAMPLES.filter(s => passes(s, key === 'cap' ? null : key) && test(key, id, s)).length;
+
+for (const key of Object.keys(FACETS)) $(`#f-${key}`).innerHTML = FACETS[key].map(([id, label]) => `<button type="button" class="fchip" data-key="${key}" data-id="${id}" aria-pressed="false">${label} <span></span></button>`).join('');
+sortSel.innerHTML = Object.entries(SORTS).map(([id, [label]]) => `<option value="${id}">${label}</option>`).join('');
+sortSel.value = lib.sort;
+const groupHead = Object.fromEntries(CATS.map(c => [c, html(`<h3 class="group-h"><span>${c}</span><span></span></h3>`)]));
+const libCards = cards.filter(c => !c.sample.pattern);
+const inView = new Set();
+
+function renderLib(animate = true) {
+  const motion = animate && !reduce.matches;
+  const vis = SAMPLES.filter(s => passes(s)).sort(SORTS[lib.sort][2]);
+  const groups = lib.sort === 'category' ? CATS.map(c => [c, vis.filter(s => s.cat === c)]).filter(g => g[1].length) : [[null, vis]];
+  const first = new Map();
+  if (motion) for (const c of libCards) if (!c.card.hidden) first.set(c.card, c.card.getBoundingClientRect());
+
+  const order = [];
+  for (const [c, list] of groups) {
+    if (c) { groupHead[c].lastChild.textContent = list.length; order.push(groupHead[c]); }
+    for (const s of list) order.push(libCards.find(x => x.sample === s).card);
+  }
+  grid.replaceChildren(...order, ...libCards.filter(c => !vis.includes(c.sample)).map(c => c.card));
+
+  let d = 0;
+  for (const c of libCards) {
+    const ok = vis.includes(c.sample), was = !c.card.hidden;
+    c.card.hidden = !ok;
+    if (ok && !was && motion) { c.card.classList.remove('pre', 'pop'); void c.card.offsetWidth; c.card.style.setProperty('--d', `${d++ * 40}ms`); c.card.classList.add('pop'); }
+  }
+  /* FLIP: cards that stay glide from their old slot so a reorder reads as movement, not a reload */
+  for (const [el, r] of first) {
+    if (el.hidden) continue;
+    const n = el.getBoundingClientRect(), dx = r.left - n.left, dy = r.top - n.top;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+    el.style.transition = 'none'; el.style.transform = `translate(${dx}px, ${dy}px)`; void el.offsetWidth;
+    el.style.transition = 'transform 500ms var(--base)'; el.style.transform = '';
+    setTimeout(() => { el.style.transition = ''; }, 520);
+  }
+
+  $('#index').innerHTML = vis.length ? groups.map(([c, list]) => `<li>${c ? `<div class="ix-g"><span>${c}</span><span>${list.length}</span></div>` : ''}<ol>${list.map(s => `<li><a class="ix-a" href="#c-${s.id}" data-id="${s.id}"${inView.has(s.id) ? ' aria-current="true"' : ''}><span>${s.name}</span>${s.ns === 'winui' ? '' : `<span class="ix-ns">${NS[s.ns].short}</span>`}</a></li>`).join('')}</ol></li>`).join('')
+    : '<li class="ix-none">No controls match.</li>';
+
+  $$('.rail .fchip').forEach(b => {
+    const { key, id } = b.dataset, on = lib[key].has(id), n = facetCount(key, id);
+    b.setAttribute('aria-pressed', on); b.lastElementChild.textContent = n; b.disabled = !on && n === 0;
+  });
+  const active = lib.cat.size + lib.src.size + lib.cap.size + (q.value.trim() ? 1 : 0);
+  $('#clear').disabled = !active;
+  $('#filter-n').hidden = !(lib.cat.size + lib.src.size + lib.cap.size);
+  $('#filter-n').textContent = lib.cat.size + lib.src.size + lib.cap.size;
+  $('#empty').hidden = vis.length > 0;
+  $('#empty-h').textContent = q.value.trim() ? `No controls match “${q.value.trim()}”` : 'No controls match these filters';
+  $('#result-status').textContent = `${vis.length} of ${SAMPLES.length} controls, ${SORTS[lib.sort][1]}`;
+}
+
+$('.rail').addEventListener('click', e => {
+  const b = e.target.closest('.fchip'); if (!b) return;
+  const set = lib[b.dataset.key]; set.has(b.dataset.id) ? set.delete(b.dataset.id) : set.add(b.dataset.id);
+  renderLib();
+});
+sortSel.addEventListener('change', () => { lib.sort = sortSel.value; store.set('sort', lib.sort); renderLib(); });
+q.addEventListener('input', () => renderLib());
+q.addEventListener('keydown', e => { if (e.key === 'Escape' && q.value) { q.value = ''; renderLib(); } });
+const clearAll = () => { lib.cat.clear(); lib.src.clear(); lib.cap.clear(); q.value = ''; renderLib(); };
+$('#clear').addEventListener('click', () => { clearAll(); q.focus(); });
+$('#empty-clear').addEventListener('click', () => { clearAll(); q.focus(); });
+toggle.addEventListener('click', () => {
+  const open = toggle.getAttribute('aria-expanded') !== 'true';
+  toggle.setAttribute('aria-expanded', open); panel.classList.toggle('open', open);
+});
 addEventListener('keydown', e => {
   if (e.key === '/' && !e.metaKey && !e.ctrlKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && !$('#sheet').open) { e.preventDefault(); q.focus(); }
 });
-function applyFilter() {
-  const term = fold(q.value.trim());
-  $$('.fchip').forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === cat));
-  let shown = 0, d = 0;
-  for (const c of cards) {
-    if (c.sample.pattern) continue;
-    const s = c.sample;
-    const hay = fold([s.name, s.blurb, s.tags, NS[s.ns].short, NS[s.ns].full, ...s.props.map(p => p.k)].join(' '));
-    const ok = (cat === 'All' || s.cat === cat) && (!term || hay.includes(term));
-    const was = !c.card.hidden;
-    c.card.hidden = !ok;
-    if (ok) {
-      shown++;
-      if (!was && !reduce.matches) { c.card.classList.remove('pre', 'pop'); void c.card.offsetWidth; c.card.style.setProperty('--d', `${d++ * 40}ms`); c.card.classList.add('pop'); }
-    }
-  }
-  $('#empty').hidden = shown > 0;
-  $('#empty-h').textContent = term ? `No controls match “${q.value.trim()}”` : `No controls in ${cat}`;
-  $('#result-status').textContent = shown ? `${shown} ${shown === 1 ? 'control' : 'controls'} shown` : 'No controls match';
-}
+$('#index').addEventListener('click', e => {
+  const a = e.target.closest('a[data-id]'); if (!a) return;
+  e.preventDefault();
+  const card = libCards.find(c => c.sample.id === a.dataset.id).card;
+  card.scrollIntoView({ behavior: reduce.matches ? 'auto' : 'smooth', block: 'center' });
+  card.focus({ preventScroll: true });
+  card.classList.remove('located'); void card.offsetWidth; card.classList.add('located');
+  setTimeout(() => card.classList.remove('located'), 1400);
+});
+/* Index follows the cards whose middle band is on screen; both cards of a row light up together */
+const spy = new IntersectionObserver(entries => {
+  for (const e of entries) e.isIntersecting ? inView.add(e.target.dataset.id) : inView.delete(e.target.dataset.id);
+  $$('#index .ix-a').forEach(a => { if (inView.has(a.dataset.id)) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+}, { rootMargin: '-40% 0px -45% 0px' });
+libCards.forEach(c => { c.card.id = `c-${c.sample.id}`; c.card.tabIndex = -1; spy.observe(c.card); });
 
 /* ---------- design system toggle ---------- */
 function setDs(v) {
@@ -1883,7 +2052,6 @@ new IntersectionObserver(([e]) => { if (heroRunner) heroRunner.visible = e.isInt
 /* ---------- sheet ---------- */
 const sheet = $('#sheet'), shStage = $('#sh-stage'), shCode = $('#sh-code'), shProps = $('#sh-props');
 let shInst = null, shTab = 0, shLast = null, opener = null;
-$('#sh-copy-ic').innerHTML = ic('copy');
 const TYPE = { bool: 'bool', text: 'string', number: 'double', enum: 'enum' };
 function updateNote() {
   $('#sh-note').textContent = (ds === 'material' ? 'Material resources: App.xaml merges MaterialToolkitTheme.' : 'Fluent resources: App.xaml merges XamlControlsResources.') + ' Generated by this prototype, so build it once before you ship.';
@@ -1951,13 +2119,13 @@ function openSheet(sample, from) {
 }
 function closeSheet() {
   if (!sheet.open) return;
-  sheet.classList.remove('shown');
+  sheet.classList.add('closing'); sheet.classList.remove('shown');
   const done = () => {
-    sheet.close();
+    sheet.classList.remove('closing'); sheet.close();
     if (shInst) { instances.delete(shInst); shInst = null; }
     opener?.focus?.();
   };
-  if (reduce.matches) done(); else setTimeout(done, 300);
+  if (reduce.matches) done(); else setTimeout(done, 200);
 }
 sheet.addEventListener('cancel', e => { e.preventDefault(); closeSheet(); });
 sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
@@ -1965,13 +2133,13 @@ $('#sh-close').addEventListener('click', closeSheet);
 
 const status = msg => { $('#sh-status').textContent = ''; requestAnimationFrame(() => { $('#sh-status').textContent = msg; }); };
 let copyTimer = 0;
-function resetCopy() { clearTimeout(copyTimer); $('#sh-copy-ic').innerHTML = ic('copy'); $('#sh-copy-l').textContent = 'Copy'; }
+function resetCopy() { clearTimeout(copyTimer); $('#sh-copy').classList.remove('done'); $('#sh-copy-l').textContent = 'Copy'; }
 function selectText(el) { const r = document.createRange(); r.selectNodeContents(el); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
 $('#sh-copy').addEventListener('click', () => {
   if (!shInst) return;
   const tab = shInst.sample.code[shTab], text = plain(shLast || '');
   const ok = () => {
-    $('#sh-copy-ic').innerHTML = ic('check'); $('#sh-copy-l').textContent = `Copied ${tab.label}`;
+    $('#sh-copy').classList.add('done'); $('#sh-copy-l').textContent = `Copied ${tab.label}`;
     status(`Copied ${tab.label} for ${shInst.sample.name}`);
     clearTimeout(copyTimer); copyTimer = setTimeout(resetCopy, 2000);
   };
@@ -1981,7 +2149,7 @@ $('#sh-copy').addEventListener('click', () => {
 
 $$('[data-copy]').forEach(b => b.addEventListener('click', () => {
   const text = b.dataset.copy, code = b.previousElementSibling;
-  const ok = () => { b.innerHTML = ic('check'); $('#cmd-status').textContent = `Copied ${text}`; setTimeout(() => { b.innerHTML = ic('copy'); }, 2000); };
+  const ok = () => { b.classList.add('done'); $('#cmd-status').textContent = `Copied ${text}`; setTimeout(() => b.classList.remove('done'), 2000); };
   const fail = () => { selectText(code); $('#cmd-status').textContent = 'Copy is blocked here. The command is selected, press Ctrl+C to copy it.'; };
   try { navigator.clipboard.writeText(text).then(ok, fail); } catch { fail(); }
 }));
@@ -2026,9 +2194,9 @@ addEventListener('keydown', e => { if (e.key === 'Escape' && menuBtn.getAttribut
 matchMedia('(min-width: 768px)').addEventListener('change', e => { if (e.matches) setMenu(false); });
 
 /* ---------- boot ---------- */
-$$('i[data-ic]').forEach(i => { i.outerHTML = ic(i.dataset.ic); });
+$$('i[data-ic]').forEach(i => { i.outerHTML = ic(i.dataset.ic, i.className); });
 setDs(ds);
-applyFilter();
+renderLib(false);
 document.fonts?.ready.then(() => instances.forEach(i => i.refresh()));
 requestAnimationFrame(clock);
 const fromHash = ALL.find(s => s.id === location.hash.slice(1));
