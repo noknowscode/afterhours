@@ -1,0 +1,2036 @@
+<title>Uno Gallery</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Try Uno Platform controls and patterns live, tune their properties, and copy XAML or C# Markup that builds for WebAssembly, Windows, iOS, Android, macOS and Linux.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: floating nav over one column. Hero pairs copy with a live anatomy card; controls sit in a 3/2/1 grid; patterns in two wide cards.
+   Every value resolves through landing-page-design Part B (type scale, spacing table, Tailwind radii, flat backgrounds, base curve).
+   Chrome stays monochrome; color lives only inside previews, where it is the real Fluent or Material control theme. */
+:root {
+  --font: "Geist", "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --s25: 2px; --s50: 4px; --s75: 8px; --s100: 12px; --s200: 16px; --s300: 24px;
+  --s400: 32px; --s500: 40px; --s600: 48px; --s700: 64px; --s800: 80px; --s900: 96px;
+
+  --r-sm: 2px; --r: 4px; --r-lg: 8px; --r-xl: 12px; --r-2xl: 16px; --r-full: 9999px;
+
+  --base: cubic-bezier(0.22, 1, 0.36, 1);
+  --e: cubic-bezier(0.16, 1, 0.3, 1);
+  --e2: cubic-bezier(0.33, 1, 0.68, 1);
+  --io: cubic-bezier(0.65, 0, 0.35, 1);
+
+  --bg: #FFFFFF; --surface: #FAFAFA; --raised: #F0F0F0;
+  --line: #E6E6E6; --line-strong: #D0D0D0;
+  --fg: #0A0A0A; --muted: #5C5C5C; --faint: #8C8C8C; --on-fg: #FFFFFF;
+  --head-from: #000000; --head-to: #666666;
+  --flash: #E8E8E8; --mark: rgba(10, 10, 10, .05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #181818; --surface: #1F1F1F; --raised: #272727;
+    --line: #313131; --line-strong: #444444;
+    --fg: #F5F5F5; --muted: #A3A3A3; --faint: #737373; --on-fg: #000000;
+    --head-from: #FFFFFF; --head-to: #9B9B9B;
+    --flash: #3A3A3A; --mark: rgba(255, 255, 255, .06);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #181818; --surface: #1F1F1F; --raised: #272727;
+  --line: #313131; --line-strong: #444444;
+  --fg: #F5F5F5; --muted: #A3A3A3; --faint: #737373; --on-fg: #000000;
+  --head-from: #FFFFFF; --head-to: #9B9B9B;
+  --flash: #3A3A3A; --mark: rgba(255, 255, 255, .06);
+  color-scheme: dark;
+}
+
+/* Preview themes. Fluent light is the base; Material and dark variants only redefine tokens. */
+.stage {
+  --p-bg: #F9F9F9; --p-fg: #1A1A1A; --p-muted: #5D5D5D; --p-line: #8A8A8A; --p-edge: #E5E5E5;
+  --p-fill: #FFFFFF; --p-fill2: #F0F0F0; --p-accent: #005FB8; --p-on: #FFFFFF; --p-soft: #E3ECF7;
+  --p-ok: #0F7B0F; --p-warn: #9D5D00; --p-err: #C42B1C;
+  --p-ok-bg: #DFF6DD; --p-warn-bg: #FFF4CE; --p-err-bg: #FDE7E9; --p-info-bg: #F0F0F0;
+  --p-r: 4px; --p-rf: 4px; --p-r2: 8px; --p-rc: 4px;
+}
+.stage[data-ds="material"] {
+  --p-bg: #FEF7FF; --p-fg: #1D1B20; --p-muted: #49454F; --p-line: #79747E; --p-edge: #E7E0EC;
+  --p-fill: #F7F2FA; --p-fill2: #ECE6F0; --p-accent: #6750A4; --p-on: #FFFFFF; --p-soft: #E8DEF8;
+  --p-ok: #386A20; --p-warn: #7D5700; --p-err: #B3261E;
+  --p-ok-bg: #DCEDD2; --p-warn-bg: #FCEFC7; --p-err-bg: #F9DEDC; --p-info-bg: #ECE6F0;
+  --p-r: 9999px; --p-rf: 4px; --p-r2: 12px; --p-rc: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stage:not([data-rt="Light"]) {
+    --p-bg: #1F1F1F; --p-fg: #FFFFFF; --p-muted: #ABABAB; --p-line: #8F8F8F; --p-edge: #313131;
+    --p-fill: #272727; --p-fill2: #313131; --p-accent: #60CDFF; --p-on: #000000; --p-soft: #313131;
+    --p-ok: #6CCB5F; --p-warn: #FCE100; --p-err: #FF99A4;
+    --p-ok-bg: #272727; --p-warn-bg: #272727; --p-err-bg: #272727; --p-info-bg: #272727;
+    color-scheme: dark;
+  }
+  :root:not([data-theme="light"]) .stage[data-ds="material"]:not([data-rt="Light"]) {
+    --p-fg: #E6E0E9; --p-muted: #CAC4D0; --p-line: #938F99;
+    --p-accent: #D0BCFF; --p-on: #381E72; --p-ok: #A6D388; --p-warn: #F5C46B; --p-err: #F2B8B5;
+  }
+}
+:root[data-theme="dark"] .stage:not([data-rt="Light"]), .stage[data-rt="Dark"] {
+  --p-bg: #1F1F1F; --p-fg: #FFFFFF; --p-muted: #ABABAB; --p-line: #8F8F8F; --p-edge: #313131;
+  --p-fill: #272727; --p-fill2: #313131; --p-accent: #60CDFF; --p-on: #000000; --p-soft: #313131;
+  --p-ok: #6CCB5F; --p-warn: #FCE100; --p-err: #FF99A4;
+  --p-ok-bg: #272727; --p-warn-bg: #272727; --p-err-bg: #272727; --p-info-bg: #272727;
+  color-scheme: dark;
+}
+:root[data-theme="dark"] .stage[data-ds="material"]:not([data-rt="Light"]), .stage[data-ds="material"][data-rt="Dark"] {
+  --p-fg: #E6E0E9; --p-muted: #CAC4D0; --p-line: #938F99;
+  --p-accent: #D0BCFF; --p-on: #381E72; --p-ok: #A6D388; --p-warn: #F5C46B; --p-err: #F2B8B5;
+}
+
+/* Base */
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+body { background: var(--bg); color: var(--fg); font: 400 16px/24px var(--font); -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
+p { margin: 0; text-wrap: pretty; }
+a { color: inherit; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.ic { width: 20px; height: 20px; flex: none; display: block; }
+.mono { font-family: var(--mono); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.stage :focus-visible { outline-color: var(--p-accent); }
+.wrap {
+  max-width: 1152px; margin-inline: auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+@media (min-width: 768px) {
+  .wrap { padding-left: max(32px, env(safe-area-inset-left, 0px)); padding-right: max(32px, env(safe-area-inset-right, 0px)); }
+}
+.skip {
+  position: fixed; z-index: 50; left: max(16px, env(safe-area-inset-left, 0px)); top: calc(env(safe-area-inset-top, 0px) + 16px);
+  padding: 8px 12px; border-radius: var(--r-lg); background: var(--fg); color: var(--on-fg);
+  font-weight: 600; text-decoration: none; transform: translateY(-160%);
+  transition: transform 300ms var(--base);
+}
+.skip:focus { transform: none; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px;
+  border: 1px solid transparent; border-radius: var(--r-lg); background: transparent;
+  font: 600 16px/24px var(--font); text-decoration: none; white-space: nowrap;
+  transition: background-color 300ms var(--base), border-color 300ms var(--base), color 300ms var(--base), transform 300ms var(--base);
+}
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: var(--fg); color: var(--on-fg); }
+.btn-primary:hover { background: color-mix(in srgb, var(--fg) 84%, var(--bg)); }
+.btn-primary .ic { transition: transform 300ms var(--base); }
+.btn-primary:hover .ic { transform: translateX(2px); }
+.btn-ghost { border-color: var(--line); background: var(--bg); }
+.btn-ghost:hover { background: var(--raised); border-color: var(--line-strong); }
+.btn-sm { padding: 4px 8px; font-size: 14px; line-height: 20px; gap: 4px; }
+.btn-sm .ic { width: 16px; height: 16px; }
+.icon-btn {
+  display: grid; place-items: center; width: 32px; height: 32px; padding: 0;
+  border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg); color: var(--muted);
+  transition: background-color 300ms var(--base), color 300ms var(--base), transform 300ms var(--base);
+}
+.icon-btn:hover { background: var(--raised); color: var(--fg); }
+.icon-btn:active { transform: scale(0.96); }
+.icon-btn .ic { width: 16px; height: 16px; }
+
+.seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: var(--r-xl); background: var(--raised); }
+.seg button {
+  padding: 4px 12px; border: 0; border-radius: var(--r-lg); background: transparent; color: var(--muted);
+  font: 500 14px/20px var(--font);
+  transition: background-color 300ms var(--base), color 300ms var(--base), transform 300ms var(--base);
+}
+.seg button:hover { color: var(--fg); }
+.seg button:active { transform: scale(0.98); }
+.seg button[aria-pressed="true"], .seg button[aria-selected="true"] {
+  background: var(--bg); color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, .12);
+}
+
+/* Nav */
+.nav {
+  position: fixed; z-index: 30; top: calc(env(safe-area-inset-top, 0px) + 16px); left: 50%;
+  transform: translateX(-50%);
+  display: flex; align-items: center; gap: 4px; padding: 4px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid var(--line); border-radius: var(--r-2xl);
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4);
+}
+.nav-brand {
+  display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: var(--r-xl);
+  font: 600 14px/20px var(--font); text-decoration: none; white-space: nowrap;
+}
+.mark { display: grid; grid-template-columns: repeat(2, 6px); gap: 2px; }
+.mark i { width: 6px; height: 6px; border-radius: var(--r-sm); background: var(--fg); }
+.mark i:nth-child(2), .mark i:nth-child(3) { opacity: .4; }
+.nav-links { display: none; gap: 4px; }
+.nav-links a {
+  padding: 8px 12px; border-radius: var(--r-xl); color: var(--muted); text-decoration: none;
+  font: 500 14px/20px var(--font); white-space: nowrap;
+  transition: background-color 300ms var(--base), color 300ms var(--base);
+}
+.nav-links a:hover { color: var(--fg); background: var(--raised); }
+.nav-links a[aria-current="true"] { color: var(--fg); background: var(--raised); }
+.nav .seg { display: none; }
+.nav-menu {
+  position: relative; width: 36px; height: 36px; padding: 0; border: 0; border-radius: var(--r-xl); background: transparent;
+  transition: background-color 300ms var(--base);
+}
+.nav-menu:hover { background: var(--raised); }
+.nav-menu span {
+  position: absolute; left: 10px; width: 16px; height: 2px; border-radius: var(--r-full); background: var(--fg);
+  transition: transform 500ms var(--base);
+}
+.nav-menu span:first-child { top: 14px; }
+.nav-menu span:last-child { top: 20px; }
+.nav-menu[aria-expanded="true"] span:first-child { transform: translateY(3px) rotate(45deg); }
+.nav-menu[aria-expanded="true"] span:last-child { transform: translateY(-3px) rotate(-45deg); }
+@media (min-width: 768px) {
+  .nav-links, .nav .seg { display: flex; }
+  .nav-menu { display: none; }
+}
+.menu {
+  position: fixed; z-index: 25; inset: 0;
+  padding: calc(env(safe-area-inset-top, 0px) + 96px) max(24px, env(safe-area-inset-right, 0px)) 32px max(24px, env(safe-area-inset-left, 0px));
+  display: flex; flex-direction: column; gap: 32px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  -webkit-backdrop-filter: blur(24px); backdrop-filter: blur(24px);
+  opacity: 0; transition: opacity 300ms var(--base);
+}
+.menu.open { opacity: 1; }
+.menu nav { display: grid; gap: 8px; }
+.menu a, .menu .seg {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 500ms var(--base), transform 500ms var(--base);
+  transition-delay: var(--d, 0ms);
+}
+.menu.open a, .menu.open .seg { opacity: 1; transform: none; }
+.menu a { font: 600 30px/36px var(--font); text-decoration: none; padding: 8px 0; }
+.menu a[aria-current="true"] { text-decoration: underline; text-underline-offset: 8px; text-decoration-thickness: 2px; }
+.menu .seg { align-self: start; }
+
+/* Hero */
+.hero { padding-top: calc(var(--s900) + var(--s400)); padding-bottom: var(--s600); }
+.hero-grid { display: grid; gap: var(--s600); align-items: center; }
+@media (min-width: 1024px) { .hero-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 520px); } }
+.hero-copy { display: grid; gap: var(--s300); justify-items: start; min-width: 0; }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px; font: 500 14px/20px var(--font); color: var(--muted); }
+.pill { padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--r-full); font: 500 12px/16px var(--font); color: var(--muted); }
+.hero h1 {
+  max-width: 680px; font-size: 36px; line-height: 40px; letter-spacing: -0.02em;
+  background: linear-gradient(90deg, var(--head-from), var(--head-to));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+@media (min-width: 768px) { .hero h1 { font-size: 48px; line-height: 1; letter-spacing: -0.03em; padding-bottom: 4px; } }
+.hero-sub { max-width: 680px; font-size: 18px; line-height: 28px; color: var(--muted); }
+.hero-proof { display: flex; align-items: flex-start; gap: 8px; font: 400 14px/20px var(--font); color: var(--muted); }
+.hero-proof .ic { width: 16px; height: 16px; margin-top: 2px; }
+.hero-proof b { font-weight: 500; color: var(--fg); }
+
+.anat {
+  margin: 0; display: grid; gap: 8px; padding: 8px; min-width: 0;
+  border: 1px solid var(--line); border-radius: var(--r-2xl); background: var(--bg);
+}
+.anat-stage { height: 176px; }
+.anat-stage .ts { transform: scale(1.2); }
+.anat-code { min-width: 0; border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); }
+.anat-bar { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 12px 0; font: 400 12px/16px var(--font); color: var(--muted); }
+.sync { display: inline-flex; align-items: center; gap: 8px; }
+.live-dot { position: relative; width: 8px; height: 8px; border-radius: var(--r-full); background: var(--fg); }
+.live-dot::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--fg); animation: ring 2s var(--e2) infinite; }
+@keyframes ring { from { transform: scale(1); opacity: .55; } to { transform: scale(2.6); opacity: 0; } }
+.anat figcaption { padding: 4px 8px; font: 400 14px/20px var(--font); color: var(--muted); }
+
+/* Code */
+.code {
+  margin: 0; padding: 12px; overflow-x: auto; font: 400 12px/16px var(--mono); tab-size: 4; white-space: pre;
+  color: var(--muted);
+}
+.code .ln { display: block; margin-inline: -12px; padding-inline: 12px; min-height: 16px; }
+.code .ln.mk { background: var(--mark); }
+.code .ln.chg { animation: flash 1200ms var(--base); }
+@keyframes flash { from { background: var(--flash); } }
+.t-tag { color: var(--fg); font-weight: 500; }
+.t-attr { color: var(--muted); }
+.t-str { color: var(--fg); }
+.t-p { color: var(--faint); }
+.t-c { color: var(--faint); }
+.t-kw { color: var(--faint); }
+.t-type { color: var(--fg); font-weight: 500; }
+
+/* Sections */
+section { scroll-margin-top: 80px; }
+.sec { padding-block: var(--s800); }
+.sec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--s300); margin-bottom: var(--s400); }
+.sec-head h2 { font-size: 30px; line-height: 36px; letter-spacing: -0.02em; }
+.sec-head p { max-width: 560px; color: var(--muted); margin-top: 8px; }
+
+.toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s200); margin-bottom: var(--s300); }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.fchip {
+  display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px;
+  border: 1px solid var(--line); border-radius: var(--r-full); background: var(--bg); color: var(--muted);
+  font: 500 14px/20px var(--font);
+  transition: background-color 300ms var(--base), color 300ms var(--base), border-color 300ms var(--base), transform 300ms var(--base);
+}
+.fchip:hover { color: var(--fg); border-color: var(--line-strong); }
+.fchip:active { transform: scale(0.98); }
+.fchip[aria-pressed="true"] { background: var(--fg); border-color: var(--fg); color: var(--on-fg); }
+.fchip span { font: 400 12px/16px var(--mono); opacity: .7; }
+.search { position: relative; width: 100%; max-width: 320px; }
+.search .ic { position: absolute; left: 12px; top: 10px; width: 20px; height: 20px; color: var(--faint); pointer-events: none; }
+.search input {
+  width: 100%; padding: 8px 40px; border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: var(--bg); font: 400 16px/24px var(--font);
+  transition: border-color 300ms var(--base);
+}
+.search input:hover { border-color: var(--line-strong); }
+.search input:focus-visible { outline-offset: 0; }
+.search kbd {
+  position: absolute; right: 8px; top: 10px; padding: 0 8px; border: 1px solid var(--line); border-radius: var(--r);
+  font: 400 12px/16px var(--mono); color: var(--faint); background: var(--surface);
+}
+@media (max-width: 767px) { .search { max-width: none; } }
+
+.grid { display: grid; gap: var(--s300); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.pgrid { display: grid; gap: var(--s300); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1024px) { .pgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.card {
+  display: flex; flex-direction: column; min-width: 0; padding: 8px;
+  border: 1px solid var(--line); border-radius: var(--r-2xl); background: var(--bg);
+  transition: border-color 300ms var(--base), transform 500ms var(--base);
+}
+.card:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.card.pre { opacity: 0; transform: translateY(24px) scale(0.985); filter: blur(6px); }
+.card.intro {
+  transition: transform 900ms var(--e) var(--d, 0ms), opacity 600ms var(--e2) var(--d, 0ms), filter 700ms var(--e2) var(--d, 0ms), border-color 300ms var(--base);
+}
+.card.pop { animation: pop 500ms var(--base) both; animation-delay: var(--d, 0ms); }
+@keyframes pop { from { opacity: 0; transform: translateY(8px); } }
+.card-stage { height: 192px; }
+.pcard .card-stage { height: 320px; }
+.card-body { display: grid; gap: 8px; padding: 12px 8px 8px; }
+.card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.card-name { font: 500 16px/24px var(--mono); letter-spacing: -0.01em; }
+.ns { padding: 2px 8px; border: 1px solid var(--line); border-radius: var(--r-full); font: 500 12px/16px var(--font); color: var(--muted); white-space: nowrap; }
+.card-blurb { font-size: 14px; line-height: 20px; color: var(--muted); }
+.card-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 4px; }
+.card-meta { font: 400 12px/16px var(--mono); color: var(--faint); }
+
+.empty {
+  display: grid; justify-items: center; gap: 12px; padding: var(--s700) var(--s300); text-align: center;
+  border: 1px dashed var(--line-strong); border-radius: var(--r-2xl);
+}
+.empty .ic { width: 32px; height: 32px; color: var(--faint); }
+.empty h3 { font-size: 18px; line-height: 28px; }
+.empty p { max-width: 420px; font-size: 14px; line-height: 20px; color: var(--muted); }
+
+/* Tagline */
+.tagline { padding-block: var(--s900); }
+.tagline p {
+  max-width: 680px; font-size: 30px; line-height: 36px; font-weight: 600; letter-spacing: -0.02em; text-wrap: balance;
+}
+@media (min-width: 768px) { .tagline p { font-size: 48px; line-height: 1; letter-spacing: -0.03em; } }
+.tagline .w { color: color-mix(in srgb, var(--fg) 30%, var(--bg)); transition: color 600ms var(--base); }
+.tagline .w.lit { color: var(--fg); }
+
+/* Steps */
+.steps { display: grid; gap: var(--s400); grid-template-columns: minmax(0, 1fr); counter-reset: step; }
+@media (min-width: 768px) { .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.step { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.step-n { font: 500 14px/20px var(--mono); color: var(--faint); }
+.step h3 { font-size: 18px; line-height: 28px; }
+.step p { font-size: 14px; line-height: 20px; color: var(--muted); }
+.cmd {
+  display: flex; align-items: center; gap: 8px; min-width: 0; padding: 4px 4px 4px 12px;
+  border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface);
+}
+.cmd code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; font: 400 12px/16px var(--mono); padding-block: 4px; }
+.cmd .icon-btn { width: 28px; height: 28px; border-radius: var(--r); }
+
+footer { padding-block: var(--s600); }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s300); padding-top: var(--s400); border-top: 1px solid var(--line); font-size: 14px; line-height: 20px; color: var(--muted); }
+.foot nav { display: flex; flex-wrap: wrap; gap: var(--s300); }
+.foot a { text-decoration: none; transition: color 300ms var(--base); }
+.foot a:hover { color: var(--fg); }
+
+/* Reveal */
+[data-reveal] { transition: opacity 700ms var(--base), transform 700ms var(--base); }
+[data-reveal].pre { opacity: 0; transform: translateY(32px); }
+
+/* Sheet */
+.sheet {
+  position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none;
+  margin: 0; padding: 0; border: 0; background: transparent; overflow: hidden; color: var(--fg);
+}
+.sheet::backdrop { background: rgba(0, 0, 0, .45); opacity: 0; transition: opacity 300ms var(--base); }
+.sheet.shown::backdrop { opacity: 1; }
+.sheet-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 100%;
+  display: flex; flex-direction: column; background: var(--bg); overflow: hidden;
+  padding-top: env(safe-area-inset-top, 0px);
+  opacity: 0; transform: translateX(32px);
+  transition: transform 500ms var(--base), opacity 300ms var(--base);
+}
+.sheet.shown .sheet-panel { opacity: 1; transform: none; }
+@media (min-width: 768px) {
+  .sheet-panel { top: 8px; right: 8px; bottom: 8px; width: min(1040px, calc(100% - 16px)); border: 1px solid var(--line); border-radius: var(--r-2xl); padding-top: 0; }
+}
+.sh-head {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: center;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) 16px max(16px, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid var(--line);
+}
+@media (min-width: 768px) { .sh-head { padding: 16px 24px; } }
+.sh-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; min-width: 0; }
+.sh-title h2 { font: 500 20px/28px var(--mono); }
+.sh-actions { display: flex; gap: 8px; align-items: center; }
+.sh-blurb { grid-column: 1 / -1; font-size: 14px; line-height: 20px; color: var(--muted); }
+.sh-body {
+  flex: 1; overflow-y: auto; overscroll-behavior: contain;
+  display: grid; gap: 24px; align-content: start;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+}
+@media (min-width: 1024px) { .sh-body { grid-template-columns: minmax(0, 1fr) 288px; padding: 24px; } }
+.sh-main { display: grid; gap: 12px; min-width: 0; align-content: start; }
+.sh-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.sh-toolbar .label { font: 400 12px/16px var(--mono); color: var(--faint); margin-right: 8px; }
+.sh-stage { height: 320px; border-radius: var(--r-xl); }
+.sh-stage.tall { height: 400px; }
+.sh-code { min-width: 0; border: 1px solid var(--line); border-radius: var(--r-xl); background: var(--surface); }
+.sh-code-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 8px 0; }
+.sh-code .seg { background: var(--raised); }
+.sh-code .code { max-height: 360px; overflow: auto; font-size: 14px; line-height: 20px; }
+.sh-code .code .ln { min-height: 20px; }
+.sh-note { padding: 0 12px 12px; font-size: 12px; line-height: 16px; color: var(--faint); }
+.sh-side { display: grid; gap: 16px; align-content: start; min-width: 0; }
+.sh-side h3 { font-size: 14px; line-height: 20px; font-weight: 600; }
+
+.pf { display: grid; gap: 16px; }
+.pf-row { display: grid; gap: 8px; }
+.pf-row label { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.pf-row label .mono { font-size: 14px; line-height: 20px; font-weight: 500; }
+.pf-type { font: 400 12px/16px var(--mono); color: var(--faint); }
+.pf-bool { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.pf-bool label { flex-direction: column; gap: 0; }
+.pf-in {
+  width: 100%; padding: 8px 12px; border: 1px solid var(--line); border-radius: var(--r-lg);
+  background: var(--bg); font: 400 14px/20px var(--font);
+  transition: border-color 300ms var(--base);
+}
+.pf-in:hover { border-color: var(--line-strong); }
+.pf-sw {
+  appearance: none; -webkit-appearance: none; position: relative; width: 36px; height: 20px; margin: 0;
+  border-radius: var(--r-full); background: var(--line-strong); cursor: pointer;
+  transition: background-color 300ms var(--base);
+}
+.pf-sw::before {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: var(--r-full);
+  background: var(--bg); transition: transform 300ms var(--base);
+}
+.pf-sw:checked { background: var(--fg); }
+.pf-sw:checked::before { transform: translateX(16px); }
+.pf-num { display: flex; align-items: center; gap: 12px; }
+.pf-num input { flex: 1; min-width: 0; accent-color: var(--fg); }
+.pf-num output { min-width: 40px; text-align: right; font-size: 14px; line-height: 20px; font-variant-numeric: tabular-nums; }
+
+/* Stage shell */
+.stage {
+  position: relative; overflow: hidden; isolation: isolate; display: grid; grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); place-items: center; padding: 12px;
+  border: 1px solid var(--p-edge); border-radius: var(--r-lg); background: var(--p-bg); color: var(--p-fg);
+  font: 400 14px/20px var(--font);
+  transition: background-color 300ms var(--base), color 300ms var(--base), border-color 300ms var(--base);
+}
+.stage.top { place-items: start center; }
+.stage > .nv, .stage > .tb, .stage > .fv, .stage > .rv { align-self: stretch; height: auto; }
+.stage button { font: inherit; }
+.stage.settle * { transition-duration: 500ms !important; }
+
+/* ToggleSwitch */
+.ts { display: grid; gap: 8px; justify-items: start; }
+.ts-btn { display: inline-flex; align-items: center; gap: 12px; padding: 0; border: 0; background: none; border-radius: var(--p-r); }
+.ts-track {
+  position: relative; width: 40px; height: 20px; border: 1px solid var(--p-muted); border-radius: var(--r-full); background: var(--p-fill);
+  transition: background-color 300ms var(--base), border-color 300ms var(--base);
+}
+.ts-thumb {
+  position: absolute; top: 3px; left: 3px; width: 12px; height: 12px; border-radius: var(--r-full); background: var(--p-muted);
+  transition: transform 300ms var(--base), background-color 300ms var(--base);
+}
+.ts-btn:hover .ts-thumb { transform: scale(1.17); }
+.ts-btn.on .ts-track { background: var(--p-accent); border-color: var(--p-accent); }
+.ts-btn.on .ts-thumb { transform: translateX(20px); background: var(--p-on); }
+.ts-btn.on:hover .ts-thumb { transform: translateX(20px) scale(1.17); }
+[data-ds="material"] .ts-track { width: 52px; height: 32px; border-width: 2px; border-color: var(--p-line); background: var(--p-fill2); }
+[data-ds="material"] .ts-thumb { top: 6px; left: 6px; width: 16px; height: 16px; background: var(--p-line); }
+[data-ds="material"] .ts-btn.on .ts-thumb, [data-ds="material"] .ts-btn.on:hover .ts-thumb { transform: translateX(20px) scale(1.5); }
+.ts-btn:disabled, .off { opacity: .4; cursor: default; }
+
+/* Slider */
+.sl { display: grid; gap: 8px; width: min(256px, 84%); }
+.sl-top { display: flex; justify-content: space-between; gap: 8px; }
+.sl-v { color: var(--p-muted); font-variant-numeric: tabular-nums; }
+.sl-rail { position: relative; height: 20px; touch-action: none; cursor: pointer; border-radius: var(--p-r); }
+.sl-rail::before { content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 4px; border-radius: var(--r-full); background: var(--p-line); opacity: .5; }
+.sl-fill { position: absolute; left: 0; top: 8px; width: 100%; height: 4px; border-radius: var(--r-full); background: var(--p-accent); transform-origin: left; transform: scaleX(var(--v, 0)); }
+.sl-pos { position: absolute; inset: 0; pointer-events: none; transform: translateX(calc(var(--v, 0) * 100%)); }
+.sl-fill, .sl-pos { transition: transform 300ms var(--base); }
+.sl.live .sl-fill, .sl.live .sl-pos, .sl.drag .sl-fill, .sl.drag .sl-pos { transition: none; }
+.sl-thumb { position: absolute; left: -10px; top: 0; width: 20px; height: 20px; border-radius: var(--r-full); background: var(--p-fill); box-shadow: 0 0 0 1px var(--p-edge), 0 1px 3px rgba(0, 0, 0, .24); }
+.sl-thumb::after { content: ""; position: absolute; inset: 4px; border-radius: inherit; background: var(--p-accent); transition: transform 300ms var(--base); }
+.sl-rail:hover .sl-thumb::after { transform: scale(1.17); }
+.sl.drag .sl-thumb::after { transform: scale(0.84); }
+[data-ds="material"] .sl-thumb { background: var(--p-accent); box-shadow: none; }
+[data-ds="material"] .sl-thumb::after { display: none; }
+
+/* NumberBox */
+.nb { display: grid; gap: 8px; width: min(208px, 84%); }
+.nb-box {
+  display: flex; align-items: center; height: 32px; overflow: hidden;
+  border: 1px solid var(--p-line); border-radius: var(--p-rf); background: var(--p-fill);
+  transition: border-color 300ms var(--base), box-shadow 300ms var(--base);
+}
+.nb-box:focus-within { border-color: var(--p-accent); box-shadow: inset 0 0 0 1px var(--p-accent); }
+.nb.bad .nb-box { border-color: var(--p-err); }
+.nb-in { flex: 1; min-width: 0; height: 100%; padding: 0 12px; border: 0; background: transparent; outline: none; font-variant-numeric: tabular-nums; }
+.nb-spin { display: flex; gap: 2px; padding: 2px; }
+.nb-b {
+  display: grid; place-items: center; width: 28px; height: 26px; padding: 0; border: 0; border-radius: var(--p-r);
+  background: transparent; color: var(--p-muted);
+  transition: background-color 300ms var(--base), color 300ms var(--base), transform 300ms var(--base);
+}
+.nb-b .ic { width: 16px; height: 16px; }
+.nb-b:hover { background: var(--p-fill2); color: var(--p-fg); }
+.nb-b:active, .nb-b.press { transform: scale(0.9); background: var(--p-fill2); color: var(--p-fg); }
+.nb-b:disabled { opacity: .35; cursor: default; }
+.nb .i-co { display: none; }
+.nb[data-spin="Compact"] .nb-spin { flex-direction: column-reverse; gap: 0; }
+.nb[data-spin="Compact"] .nb-b { width: 24px; height: 13px; }
+.nb[data-spin="Compact"] .i-in { display: none; }
+.nb[data-spin="Compact"] .i-co { display: block; width: 12px; height: 12px; }
+.nb[data-spin="Hidden"] .nb-spin { display: none; }
+.nb-err { color: var(--p-err); font-size: 12px; line-height: 16px; }
+
+/* AutoSuggestBox */
+.asb { display: grid; gap: 8px; width: min(256px, 88%); margin-top: 12px; }
+.asb-field { position: relative; }
+.asb-box {
+  position: relative; display: flex; align-items: center; height: 32px;
+  border: 1px solid var(--p-line); border-radius: var(--p-rf); background: var(--p-fill);
+  transition: border-color 300ms var(--base), box-shadow 300ms var(--base);
+}
+.asb-box:focus-within, .asb.story .asb-box { border-color: var(--p-accent); box-shadow: inset 0 0 0 1px var(--p-accent); }
+.asb-in { flex: 1; min-width: 0; height: 100%; padding: 0 12px; border: 0; background: transparent; outline: none; }
+.asb-in::placeholder { color: var(--p-muted); }
+.asb-q { display: grid; place-items: center; padding-right: 8px; color: var(--p-muted); }
+.asb-q .ic { width: 16px; height: 16px; }
+.asb-mirror { position: absolute; visibility: hidden; white-space: pre; left: 0; top: 0; }
+.asb-caret { position: absolute; left: 12px; top: 6px; width: 2px; height: 18px; border-radius: var(--r-full); background: var(--p-fg); opacity: 0; }
+.asb-caret.on { opacity: 1; }
+.asb-caret.on.blink { animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.asb-list {
+  position: absolute; z-index: 2; top: calc(100% + 4px); left: 0; right: 0; margin: 0; padding: 4px; list-style: none;
+  border: 1px solid var(--p-edge); border-radius: var(--p-r2); background: var(--p-fill); box-shadow: 0 8px 24px rgba(0, 0, 0, .14);
+  opacity: 0; transform: translateY(-4px); pointer-events: none;
+  transition: opacity 300ms var(--base), transform 300ms var(--base);
+}
+.asb.open .asb-list { opacity: 1; transform: none; pointer-events: auto; }
+.asb-opt, .asb-none { padding: 4px 8px; line-height: 24px; border-radius: var(--r); cursor: pointer; transition: background-color 200ms var(--base); }
+[data-ds="material"] .asb-opt { border-radius: var(--r-lg); }
+.asb-opt:hover, .asb-opt.hi { background: var(--p-fill2); }
+.asb-opt b { font-weight: 600; }
+.asb-none { color: var(--p-muted); cursor: default; }
+
+/* RadioButtons */
+.rb { display: grid; gap: 8px; width: min(320px, 92%); }
+.rb-list { display: grid; gap: 4px 16px; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); }
+.rb-i { display: flex; align-items: center; gap: 8px; padding: 4px 0; border: 0; background: none; text-align: left; border-radius: var(--r); }
+.rb-dot {
+  display: grid; place-items: center; flex: none; width: 20px; height: 20px; border: 1px solid var(--p-muted); border-radius: var(--r-full); background: var(--p-fill);
+  transition: background-color 300ms var(--base), border-color 300ms var(--base);
+}
+.rb-dot::after {
+  content: ""; width: 10px; height: 10px; border-radius: var(--r-full); background: var(--p-on);
+  opacity: 0; transform: scale(0.4); transition: transform 300ms var(--base), opacity 300ms var(--base);
+}
+.rb-i:hover .rb-dot { border-color: var(--p-fg); }
+.rb-i[aria-checked="true"] .rb-dot { background: var(--p-accent); border-color: var(--p-accent); }
+.rb-i[aria-checked="true"] .rb-dot::after { opacity: 1; transform: none; }
+[data-ds="material"] .rb-dot { border-width: 2px; background: transparent; }
+[data-ds="material"] .rb-i[aria-checked="true"] .rb-dot { background: transparent; }
+[data-ds="material"] .rb-dot::after { background: var(--p-accent); }
+
+/* ChipGroup */
+.cg { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 288px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 12px;
+  border: 1px solid var(--p-line); border-radius: var(--p-rc); background: transparent; font-weight: 500;
+  transition: background-color 300ms var(--base), border-color 300ms var(--base), transform 300ms var(--base);
+}
+.chip .ic { width: 16px; height: 16px; display: none; }
+.chip:hover { background: var(--p-fill2); }
+.chip:active, .chip.press { transform: scale(0.96); }
+.chip[aria-pressed="true"] { background: var(--p-soft); border-color: var(--p-soft); }
+.chip[aria-pressed="true"] .ic { display: block; }
+.cg[data-mode="None"] .chip { cursor: default; }
+
+/* ListView */
+.lv { position: relative; width: min(304px, 96%); height: calc(var(--rows, 3) * 48px); overflow: hidden; }
+.lv-row {
+  position: absolute; left: 0; right: 0; top: 0; height: 48px; display: flex; align-items: center; gap: 12px; padding: 0 12px;
+  border-radius: var(--p-r); cursor: pointer; transition: background-color 200ms var(--base);
+}
+[data-ds="material"] .lv-row { border-radius: var(--r-lg); }
+.lv-row:hover { background: var(--p-fill2); }
+.lv-row.sel { background: var(--p-fill2); }
+[data-ds="material"] .lv-row.sel { background: var(--p-soft); }
+.lv-row.sel::before { content: ""; position: absolute; left: 0; top: 16px; width: 3px; height: 16px; border-radius: var(--r-full); background: var(--p-accent); }
+[data-ds="material"] .lv-row.sel::before, .lv[data-mode="Multiple"] .lv-row.sel::before { display: none; }
+.lv[data-mode="None"] .lv-row { cursor: default; }
+.lv-chk { display: none; place-items: center; width: 16px; height: 16px; flex: none; border: 1px solid var(--p-muted); border-radius: var(--r); color: var(--p-on); }
+.lv-chk .ic { width: 12px; height: 12px; opacity: 0; }
+.lv[data-mode="Multiple"] .lv-chk { display: grid; }
+.lv-row.sel .lv-chk { background: var(--p-accent); border-color: var(--p-accent); }
+.lv-row.sel .lv-chk .ic { opacity: 1; }
+.lv-av { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--r-full); background: var(--p-soft); color: var(--p-accent); font: 600 12px/16px var(--font); }
+.lv-new .lv-av { background: var(--p-accent); color: var(--p-on); }
+.lv-txt { display: grid; flex: 1; min-width: 0; }
+.lv-n { font-weight: 500; }
+.lv-m, .lv-t { font-size: 12px; line-height: 16px; color: var(--p-muted); }
+.lv-m { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lv-t { align-self: start; padding-top: 8px; font-variant-numeric: tabular-nums; }
+
+/* TreeView */
+.tv { width: min(256px, 92%); max-height: 100%; overflow-y: auto; }
+.tv-inner { position: relative; transition: height 0ms; }
+.tv-row {
+  position: absolute; left: 0; right: 0; top: 0; height: 28px; display: flex; align-items: center; gap: 4px;
+  padding: 0 8px 0 calc(8px + var(--lvl, 0) * 24px); border: 0; background: transparent; text-align: left; border-radius: var(--p-r);
+  transition: transform 500ms var(--base), opacity 300ms var(--base), background-color 200ms var(--base);
+}
+[data-ds="material"] .tv-row { border-radius: var(--r-lg); }
+.tv-row:hover { background: var(--p-fill2); }
+.tv-row .ic { width: 16px; height: 16px; color: var(--p-muted); }
+.tv-row .chev { transition: transform 300ms var(--base); }
+.tv-row[aria-expanded="true"] .chev { transform: rotate(90deg); }
+.tv-row.gone { opacity: 0; pointer-events: none; }
+.tv-row.sel { background: var(--p-fill2); }
+[data-ds="material"] .tv-row.sel { background: var(--p-soft); }
+.tv-row.sel::before { content: ""; position: absolute; left: 0; top: 6px; width: 3px; height: 16px; border-radius: var(--r-full); background: var(--p-accent); }
+[data-ds="material"] .tv-row.sel::before { display: none; }
+.tv[data-mode="None"] .tv-file { cursor: default; }
+
+/* NavigationView */
+.nv { display: grid; grid-template-columns: auto minmax(0, 1fr); width: 100%; height: 100%; overflow: hidden; border: 1px solid var(--p-edge); border-radius: var(--p-r2); background: var(--p-bg); }
+.nv-pane { position: relative; z-index: 0; display: flex; flex-direction: column; gap: 4px; width: 132px; padding: 4px; }
+.nv-i {
+  position: relative; display: flex; align-items: center; gap: 12px; height: 32px; padding: 0 8px; border: 0; border-radius: var(--p-r);
+  background: transparent; color: var(--p-fg); white-space: nowrap; transition: background-color 200ms var(--base);
+}
+.nv-i .ic { width: 16px; height: 16px; }
+.nv-i:hover { background: var(--p-fill2); }
+.nv-i[aria-current="page"] { background: var(--p-fill2); }
+.nv-set { margin-top: auto; }
+.nv-ind { position: absolute; z-index: 1; top: 12px; left: 4px; width: 3px; height: 16px; border-radius: var(--r-full); background: var(--p-accent); transition: transform 500ms var(--base); pointer-events: none; }
+[data-ds="material"] .nv-ind { z-index: -1; top: 4px; left: 4px; right: 4px; width: auto; height: 32px; background: var(--p-soft); }
+[data-ds="material"] .nv-i[aria-current="page"], [data-ds="material"] .nv-i:hover { background: transparent; }
+[data-ds="material"] .nv-i { border-radius: var(--r-full); }
+[data-ds="material"] .nv-i:hover::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: var(--p-fg); opacity: .06; }
+.nv[data-mode="LeftCompact"] .nv-pane { width: 40px; }
+.nv[data-mode="LeftCompact"] .nv-l { display: none; }
+.nv[data-mode="Top"] { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+.nv[data-mode="Top"] .nv-pane { flex-direction: row; width: auto; }
+.nv[data-mode="Top"] .nv-i { gap: 8px; }
+.nv[data-mode="Top"] .nv-i .ic { display: none; }
+.nv[data-mode="Top"] .nv-set { margin-top: 0; margin-left: auto; }
+.nv[data-mode="Top"] .nv-set .ic { display: block; }
+.nv[data-mode="Top"] .nv-set .nv-l { display: none; }
+.nv[data-mode="Top"] .nv-ind, [data-ds="material"] .nv[data-mode="Top"] .nv-ind { z-index: 1; top: auto; bottom: 0; left: 0; right: auto; width: 16px; height: 3px; background: var(--p-accent); }
+.nv-body { display: grid; align-content: start; gap: 8px; margin: 4px; padding: 12px; border: 1px solid var(--p-edge); border-radius: var(--p-r2); background: var(--p-fill); min-width: 0; }
+.nv[data-mode="Top"] .nv-body { margin-top: 0; }
+.nv-t { font-weight: 600; font-size: 16px; line-height: 24px; }
+.nv-s { font-size: 12px; line-height: 16px; color: var(--p-muted); }
+.bar { height: 8px; width: 84%; border-radius: var(--r-full); background: var(--p-fill2); }
+.bar.short { width: 56%; }
+
+/* TabBar */
+.tb { display: flex; flex-direction: column; width: min(240px, 90%); height: 100%; overflow: hidden; border: 1px solid var(--p-edge); border-radius: var(--p-r2); background: var(--p-fill); }
+.tb-page { flex: 1; display: grid; align-content: start; gap: 8px; padding: 12px; }
+.tb-t { font-weight: 600; font-size: 16px; line-height: 24px; }
+.tb-bar { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 8px 0; background: var(--p-bg); }
+.tb-i { position: relative; z-index: 1; display: grid; justify-items: center; gap: 4px; padding: 0; border: 0; background: transparent; color: var(--p-muted); font-size: 12px; line-height: 16px; transition: color 300ms var(--base); }
+.tb-i .ic { width: 20px; height: 32px; padding-block: 6px; }
+.tb-i[aria-selected="true"] { color: var(--p-fg); }
+.tb-i[aria-selected="true"] .ic { color: var(--p-accent); }
+.tb-ind { position: absolute; top: 8px; left: 0; width: 25%; height: 32px; display: grid; place-items: center; transform: translateX(calc(var(--i, 0) * 100%)); transition: transform 500ms var(--base); pointer-events: none; }
+.tb-ind span { width: 56px; height: 32px; border-radius: var(--p-r); background: var(--p-soft); }
+[data-ds="material"] .tb-ind span { border-radius: var(--r-full); }
+.tb[data-style="TopTabBarStyle"] .tb-bar { order: -1; padding: 0; }
+.tb[data-style="TopTabBarStyle"] .tb-i { height: 40px; align-content: center; font-size: 14px; line-height: 20px; }
+.tb[data-style="TopTabBarStyle"] .tb-i .ic { display: none; }
+.tb[data-style="TopTabBarStyle"] .tb-ind { top: auto; bottom: 0; height: 3px; }
+.tb[data-style="TopTabBarStyle"] .tb-ind span { width: 32px; height: 3px; border-radius: var(--r-full); background: var(--p-accent); }
+
+/* ProgressBar */
+.pb { display: grid; gap: 12px; width: min(280px, 92%); }
+.pb-file { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pb-ic { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--r); background: var(--p-soft); color: var(--p-accent); }
+[data-ds="material"] .pb-ic { border-radius: var(--r-lg); }
+.pb-ic .ic { width: 16px; height: 16px; }
+.pb-meta { display: grid; min-width: 0; }
+.pb-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pb-st { font-size: 12px; line-height: 16px; color: var(--p-muted); font-variant-numeric: tabular-nums; }
+.pb.error .pb-st { color: var(--p-err); }
+.pb-track { position: relative; height: 4px; overflow: hidden; border-radius: var(--r-full); background: var(--p-edge); }
+.pb-fill { position: absolute; inset: 0; border-radius: var(--r-full); background: var(--p-accent); transform-origin: left; transform: scaleX(var(--v, 0)); transition: transform 500ms var(--base), background-color 300ms var(--base); }
+.pb.live .pb-fill { transition: background-color 300ms var(--base); }
+.pb.paused .pb-fill { background: var(--p-warn); }
+.pb.error .pb-fill { background: var(--p-err); }
+.pb.ind .pb-fill { width: 40%; transform: none; animation: ind 1.6s var(--io) infinite; }
+@keyframes ind { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+.pb-track, .pb-st { transition: opacity 300ms var(--base); }
+.pbtn {
+  justify-self: start; display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border: 0;
+  border-radius: var(--p-r); background: var(--p-accent); color: var(--p-on); font-weight: 500;
+  transition: transform 300ms var(--base), opacity 300ms var(--base);
+}
+.pbtn:hover { opacity: .9; }
+.pbtn:active, .pbtn.press { transform: scale(0.96); }
+
+/* InfoBar */
+.ib-wrap { display: grid; width: 100%; }
+.ib-wrap > * { grid-area: 1 / 1; }
+.ib {
+  --ib-c: var(--p-accent); --ib-bg: var(--p-info-bg);
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px;
+  border: 1px solid var(--p-edge); border-radius: var(--p-r2); background: var(--ib-bg);
+  transition: opacity 300ms var(--base), transform 500ms var(--base), background-color 300ms var(--base);
+}
+[data-ds="material"] .ib { border-radius: var(--r-xl); }
+.ib[data-sev="Success"] { --ib-c: var(--p-ok); --ib-bg: var(--p-ok-bg); }
+.ib[data-sev="Warning"] { --ib-c: var(--p-warn); --ib-bg: var(--p-warn-bg); }
+.ib[data-sev="Error"] { --ib-c: var(--p-err); --ib-bg: var(--p-err-bg); }
+.ib-ic { color: var(--ib-c); padding-top: 0; transition: color 300ms var(--base); }
+.ib-ic .ic { width: 20px; height: 20px; }
+.ib-t { font-weight: 600; }
+.ib-m { color: var(--p-muted); }
+.ib-x { display: grid; place-items: center; width: 28px; height: 28px; margin: -4px -4px 0 0; padding: 0; border: 0; border-radius: var(--p-r); background: transparent; color: var(--p-muted); transition: background-color 200ms var(--base); }
+.ib-x:hover { background: var(--p-fill2); color: var(--p-fg); }
+.ib-x .ic { width: 16px; height: 16px; }
+.ib.closed { opacity: 0; transform: translateY(-8px); pointer-events: none; }
+.ib-empty { display: grid; justify-items: center; align-content: center; gap: 8px; color: var(--p-muted); opacity: 0; transition: opacity 300ms var(--base); pointer-events: none; }
+.ib-empty.on { opacity: 1; pointer-events: auto; }
+
+/* FeedView */
+.fv { display: flex; flex-direction: column; width: min(400px, 100%); height: 100%; overflow: hidden; border: 1px solid var(--p-edge); border-radius: var(--p-r2); background: var(--p-fill); }
+.fv-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; }
+.fv-city { font-weight: 600; font-size: 16px; line-height: 24px; }
+.fv-sub { font-size: 12px; line-height: 16px; color: var(--p-muted); }
+.fv-ref { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--p-r); background: transparent; color: var(--p-fg); transition: background-color 200ms var(--base), transform 300ms var(--base); }
+.fv-ref:hover { background: var(--p-fill2); }
+.fv-ref:active, .fv-ref.press { transform: scale(0.9); background: var(--p-fill2); }
+.fv-ref .ic { width: 20px; height: 20px; }
+.fv-ref.spin .ic { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.fv-body { flex: 1; position: relative; padding: 0 8px 8px; }
+.fv-row { display: grid; grid-template-columns: 40px 20px minmax(0, 1fr) 72px; align-items: center; gap: 12px; height: 40px; padding: 0 8px; border-radius: var(--p-r); animation: rise 500ms var(--base) both; animation-delay: calc(var(--i, 0) * 50ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+.fv-row .ic { width: 20px; height: 20px; color: var(--p-muted); }
+.fv-d { font-weight: 500; }
+.fv-range { position: relative; height: 4px; overflow: hidden; border-radius: var(--r-full); background: var(--p-fill2); }
+.fv-span { position: absolute; inset: 0; border-radius: var(--r-full); background: var(--p-accent); transform-origin: left; transform: translateX(calc(var(--a) * 100%)) scaleX(var(--b)); }
+.fv-hl { text-align: right; font-variant-numeric: tabular-nums; }
+.fv-hl b { font-weight: 600; }
+.fv-hl span { color: var(--p-muted); }
+.sk-row { animation: none; }
+.sk { display: block; height: 12px; border-radius: var(--r-full); background: var(--p-fill2); animation: sk 1.2s var(--io) infinite alternate; }
+.sk-dot { width: 20px; height: 20px; }
+@keyframes sk { from { opacity: 1; } to { opacity: .45; } }
+.fv-msg { position: absolute; inset: 0 8px 8px; display: grid; justify-items: center; align-content: center; gap: 4px; text-align: center; animation: rise 500ms var(--base) both; }
+.fv-msg .ic { width: 32px; height: 32px; color: var(--p-muted); margin-bottom: 4px; }
+.fv-msg.err .ic { color: var(--p-err); }
+.fv-msg b { font-weight: 600; }
+.fv-msg span { font-size: 12px; line-height: 16px; color: var(--p-muted); max-width: 240px; }
+.fv-msg .pbtn { justify-self: center; margin-top: 8px; }
+
+/* ResponsiveView */
+.rv { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: 12px; width: 100%; height: 100%; }
+.rv-win { position: relative; overflow: hidden; border: 1px solid var(--p-edge); border-radius: var(--p-r2); background: var(--p-fill); }
+.rv-tpl { position: absolute; inset: 0; padding: 12px; transition: opacity 300ms var(--base), transform 500ms var(--base); }
+.rv-tpl[aria-hidden="true"] { opacity: 0; transform: translateY(8px); pointer-events: none; }
+.rv-col { max-width: 216px; margin-inline: auto; display: grid; gap: 4px; }
+.rv-title { font-weight: 600; font-size: 16px; line-height: 24px; margin-bottom: 4px; }
+.rv-li { display: flex; justify-content: space-between; align-items: center; height: 32px; padding: 0 8px; border-radius: var(--p-r); background: var(--p-bg); }
+.rv-li .ic { width: 16px; height: 16px; color: var(--p-muted); }
+.rv-li.sel { background: var(--p-soft); }
+.rv-split { display: grid; grid-template-columns: 40% minmax(0, 1fr); gap: 12px; height: 100%; }
+.rv-nav { display: grid; gap: 4px; align-content: start; }
+.rv-detail { display: grid; gap: 8px; align-content: start; padding: 12px; border-radius: var(--p-r2); background: var(--p-bg); min-width: 0; }
+.rv-kv { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; line-height: 16px; }
+.rv-kv span:first-child { color: var(--p-muted); }
+.rv-meter { display: grid; gap: 8px; }
+.rv-read { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; line-height: 16px; color: var(--p-muted); font-variant-numeric: tabular-nums; }
+.rv-read b { color: var(--p-fg); font-weight: 600; font-family: var(--mono); }
+.rv-ruler { position: relative; height: 32px; margin-inline: 8px; touch-action: none; cursor: pointer; border-radius: var(--r); }
+.rv-line { position: absolute; left: 0; right: 0; top: 8px; height: 4px; border-radius: var(--r-full); background: var(--p-edge); }
+.rv-tick { position: absolute; top: 4px; width: 1px; height: 12px; background: var(--p-line); opacity: .5; }
+.rv-tick.on { opacity: 1; }
+.rv-tick span { position: absolute; top: 14px; left: 0; transform: translateX(-50%); font-size: 12px; line-height: 16px; color: var(--p-muted); white-space: nowrap; }
+.rv-mk { position: absolute; inset: 0; pointer-events: none; transform: translateX(calc(var(--w, 0) * 100%)); transition: transform 300ms var(--base); }
+.rv.live .rv-mk, .rv.drag .rv-mk { transition: none; }
+.rv-mk span { position: absolute; left: -8px; top: 2px; width: 16px; height: 16px; border-radius: var(--r-full); background: var(--p-accent); box-shadow: 0 0 0 4px var(--p-bg); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 1ms !important; animation-iteration-count: 1 !important;
+    transition-property: opacity, color, background-color, border-color !important;
+  }
+  .pb.ind .pb-fill, .sk, .live-dot::after, .fv-ref.spin .ic { animation: none !important; }
+  .pb.ind .pb-fill { transform: translateX(75%); }
+  .card.pre, [data-reveal].pre { opacity: 1; transform: none; filter: none; }
+  .menu a, .menu .seg { transform: none; }
+}
+</style>
+
+<a class="skip" href="#controls">Skip to samples</a>
+
+<header class="nav" id="nav">
+  <a class="nav-brand" href="#top"><span class="mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>Uno Gallery</span></a>
+  <nav class="nav-links" aria-label="Sections">
+    <a href="#controls" data-spy="controls">Controls</a>
+    <a href="#patterns" data-spy="patterns">Patterns</a>
+    <a href="#start" data-spy="start">Get started</a>
+  </nav>
+  <div class="seg" role="group" aria-label="Theme resources">
+    <button type="button" data-ds-btn="fluent">Fluent</button>
+    <button type="button" data-ds-btn="material">Material</button>
+  </div>
+  <button class="nav-menu" id="menu-btn" type="button" aria-expanded="false" aria-controls="menu" aria-label="Open menu"><span></span><span></span></button>
+</header>
+
+<div class="menu" id="menu" hidden>
+  <nav aria-label="Sections">
+    <a href="#controls" data-spy="controls">Controls</a>
+    <a href="#patterns" data-spy="patterns">Patterns</a>
+    <a href="#start" data-spy="start">Get started</a>
+  </nav>
+  <div class="seg" role="group" aria-label="Theme resources">
+    <button type="button" data-ds-btn="fluent">Fluent</button>
+    <button type="button" data-ds-btn="material">Material</button>
+  </div>
+</div>
+
+<main id="top">
+  <section class="hero wrap" aria-labelledby="hero-h">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <span class="eyebrow">Uno Platform sample gallery <span class="pill">Prototype</span></span>
+        <h1 id="hero-h">Try each control live,<br>then copy the XAML</h1>
+        <p class="hero-sub">Fourteen samples from WinUI, Uno Toolkit and MVUX. Change a property and the preview, the XAML and the C# Markup update together.</p>
+        <a class="btn btn-primary" href="#controls">Browse 14 samples <i data-ic="arrow-right"></i></a>
+        <p class="hero-proof"><i data-ic="devices"></i><span>Same markup builds for <b>WebAssembly</b>, <b>Windows</b>, <b>iOS</b>, <b>Android</b>, <b>macOS</b> and <b>Linux</b></span></p>
+      </div>
+      <figure class="anat" aria-label="A live ToggleSwitch beside the XAML it produces">
+        <div class="stage anat-stage" id="anat-stage" role="group" aria-label="ToggleSwitch preview"></div>
+        <div class="anat-code">
+          <div class="anat-bar"><span class="mono">SettingsPage.xaml</span><span class="sync"><span class="live-dot" aria-hidden="true"></span>In sync</span></div>
+          <pre class="code" id="anat-code" tabindex="0" aria-label="XAML for the preview"></pre>
+        </div>
+        <figcaption>Flip the switch. The markup follows.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="sec wrap" id="controls" aria-labelledby="controls-h">
+    <div class="sec-head" data-reveal>
+      <div>
+        <h2 id="controls-h">Controls</h2>
+        <p>Every preview is the working control. Click it, drag it, type in it. Open a sample to edit properties and copy the code.</p>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="filters" id="filters" role="group" aria-label="Filter by category"></div>
+      <label class="search"><span class="sr">Search controls</span><i data-ic="magnifying-glass"></i><input id="q" type="search" placeholder="Search controls" autocomplete="off" spellcheck="false"><kbd aria-hidden="true">/</kbd></label>
+    </div>
+    <p class="sr" id="result-status" aria-live="polite"></p>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="empty" hidden>
+      <i data-ic="magnifying-glass"></i>
+      <h3 id="empty-h">No controls match</h3>
+      <p>Search looks at control names, namespaces and property names. Try “toggle”, “list” or “SelectionMode”.</p>
+      <button class="btn btn-ghost btn-sm" id="empty-clear" type="button">Clear search and filters</button>
+    </div>
+  </section>
+
+  <section class="tagline wrap" aria-label="Tagline">
+    <p id="tagline">Write the control once in XAML. Ship it to six platforms from one project.</p>
+  </section>
+
+  <section class="sec wrap" id="patterns" aria-labelledby="patterns-h">
+    <div class="sec-head" data-reveal>
+      <div>
+        <h2 id="patterns-h">Patterns</h2>
+        <p>Controls combined the way apps use them. The highlighted block in the XAML is the template the preview is showing.</p>
+      </div>
+    </div>
+    <div class="pgrid" id="pgrid"></div>
+  </section>
+
+  <section class="sec wrap" id="start" aria-labelledby="start-h">
+    <div class="sec-head" data-reveal>
+      <div>
+        <h2 id="start-h">Get started</h2>
+        <p>Three steps from a copied sample to a running app.</p>
+      </div>
+    </div>
+    <ol class="steps" data-reveal style="list-style:none;margin:0;padding:0">
+      <li class="step">
+        <span class="step-n">Step 1</span>
+        <h3>Create the app</h3>
+        <p>Install the templates once, then create a project.</p>
+        <div class="cmd"><code>dotnet new install Uno.Templates</code><button class="icon-btn" type="button" data-copy="dotnet new install Uno.Templates" aria-label="Copy command"><i data-ic="copy"></i></button></div>
+        <div class="cmd"><code>dotnet new unoapp -o NightDrive</code><button class="icon-btn" type="button" data-copy="dotnet new unoapp -o NightDrive" aria-label="Copy command"><i data-ic="copy"></i></button></div>
+      </li>
+      <li class="step">
+        <span class="step-n">Step 2</span>
+        <h3>Turn on the features</h3>
+        <p>Toolkit samples need Toolkit, FeedView needs MVUX, and the Material previews need Material in your project file.</p>
+        <div class="cmd"><code>&lt;UnoFeatures&gt;Material;Toolkit;MVUX;CSharpMarkup&lt;/UnoFeatures&gt;</code><button class="icon-btn" type="button" data-copy="&lt;UnoFeatures&gt;Material;Toolkit;MVUX;CSharpMarkup&lt;/UnoFeatures&gt;" aria-label="Copy line"><i data-ic="copy"></i></button></div>
+      </li>
+      <li class="step">
+        <span class="step-n">Step 3</span>
+        <h3>Paste and run</h3>
+        <p>Copy a sample into a page, then start the desktop head to check it before you deploy.</p>
+        <div class="cmd"><code>dotnet run -f net10.0-desktop</code><button class="icon-btn" type="button" data-copy="dotnet run -f net10.0-desktop" aria-label="Copy command"><i data-ic="copy"></i></button></div>
+      </li>
+    </ol>
+    <p class="sr" id="cmd-status" aria-live="polite"></p>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div class="foot">
+    <p>Uno Gallery design prototype. Not an official Uno Platform page.</p>
+    <nav aria-label="Resources">
+      <a href="https://platform.uno/docs/" target="_blank" rel="noopener">Uno Platform docs</a>
+      <a href="https://github.com/unoplatform/uno" target="_blank" rel="noopener">Uno on GitHub</a>
+      <a href="https://github.com/elayadesign/ai-design-skills" target="_blank" rel="noopener">Design skills used</a>
+    </nav>
+  </div>
+</footer>
+
+<dialog class="sheet" id="sheet" aria-labelledby="sh-name">
+  <div class="sheet-panel">
+    <header class="sh-head">
+      <div class="sh-title"><h2 id="sh-name"></h2><span class="ns" id="sh-ns"></span></div>
+      <div class="sh-actions">
+        <a class="btn btn-ghost btn-sm" id="sh-docs" target="_blank" rel="noopener">Docs <i data-ic="arrow-up-right"></i></a>
+        <button class="icon-btn" id="sh-close" type="button" aria-label="Close sample"><i data-ic="x"></i></button>
+      </div>
+      <p class="sh-blurb" id="sh-blurb"></p>
+    </header>
+    <div class="sh-body">
+      <div class="sh-main">
+        <div class="sh-toolbar">
+          <div style="display:flex;align-items:center"><span class="label">RequestedTheme</span>
+            <div class="seg" role="group" aria-label="RequestedTheme" id="sh-rt">
+              <button type="button" data-rt="Default">Default</button>
+              <button type="button" data-rt="Light">Light</button>
+              <button type="button" data-rt="Dark">Dark</button>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="sh-reset" type="button"><i data-ic="arrow-clockwise"></i>Reset properties</button>
+        </div>
+        <div class="stage sh-stage" id="sh-stage" role="group" aria-label="Live preview"></div>
+        <div class="sh-code">
+          <div class="sh-code-bar">
+            <div class="seg" role="tablist" id="sh-tabs" aria-label="Code format"></div>
+            <button class="btn btn-ghost btn-sm" id="sh-copy" type="button"><span id="sh-copy-ic"></span><span id="sh-copy-l">Copy</span></button>
+          </div>
+          <pre class="code" id="sh-code" tabindex="0" role="tabpanel"></pre>
+          <p class="sh-note" id="sh-note"></p>
+        </div>
+      </div>
+      <aside class="sh-side" aria-labelledby="sh-props-h">
+        <h3 id="sh-props-h">Properties</h3>
+        <form class="pf" id="sh-props"></form>
+      </aside>
+    </div>
+    <p class="sr" id="sh-status" aria-live="polite"></p>
+  </div>
+</dialog>
+
+<script>
+const ICONS = {"magnifying-glass":"<path d=\"M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z\"/>","x":"<path d=\"M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z\"/>","list":"<path d=\"M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128ZM40,72H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16ZM216,184H40a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Z\"/>","copy":"<path d=\"M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32ZM160,208H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z\"/>","check":"<path d=\"M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z\"/>","arrow-right":"<path d=\"M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z\"/>","arrow-up-right":"<path d=\"M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z\"/>","code":"<path d=\"M69.12,94.15,28.5,128l40.62,33.85a8,8,0,1,1-10.24,12.29l-48-40a8,8,0,0,1,0-12.29l48-40a8,8,0,0,1,10.24,12.3Zm176,27.7-48-40a8,8,0,1,0-10.24,12.3L227.5,128l-40.62,33.85a8,8,0,1,0,10.24,12.29l48-40a8,8,0,0,0,0-12.29ZM162.73,32.48a8,8,0,0,0-10.25,4.79l-64,176a8,8,0,0,0,4.79,10.26A8.14,8.14,0,0,0,96,224a8,8,0,0,0,7.52-5.27l64-176A8,8,0,0,0,162.73,32.48Z\"/>","sliders-horizontal":"<path d=\"M40,88H73a32,32,0,0,0,62,0h81a8,8,0,0,0,0-16H135a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16Zm64-24A16,16,0,1,1,88,80,16,16,0,0,1,104,64ZM216,168H199a32,32,0,0,0-62,0H40a8,8,0,0,0,0,16h97a32,32,0,0,0,62,0h17a8,8,0,0,0,0-16Zm-48,24a16,16,0,1,1,16-16A16,16,0,0,1,168,192Z\"/>","arrow-clockwise":"<path d=\"M240,56v48a8,8,0,0,1-8,8H184a8,8,0,0,1,0-16H211.4L184.81,71.64l-.25-.24a80,80,0,1,0-1.67,114.78,8,8,0,0,1,11,11.63A95.44,95.44,0,0,1,128,224h-1.32A96,96,0,1,1,195.75,60L224,85.8V56a8,8,0,1,1,16,0Z\"/>","warning-circle":"<path d=\"M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm-8-80V80a8,8,0,0,1,16,0v56a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,172Z\"/>","house":"<path d=\"M219.31,108.68l-80-80a16,16,0,0,0-22.62,0l-80,80A15.87,15.87,0,0,0,32,120v96a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V160h32v56a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V120A15.87,15.87,0,0,0,219.31,108.68ZM208,208H160V152a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v56H48V120l80-80,80,80Z\"/>","music-notes":"<path d=\"M212.92,17.69a8,8,0,0,0-6.86-1.45l-128,32A8,8,0,0,0,72,56V166.08A36,36,0,1,0,88,196V110.25l112-28v51.83A36,36,0,1,0,216,164V24A8,8,0,0,0,212.92,17.69ZM52,216a20,20,0,1,1,20-20A20,20,0,0,1,52,216ZM88,93.75V62.25l112-28v31.5ZM180,184a20,20,0,1,1,20-20A20,20,0,0,1,180,184Z\"/>","gear":"<path d=\"M128,80a48,48,0,1,0,48,48A48.05,48.05,0,0,0,128,80Zm0,80a32,32,0,1,1,32-32A32,32,0,0,1,128,160Zm88-29.84q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.21,107.21,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.71,107.71,0,0,0-26.25-10.87,8,8,0,0,0-7.06,1.49L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64.27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.21,107.21,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06Zm-16.1-6.5a73.93,73.93,0,0,1,0,8.68,8,8,0,0,0,1.74,5.48l14.19,17.73a91.57,91.57,0,0,1-6.23,15L187,173.11a8,8,0,0,0-5.1,2.64,74.11,74.11,0,0,1-6.14,6.14,8,8,0,0,0-2.64,5.1l-2.51,22.58a91.32,91.32,0,0,1-15,6.23l-17.74-14.19a8,8,0,0,0-5-1.75h-.48a73.93,73.93,0,0,1-8.68,0,8,8,0,0,0-5.48,1.74L100.45,215.8a91.57,91.57,0,0,1-15-6.23L82.89,187a8,8,0,0,0-2.64-5.1,74.11,74.11,0,0,1-6.14-6.14,8,8,0,0,0-5.1-2.64L46.43,170.6a91.32,91.32,0,0,1-6.23-15l14.19-17.74a8,8,0,0,0,1.74-5.48,73.93,73.93,0,0,1,0-8.68,8,8,0,0,0-1.74-5.48L40.2,100.45a91.57,91.57,0,0,1,6.23-15L69,82.89a8,8,0,0,0,5.1-2.64,74.11,74.11,0,0,1,6.14-6.14A8,8,0,0,0,82.89,69L85.4,46.43a91.32,91.32,0,0,1,15-6.23l17.74,14.19a8,8,0,0,0,5.48,1.74,73.93,73.93,0,0,1,8.68,0,8,8,0,0,0,5.48-1.74L155.55,40.2a91.57,91.57,0,0,1,15,6.23L173.11,69a8,8,0,0,0,2.64,5.1,74.11,74.11,0,0,1,6.14,6.14,8,8,0,0,0,5.1,2.64l22.58,2.51a91.32,91.32,0,0,1,6.23,15l-14.19,17.74A8,8,0,0,0,199.87,123.66Z\"/>","user":"<path d=\"M230.92,212c-15.23-26.33-38.7-45.21-66.09-54.16a72,72,0,1,0-73.66,0C63.78,166.78,40.31,185.66,25.08,212a8,8,0,1,0,13.85,8c18.84-32.56,52.14-52,89.07-52s70.23,19.44,89.07,52a8,8,0,1,0,13.85-8ZM72,96a56,56,0,1,1,56,56A56.06,56.06,0,0,1,72,96Z\"/>","cloud-sun":"<path d=\"M164,72a76.2,76.2,0,0,0-20.26,2.73,55.63,55.63,0,0,0-9.41-11.54l9.51-13.57a8,8,0,1,0-13.11-9.18L121.22,54A55.9,55.9,0,0,0,96,48c-.58,0-1.16,0-1.74,0L91.37,31.71a8,8,0,1,0-15.75,2.77L78.5,50.82A56.1,56.1,0,0,0,55.23,65.67L41.61,56.14a8,8,0,1,0-9.17,13.11L46,78.77A55.55,55.55,0,0,0,40,104c0,.57,0,1.15,0,1.72L23.71,108.6a8,8,0,0,0,1.38,15.88,8.24,8.24,0,0,0,1.39-.12l16.32-2.88a55.74,55.74,0,0,0,5.86,12.42A52,52,0,0,0,84,224h80a76,76,0,0,0,0-152ZM56,104a40,40,0,0,1,72.54-23.24,76.26,76.26,0,0,0-35.62,40,52.14,52.14,0,0,0-31,4.17A40,40,0,0,1,56,104ZM164,208H84a36,36,0,1,1,4.78-71.69c-.37,2.37-.63,4.79-.77,7.23a8,8,0,0,0,16,.92,58.91,58.91,0,0,1,1.88-11.81c0-.16.09-.32.12-.48A60.06,60.06,0,1,1,164,208Z\"/>","cloud":"<path d=\"M160,40A88.09,88.09,0,0,0,81.29,88.67,64,64,0,1,0,72,216h88a88,88,0,0,0,0-176Zm0,160H72a48,48,0,0,1,0-96c1.1,0,2.2,0,3.29.11A88,88,0,0,0,72,128a8,8,0,0,0,16,0,72,72,0,1,1,72,72Z\"/>","cloud-rain":"<path d=\"M158.66,196.44l-32,48a8,8,0,1,1-13.32-8.88l32-48a8,8,0,0,1,13.32,8.88ZM232,92a76.08,76.08,0,0,1-76,76H132.28l-29.62,44.44a8,8,0,1,1-13.32-8.88L113.05,168H76A52,52,0,0,1,76,64a53.26,53.26,0,0,1,8.92.76A76.08,76.08,0,0,1,232,92Zm-16,0A60.06,60.06,0,0,0,96,88.46a8,8,0,0,1-16-.92q.21-3.66.77-7.23A38.11,38.11,0,0,0,76,80a36,36,0,0,0,0,72h80A60.07,60.07,0,0,0,216,92Z\"/>","sun":"<path d=\"M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm72,88a64,64,0,1,1-64-64A64.07,64.07,0,0,1,192,128Zm-16,0a48,48,0,1,0-48,48A48.05,48.05,0,0,0,176,128ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z\"/>","moon":"<path d=\"M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23ZM188.9,190.34A88,88,0,0,1,65.66,67.11a89,89,0,0,1,31.4-26A106,106,0,0,0,96,56,104.11,104.11,0,0,0,200,160a106,106,0,0,0,14.92-1.06A89,89,0,0,1,188.9,190.34Z\"/>","plus":"<path d=\"M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z\"/>","minus":"<path d=\"M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128Z\"/>","caret-down":"<path d=\"M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z\"/>","caret-up":"<path d=\"M213.66,165.66a8,8,0,0,1-11.32,0L128,91.31,53.66,165.66a8,8,0,0,1-11.32-11.32l80-80a8,8,0,0,1,11.32,0l80,80A8,8,0,0,1,213.66,165.66Z\"/>","caret-right":"<path d=\"M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z\"/>","github-logo":"<path d=\"M208.31,75.68A59.78,59.78,0,0,0,202.93,28,8,8,0,0,0,196,24a59.75,59.75,0,0,0-48,24H124A59.75,59.75,0,0,0,76,24a8,8,0,0,0-6.93,4,59.78,59.78,0,0,0-5.38,47.68A58.14,58.14,0,0,0,56,104v8a56.06,56.06,0,0,0,48.44,55.47A39.8,39.8,0,0,0,96,192v8H72a24,24,0,0,1-24-24A40,40,0,0,0,8,136a8,8,0,0,0,0,16,24,24,0,0,1,24,24,40,40,0,0,0,40,40H96v16a8,8,0,0,0,16,0V192a24,24,0,0,1,48,0v40a8,8,0,0,0,16,0V192a39.8,39.8,0,0,0-8.44-24.53A56.06,56.06,0,0,0,216,112v-8A58.14,58.14,0,0,0,208.31,75.68ZM200,112a40,40,0,0,1-40,40H112a40,40,0,0,1-40-40v-8a41.74,41.74,0,0,1,6.9-22.48A8,8,0,0,0,80,73.83a43.81,43.81,0,0,1,.79-33.58,43.88,43.88,0,0,1,32.32,20.06A8,8,0,0,0,119.82,64h32.35a8,8,0,0,0,6.74-3.69,43.87,43.87,0,0,1,32.32-20.06A43.81,43.81,0,0,1,192,73.83a8.09,8.09,0,0,0,1,7.65A41.72,41.72,0,0,1,200,104Z\"/>","devices":"<path d=\"M224,72H208V64a24,24,0,0,0-24-24H40A24,24,0,0,0,16,64v96a24,24,0,0,0,24,24H152v8a24,24,0,0,0,24,24h48a24,24,0,0,0,24-24V96A24,24,0,0,0,224,72ZM40,168a8,8,0,0,1-8-8V64a8,8,0,0,1,8-8H184a8,8,0,0,1,8,8v8H176a24,24,0,0,0-24,24v72Zm192,24a8,8,0,0,1-8,8H176a8,8,0,0,1-8-8V96a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8Zm-96,16a8,8,0,0,1-8,8H88a8,8,0,0,1,0-16h40A8,8,0,0,1,136,208Zm80-96a8,8,0,0,1-8,8H192a8,8,0,0,1,0-16h16A8,8,0,0,1,216,112Z\"/>","tray":"<path d=\"M208,32H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm0,16V152h-28.7A15.86,15.86,0,0,0,168,156.69L148.69,176H107.31L88,156.69A15.86,15.86,0,0,0,76.69,152H48V48Zm0,160H48V168H76.69L96,187.31A15.86,15.86,0,0,0,107.31,192h41.38A15.86,15.86,0,0,0,160,187.31L179.31,168H208v40Z\"/>","info":"<path d=\"M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm16-40a8,8,0,0,1-8,8,16,16,0,0,1-16-16V128a8,8,0,0,1,0-16,16,16,0,0,1,16,16v40A8,8,0,0,1,144,176ZM112,84a12,12,0,1,1,12,12A12,12,0,0,1,112,84Z\"/>","check-circle":"<path d=\"M173.66,98.34a8,8,0,0,1,0,11.32l-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35A8,8,0,0,1,173.66,98.34ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z\"/>","warning":"<path d=\"M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM222.93,203.8a8.5,8.5,0,0,1-7.48,4.2H40.55a8.5,8.5,0,0,1-7.48-4.2,7.59,7.59,0,0,1,0-7.72L120.52,44.21a8.75,8.75,0,0,1,15,0l87.45,151.87A7.59,7.59,0,0,1,222.93,203.8ZM120,144V104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,180Z\"/>","x-circle":"<path d=\"M165.66,101.66,139.31,128l26.35,26.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32ZM232,128A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z\"/>","file":"<path d=\"M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Z\"/>","folder-simple":"<path d=\"M216,72H130.67L102.93,51.2a16.12,16.12,0,0,0-9.6-3.2H40A16,16,0,0,0,24,64V200a16,16,0,0,0,16,16H216.89A15.13,15.13,0,0,0,232,200.89V88A16,16,0,0,0,216,72Zm0,128H40V64H93.33L123.2,86.4A8,8,0,0,0,128,88h88Z\"/>"};
+
+/* ---------- helpers ---------- */
+const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ic = (n, c = '') => `<svg class="ic${c ? ' ' + c : ''}" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+const html = s => { const t = document.createElement('template'); t.innerHTML = s.trim(); return t.content.firstElementChild; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const store = {
+  get(k) { try { return localStorage.getItem('uno-gallery:' + k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem('uno-gallery:' + k, v); } catch { /* storage blocked */ } },
+};
+let uid = 0;
+const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+function track(keys, t) {
+  if (t <= keys[0][0]) return keys[0][1];
+  for (let i = 1; i < keys.length; i++) {
+    const [t1, v1] = keys[i], [t0, v0] = keys[i - 1];
+    if (t <= t1) return v0 + (v1 - v0) * ease(Math.min(1, (t - t0) / (t1 - t0 || 1)));
+  }
+  return keys[keys.length - 1][1];
+}
+const pressed = (t, at) => t >= at - 0.2 && t < at;
+
+/* ---------- code generation ---------- */
+const xmlv = v => typeof v === 'boolean' ? (v ? 'True' : 'False') : String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const keep = (v, d) => v !== undefined && v !== null && v !== '' && v !== d;
+function xtag(name, attrs, children, ind = '') {
+  const a = attrs.filter(([, v, d]) => keep(v, d)).map(([k, v]) => `${k}="${xmlv(v)}"`);
+  let head = `${ind}<${name}`;
+  if (a.length) {
+    const one = `${head} ${a.join(' ')}`;
+    head = a.length <= 2 && one.length <= 64 ? one : `${head} ${a[0]}` + a.slice(1).map(x => `\n${ind}${' '.repeat(name.length + 2)}${x}`).join('');
+  }
+  if (!children || !children.length) return head + ' />';
+  return `${head}>\n${children.join('\n')}\n${ind}</${name}>`;
+}
+const csv = (v, e) => e ? `${e}.${v}` : typeof v === 'string' ? JSON.stringify(v) : String(v);
+function cs(name, calls, ind = '') {
+  const out = [`${ind}new ${name}()`];
+  for (const c of calls) {
+    if (typeof c === 'string') { out.push(`${ind}    ${c}`); continue; }
+    const [k, v, d, e] = c;
+    if (keep(v, d)) out.push(`${ind}    .${k}(${csv(v, e)})`);
+  }
+  return out.join('\n');
+}
+const RT = s => ['RequestedTheme', s.RequestedTheme, 'Default'];
+const RTc = s => ['RequestedTheme', s.RequestedTheme, 'Default', 'ElementTheme'];
+const MARK = '\u0001';
+const mark = lines => lines.map(l => MARK + l);
+const UTU = '<!-- xmlns:utu="using:Uno.Toolkit.UI" -->';
+
+function hlXaml(line) {
+  const re = /(<!--.*?-->)|(<\/?[\w:.]+)|([\w:.]+)(?==")|("[^"]*")|(\/?>)/g;
+  let out = '', i = 0, m;
+  while ((m = re.exec(line))) {
+    out += esc(line.slice(i, m.index));
+    const cls = m[1] ? 't-c' : m[2] ? 't-tag' : m[3] ? 't-attr' : m[4] ? 't-str' : 't-p';
+    out += `<span class="${cls}">${esc(m[0])}</span>`;
+    i = re.lastIndex;
+  }
+  return out + esc(line.slice(i));
+}
+function hlCs(line) {
+  const re = /(\/\/.*$)|("(?:[^"\\]|\\.)*")|\b(new|true|false|public|partial|record|interface|return|null)\b|(\.\w+)(?=[(<])|\b([A-Z]\w*)\b/g;
+  let out = '', i = 0, m;
+  while ((m = re.exec(line))) {
+    out += esc(line.slice(i, m.index));
+    const cls = m[1] ? 't-c' : m[2] ? 't-str' : m[3] ? 't-kw' : m[4] ? 't-attr' : 't-type';
+    out += `<span class="${cls}">${esc(m[0])}</span>`;
+    i = re.lastIndex;
+  }
+  return out + esc(line.slice(i));
+}
+const plain = code => code.split('\n').map(l => l.replace(MARK, '')).join('\n');
+function renderCode(pre, code, lang, prev) {
+  const before = prev == null ? null : new Set(prev.split('\n'));
+  const hl = lang === 'cs' ? hlCs : hlXaml;
+  pre.innerHTML = code.split('\n').map(l => {
+    const mk = l.startsWith(MARK), raw = mk ? l.slice(1) : l;
+    const chg = before && !before.has(l);
+    return `<span class="ln${mk ? ' mk' : ''}${chg ? ' chg' : ''}">${hl(raw)}</span>`;
+  }).join('');
+}
+
+/* ---------- sample data ---------- */
+const NS = {
+  winui: { short: 'WinUI', full: 'Microsoft.UI.Xaml.Controls' },
+  toolkit: { short: 'Uno Toolkit', full: 'Uno.Toolkit.UI' },
+  mvux: { short: 'MVUX', full: 'Uno.Extensions.Reactive.UI' },
+};
+const LEARN = 'https://learn.microsoft.com/windows/apps/design/controls/';
+const UNODOC = 'https://platform.uno/docs/articles/external/';
+const CITIES = ['Montréal', 'Montpellier', 'Monterrey', 'Montevideo', 'Monaco', 'Québec City', 'Toronto', 'Ottawa', 'Vancouver', 'Lyon', 'Lisbon', 'Mexico City'];
+const fold = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const QUALITY = ['Data saver', 'Standard', 'High fidelity'];
+const GENRES = ['Ambient', 'House', 'Soul', 'Techno', 'Jazz', 'Funk'];
+const MSGS = [
+  { n: 'Inès Gagnon', m: 'Pushed the TabBar indicator fix', t: '09:42' },
+  { n: 'Kofi Mensah', m: 'Android build is green again', t: '09:15' },
+  { n: 'Mira Patel', m: 'Release notes draft is ready', t: '08:57' },
+  { n: 'Daniel Ruiz', m: 'Moved standup to 10:30', t: '08:31' },
+];
+const NEWMSG = { n: 'Tomás Herrera', m: 'Shared the settings frames', t: '09:51' };
+const TREE = [
+  { c: 'Assets', k: 'AssetsExpanded', ch: ['Fonts', 'Icons'] },
+  { c: 'Pages', k: 'PagesExpanded', ch: ['MainPage.xaml', 'SettingsPage.xaml', 'ShellPage.xaml'] },
+  { c: 'Services', k: 'ServicesExpanded', ch: ['WeatherService.cs'] },
+];
+const NAV = [
+  { c: 'Home', i: 'house', sym: 'Home', sub: 'Recently played', note: 'Three mixes from this week' },
+  { c: 'Library', i: 'music-notes', sym: 'Library', sub: '214 tracks', note: 'Sorted by date added' },
+  { c: 'Friends', i: 'user', sym: 'Contact', sub: '6 online', note: 'Kofi is in a session' },
+  { c: 'Settings', i: 'gear', sub: 'Playback and storage', note: 'Version 2.3.1' },
+];
+const TABS = [
+  { c: 'Home', i: 'house', sym: 'Home' }, { c: 'Search', i: 'magnifying-glass', sym: 'Find' },
+  { c: 'Library', i: 'music-notes', sym: 'Library' }, { c: 'Profile', i: 'user', sym: 'Contact' },
+];
+const SEV = ['Informational', 'Success', 'Warning', 'Error'];
+const SEV_IC = { Informational: 'info', Success: 'check-circle', Warning: 'warning', Error: 'x-circle' };
+const PRESET = {
+  Informational: { Title: 'Hot Reload connected', Message: 'Changes to MainPage.xaml apply when you save.' },
+  Success: { Title: 'Build succeeded', Message: 'The WebAssembly head finished in 41.7 s.' },
+  Warning: { Title: 'Simulator is low on storage', Message: 'Free 1.8 GB before the next iOS deploy.' },
+  Error: { Title: 'Deploy failed', Message: 'The iOS provisioning profile expired on 12 Oct.' },
+};
+const DAYS = [
+  { d: 'Mon', i: 'cloud-sun', hi: 9, lo: 1 }, { d: 'Tue', i: 'cloud', hi: 7, lo: -2 }, { d: 'Wed', i: 'sun', hi: 11, lo: 3 },
+  { d: 'Thu', i: 'cloud-rain', hi: 4, lo: -3 }, { d: 'Fri', i: 'cloud-sun', hi: 6, lo: 0 },
+];
+const deg = n => (n < 0 ? '−' + -n : n) + '°';
+
+function chipClick(sel, i, mode) {
+  const c = sel.slice();
+  if (mode === 'None') return c;
+  if (mode === 'Multiple') { c[i] = !c[i]; return c; }
+  const was = c[i]; c.fill(false);
+  c[i] = mode === 'SingleOrNone' ? !was : true;
+  return c;
+}
+function chipNormalize(sel, mode) {
+  if (mode === 'None') return sel.map(() => false);
+  if (mode === 'Multiple') return sel;
+  const f = sel.indexOf(true), c = sel.map(() => false);
+  if (f >= 0) c[f] = true; else if (mode === 'Single') c[0] = true;
+  return c;
+}
+function selNormalize(sel, mode) {
+  if (mode === 'None') return sel.map(() => false);
+  if (mode === 'Single') { const f = sel.indexOf(true); return sel.map((_, i) => i === f); }
+  return sel;
+}
+
+/* ---------- samples ---------- */
+const SAMPLES = [
+{
+  id: 'toggleswitch', name: 'ToggleSwitch', ns: 'winui', cat: 'Input', len: 4.6, docs: LEARN + 'toggles',
+  blurb: 'Turns one setting on or off and applies it right away.',
+  tags: 'switch boolean setting airplane',
+  defaults: { Header: 'Airplane mode', IsOn: false, OnContent: 'On', OffContent: 'Off', IsEnabled: true },
+  props: [{ k: 'Header', t: 'text' }, { k: 'IsOn', t: 'bool' }, { k: 'OnContent', t: 'text' }, { k: 'OffContent', t: 'text' }, { k: 'IsEnabled', t: 'bool' }],
+  story: (t, s) => ({ ...s, IsOn: t >= 0.8 && t < 2.8 ? !s.IsOn : s.IsOn }),
+  mount(host, api) {
+    host.innerHTML = `<div class="ts"><span class="ts-h"></span><button type="button" role="switch" class="ts-btn"><span class="ts-track"><span class="ts-thumb"></span></span><span class="ts-lbl"></span></button></div>`;
+    const btn = $('.ts-btn', host), h = $('.ts-h', host), lbl = $('.ts-lbl', host);
+    btn.addEventListener('click', () => api.set({ IsOn: !api.get().IsOn }));
+    return {
+      update(s) {
+        h.textContent = s.Header; h.hidden = !s.Header;
+        btn.classList.toggle('on', s.IsOn); btn.setAttribute('aria-checked', s.IsOn);
+        btn.setAttribute('aria-label', s.Header || 'Toggle'); btn.disabled = !s.IsEnabled;
+        lbl.textContent = s.IsOn ? s.OnContent : s.OffContent;
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => xtag('ToggleSwitch', [['Header', s.Header], ['IsOn', s.IsOn, false], ['OnContent', s.OnContent, 'On'], ['OffContent', s.OffContent, 'Off'], ['IsEnabled', s.IsEnabled, true], RT(s)]) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('ToggleSwitch', [['Header', s.Header], ['IsOn', s.IsOn, false], ['OnContent', s.OnContent, 'On'], ['OffContent', s.OffContent, 'Off'], ['IsEnabled', s.IsEnabled, true], RTc(s)]) },
+  ],
+},
+{
+  id: 'slider', name: 'Slider', ns: 'winui', cat: 'Input', len: 5, docs: LEARN + 'slider',
+  blurb: 'Picks a value from a continuous range by dragging or with the arrow keys.',
+  tags: 'range volume value drag',
+  defaults: { Header: 'Volume', Value: 40, StepFrequency: 5, IsEnabled: true },
+  props: [{ k: 'Header', t: 'text' }, { k: 'Value', t: 'number', min: 0, max: 100 }, { k: 'StepFrequency', t: 'enum', o: [1, 5, 10], type: 'double' }, { k: 'IsEnabled', t: 'bool' }],
+  story: (t, s) => ({ ...s, _live: true, Value: track([[0.5, s.Value], [1.8, s.Value < 70 ? 80 : 30], [2.9, s.Value < 70 ? 80 : 30], [4.2, s.Value]], t) }),
+  mount(host, api) {
+    host.innerHTML = `<div class="sl"><div class="sl-top"><span class="sl-h"></span><span class="sl-v"></span></div><div class="sl-rail" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="100"><span class="sl-fill"></span><span class="sl-pos"><span class="sl-thumb"></span></span></div></div>`;
+    const root = $('.sl', host), rail = $('.sl-rail', host), h = $('.sl-h', host), out = $('.sl-v', host);
+    const snap = (v, s) => clamp(Math.round(v / s.StepFrequency) * s.StepFrequency, 0, 100);
+    const fromX = x => { const r = rail.getBoundingClientRect(); return (x - r.left) / r.width * 100; };
+    rail.addEventListener('pointerdown', e => {
+      const s = api.get(); if (!s.IsEnabled) return;
+      rail.setPointerCapture(e.pointerId); root.classList.add('drag'); api.set({ Value: snap(fromX(e.clientX), s) });
+    });
+    rail.addEventListener('pointermove', e => { if (rail.hasPointerCapture(e.pointerId)) api.set({ Value: snap(fromX(e.clientX), api.get()) }); });
+    const end = () => root.classList.remove('drag');
+    rail.addEventListener('pointerup', end); rail.addEventListener('pointercancel', end);
+    rail.addEventListener('keydown', e => {
+      const s = api.get(); if (!s.IsEnabled) return;
+      const st = s.StepFrequency, d = { ArrowRight: st, ArrowUp: st, ArrowLeft: -st, ArrowDown: -st, PageUp: 10, PageDown: -10 }[e.key];
+      let v; if (d) v = s.Value + d; else if (e.key === 'Home') v = 0; else if (e.key === 'End') v = 100; else return;
+      e.preventDefault(); api.set({ Value: snap(v, s) });
+    });
+    return {
+      update(s) {
+        h.textContent = s.Header; h.hidden = !s.Header;
+        root.style.setProperty('--v', s.Value / 100);
+        const shown = snap(s.Value, s);
+        out.textContent = shown; rail.setAttribute('aria-valuenow', shown);
+        rail.setAttribute('aria-label', s.Header || 'Value'); rail.setAttribute('aria-disabled', !s.IsEnabled);
+        root.classList.toggle('off', !s.IsEnabled); root.classList.toggle('live', !!s._live);
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => xtag('Slider', [['Header', s.Header], ['Value', Math.round(s.Value), 0], ['StepFrequency', s.StepFrequency, 1], ['IsEnabled', s.IsEnabled, true], RT(s)]) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('Slider', [['Header', s.Header], ['Value', Math.round(s.Value), 0], ['StepFrequency', s.StepFrequency, 1], ['IsEnabled', s.IsEnabled, true], RTc(s)]) },
+  ],
+},
+{
+  id: 'numberbox', name: 'NumberBox', ns: 'winui', cat: 'Input', len: 4.6, docs: LEARN + 'number-box',
+  blurb: 'Takes a whole number with spin buttons, arrow keys and range checks.',
+  tags: 'number numeric spin guests input',
+  defaults: { Header: 'Guests', Value: 2, Minimum: 1, Maximum: 12, SpinButtonPlacementMode: 'Inline' },
+  props: [{ k: 'Header', t: 'text' }, { k: 'Value', t: 'number', min: 1, max: 12 }, { k: 'SpinButtonPlacementMode', t: 'enum', o: ['Inline', 'Compact', 'Hidden'], type: 'enum' }],
+  story(t, s) {
+    const dir = s.Value + 2 <= s.Maximum ? 1 : -1;
+    let v = s.Value, press;
+    for (const [at, d] of [[0.8, 1], [1.5, 1], [2.9, -1], [3.5, -1]]) {
+      if (t >= at) v += d * dir;
+      if (pressed(t, at)) press = d * dir > 0 ? '+' : '-';
+    }
+    return { ...s, Value: v, _press: press, _story: true };
+  },
+  mount(host, api) {
+    const id = 'nb' + (++uid);
+    host.innerHTML = `<div class="nb"><label class="nb-h" for="${id}"></label><div class="nb-box"><input class="nb-in" id="${id}" inputmode="numeric" autocomplete="off"><span class="nb-spin"><button type="button" class="nb-b" data-d="-1" aria-label="Decrease">${ic('minus', 'i-in')}${ic('caret-down', 'i-co')}</button><button type="button" class="nb-b" data-d="1" aria-label="Increase">${ic('plus', 'i-in')}${ic('caret-up', 'i-co')}</button></span></div><p class="nb-err" role="alert" hidden></p></div>`;
+    const root = $('.nb', host), inp = $('input', host), err = $('.nb-err', host), h = $('.nb-h', host), [bm, bp] = $$('.nb-b', host);
+    const showErr = msg => { err.textContent = msg || ''; err.hidden = !msg; root.classList.toggle('bad', !!msg); };
+    const bump = d => { const s = api.get(); showErr(); api.set({ Value: clamp(s.Value + d, s.Minimum, s.Maximum) }); };
+    [bm, bp].forEach(b => b.addEventListener('click', () => bump(+b.dataset.d)));
+    const commit = () => {
+      const s = api.get(), raw = inp.value.trim(), v = Number(raw);
+      if (raw === '' || !Number.isInteger(v) || v < s.Minimum || v > s.Maximum) { showErr(`Enter a whole number from ${s.Minimum} to ${s.Maximum}.`); api.touch(); return; }
+      showErr(); if (v !== s.Value) api.set({ Value: v });
+    };
+    inp.addEventListener('change', commit);
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); bump(e.key === 'ArrowUp' ? 1 : -1); }
+    });
+    return {
+      update(s) {
+        h.textContent = s.Header; h.hidden = !s.Header;
+        if (document.activeElement !== inp || s._story) inp.value = s.Value;
+        root.dataset.spin = s.SpinButtonPlacementMode;
+        bm.disabled = s.Value <= s.Minimum; bp.disabled = s.Value >= s.Maximum;
+        bm.classList.toggle('press', s._press === '-'); bp.classList.toggle('press', s._press === '+');
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => xtag('NumberBox', [['Header', s.Header], ['Value', s.Value, 0], ['Minimum', s.Minimum], ['Maximum', s.Maximum], ['SpinButtonPlacementMode', s.SpinButtonPlacementMode, 'Hidden'], RT(s)]) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('NumberBox', [['Header', s.Header], ['Value', s.Value, 0], ['Minimum', s.Minimum], ['Maximum', s.Maximum], ['SpinButtonPlacementMode', s.SpinButtonPlacementMode, 'Hidden', 'NumberBoxSpinButtonPlacementMode'], RTc(s)]) },
+  ],
+},
+{
+  id: 'autosuggestbox', name: 'AutoSuggestBox', ns: 'winui', cat: 'Input', len: 6, docs: LEARN + 'auto-suggest-box',
+  blurb: 'Suggests matches while someone types. Arrow keys move, Enter picks.',
+  tags: 'search suggest typeahead combobox city text',
+  defaults: { Header: '', PlaceholderText: 'Search cities', QueryIcon: true },
+  props: [{ k: 'Header', t: 'text' }, { k: 'PlaceholderText', t: 'text' }, { k: 'QueryIcon', t: 'bool', type: 'Find icon' }],
+  story(t, s) {
+    const word = 'Mont', pick = 'Montpellier';
+    let text = '', open = false, hi = -1, typing = false;
+    if (t >= 0.5 && t < 2.8) {
+      const n = Math.min(word.length, Math.floor((t - 0.5) / 0.07) + 1);
+      text = word.slice(0, n); typing = n < word.length; open = n >= 2;
+      if (t >= 1.5) hi = 0; if (t >= 2.1) hi = 1;
+    } else if (t >= 2.8 && t < 4.2) text = pick;
+    else if (t >= 4.2) { const n = pick.length - Math.floor((t - 4.2) / 0.05) - 1; text = n > 0 ? pick.slice(0, n) : ''; typing = n > 0; }
+    return { ...s, _story: true, _text: text, _open: open, _hi: hi, _typing: typing, _caret: t >= 0.3 && t < 5.4 };
+  },
+  mount(host, api, ctx) {
+    host.classList.add('top');
+    const id = 'asb' + (++uid), max = ctx.big ? 5 : 3;
+    host.innerHTML = `<div class="asb"><label class="asb-h" for="${id}"></label><div class="asb-field"><div class="asb-box"><input id="${id}" class="asb-in" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="${id}l" autocomplete="off" spellcheck="false"><span class="asb-caret" aria-hidden="true"></span><span class="asb-mirror" aria-hidden="true"></span><span class="asb-q">${ic('magnifying-glass')}</span></div><ul class="asb-list" id="${id}l" role="listbox" aria-label="Suggestions"></ul></div></div>`;
+    const root = $('.asb', host), inp = $('input', host), list = $('ul', host), caret = $('.asb-caret', host), mirror = $('.asb-mirror', host), q = $('.asb-q', host), h = $('.asb-h', host);
+    let open = false, hi = -1, items = [], text = '';
+    const matches = txt => {
+      const f = fold(txt.trim()); if (!f) return [];
+      return CITIES.filter(c => fold(c).includes(f)).sort((a, b) => fold(a).indexOf(f) - fold(b).indexOf(f)).slice(0, max);
+    };
+    const bold = (c, txt) => { const f = fold(txt.trim()), i = fold(c).indexOf(f); return i < 0 ? esc(c) : esc(c.slice(0, i)) + '<b>' + esc(c.slice(i, i + f.length)) + '</b>' + esc(c.slice(i + f.length)); };
+    function draw(txt, isOpen, hiIdx) {
+      items = matches(txt);
+      const none = isOpen && txt.trim() && !items.length;
+      list.innerHTML = none
+        ? `<li class="asb-none" role="option" aria-disabled="true" aria-selected="false">No city matches “${esc(txt.trim())}”.</li>`
+        : items.map((c, i) => `<li role="option" id="${id}o${i}" class="asb-opt${i === hiIdx ? ' hi' : ''}" aria-selected="${i === hiIdx}" data-i="${i}">${bold(c, txt)}</li>`).join('');
+      const show = isOpen && (items.length > 0 || !!none);
+      root.classList.toggle('open', show); inp.setAttribute('aria-expanded', show);
+      if (hiIdx >= 0 && items[hiIdx]) inp.setAttribute('aria-activedescendant', `${id}o${hiIdx}`); else inp.removeAttribute('aria-activedescendant');
+    }
+    const choose = c => { text = c; inp.value = c; open = false; hi = -1; draw(c, false, -1); api.touch(); };
+    inp.addEventListener('input', () => { text = inp.value; open = true; hi = -1; draw(text, true, -1); api.touch(); });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault(); open = true; const n = items.length || matches(text).length;
+        if (n) hi = e.key === 'ArrowDown' ? (hi + 1) % n : (hi - 1 + n) % n;
+        draw(text, true, hi); api.touch();
+      } else if (e.key === 'Enter') {
+        e.preventDefault(); if (hi >= 0 && items[hi]) choose(items[hi]); else { open = true; draw(text, true, -1); }
+      } else if (e.key === 'Escape' && open) { e.preventDefault(); e.stopPropagation(); open = false; draw(text, false, -1); }
+    });
+    list.addEventListener('pointerdown', e => { const li = e.target.closest('.asb-opt'); if (li) { e.preventDefault(); choose(items[+li.dataset.i]); } });
+    inp.addEventListener('blur', () => { open = false; draw(text, false, -1); });
+    return {
+      update(s) {
+        h.textContent = s.Header; h.hidden = !s.Header; inp.placeholder = s.PlaceholderText; q.hidden = !s.QueryIcon;
+        if (s._story) {
+          root.classList.add('story'); inp.value = s._text; mirror.textContent = s._text;
+          caret.style.transform = `translateX(${mirror.offsetWidth}px)`;
+          caret.classList.toggle('on', s._caret); caret.classList.toggle('blink', !s._typing);
+          draw(s._text, s._open, s._hi);
+        } else if (root.classList.contains('story')) {
+          root.classList.remove('story'); caret.classList.remove('on'); inp.value = text; draw(text, false, -1);
+        }
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => xtag('AutoSuggestBox', [['Header', s.Header], ['PlaceholderText', s.PlaceholderText], ['QueryIcon', s.QueryIcon ? 'Find' : ''], ['TextChanged', 'OnCityTextChanged'], ['QuerySubmitted', 'OnCitySubmitted'], RT(s)]) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('AutoSuggestBox', [['Header', s.Header], ['PlaceholderText', s.PlaceholderText], s.QueryIcon ? '.QueryIcon(new SymbolIcon().Symbol(Symbol.Find))' : null, '.ItemsSource(x => x.Binding(() => vm.CityMatches))', RTc(s)].filter(Boolean)) },
+  ],
+},
+{
+  id: 'radiobuttons', name: 'RadioButtons', ns: 'winui', cat: 'Input', len: 5, docs: LEARN + 'radio-button',
+  blurb: 'Picks exactly one option from a short list, with arrow key navigation.',
+  tags: 'radio option choice quality group',
+  defaults: { Header: 'Stream quality', SelectedIndex: 1, MaxColumns: 1 },
+  props: [{ k: 'Header', t: 'text' }, { k: 'SelectedIndex', t: 'enum', o: [0, 1, 2], labels: ['0 · Data saver', '1 · Standard', '2 · High fidelity'], type: 'int' }, { k: 'MaxColumns', t: 'enum', o: [1, 3], type: 'int' }],
+  story: (t, s) => ({ ...s, SelectedIndex: t < 0.9 ? s.SelectedIndex : t < 2.2 ? (s.SelectedIndex + 1) % 3 : t < 3.5 ? (s.SelectedIndex + 2) % 3 : s.SelectedIndex }),
+  mount(host, api) {
+    host.innerHTML = `<div class="rb" role="radiogroup"><div class="rb-h"></div><div class="rb-list">${QUALITY.map((q, i) => `<button type="button" role="radio" class="rb-i" data-i="${i}"><span class="rb-dot"></span><span>${q}</span></button>`).join('')}</div></div>`;
+    const grp = $('.rb', host), h = $('.rb-h', host), btns = $$('.rb-i', host);
+    btns.forEach((b, i) => {
+      b.addEventListener('click', () => api.set({ SelectedIndex: i }));
+      b.addEventListener('keydown', e => {
+        const d = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key]; if (!d) return;
+        e.preventDefault(); const n = (i + d + 3) % 3; api.set({ SelectedIndex: n }); btns[n].focus();
+      });
+    });
+    return {
+      update(s) {
+        h.textContent = s.Header; h.hidden = !s.Header; grp.setAttribute('aria-label', s.Header || 'Options');
+        grp.style.setProperty('--cols', s.MaxColumns);
+        btns.forEach((b, i) => { const on = i === s.SelectedIndex; b.setAttribute('aria-checked', on); b.tabIndex = on ? 0 : -1; });
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => xtag('RadioButtons', [['Header', s.Header], ['SelectedIndex', s.SelectedIndex, -1], ['MaxColumns', s.MaxColumns, 1], RT(s)], QUALITY.map(q => `    <x:String>${q}</x:String>`)) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('RadioButtons', [['Header', s.Header], ['SelectedIndex', s.SelectedIndex, -1], ['MaxColumns', s.MaxColumns, 1], RTc(s), `.Items(${QUALITY.map(q => JSON.stringify(q)).join(', ')})`]) },
+  ],
+},
+{
+  id: 'chipgroup', name: 'ChipGroup', ns: 'toolkit', cat: 'Input', len: 5, docs: UNODOC + 'uno.toolkit.ui/doc/controls/ChipAndChipGroup.html',
+  blurb: 'Filters or picks tags. SelectionMode decides how many chips stay checked.',
+  tags: 'chip filter tag genre toggle selection',
+  defaults: { SelectionMode: 'Multiple', Checked: [false, false, true, false, true, false] },
+  props: [{ k: 'SelectionMode', t: 'enum', o: ['None', 'SingleOrNone', 'Single', 'Multiple'], type: 'ChipSelectionMode' }],
+  normalize: (n, p) => n.SelectionMode !== p.SelectionMode ? { ...n, Checked: chipNormalize(n.Checked, n.SelectionMode) } : n,
+  story(t, s) {
+    const m = s.SelectionMode, first = s.Checked.indexOf(true);
+    const clicks = m === 'Multiple' ? [[1.0, 1], [1.7, 3], [3.1, 1], [3.8, 3]] : m === 'None' ? [] : [[1.0, 1], [2.0, 3], [3.4, first < 0 ? 3 : first]];
+    let c = s.Checked, press = -1;
+    for (const [at, i] of clicks) { if (t >= at) c = chipClick(c, i, m); if (pressed(t, at)) press = i; }
+    return { ...s, Checked: c, _press: press };
+  },
+  mount(host, api) {
+    host.innerHTML = `<div class="cg" role="group" aria-label="Genres">${GENRES.map((g, i) => `<button type="button" class="chip" data-i="${i}">${ic('check')}<span>${g}</span></button>`).join('')}</div>`;
+    const cg = $('.cg', host), chips = $$('.chip', host);
+    chips.forEach((b, i) => b.addEventListener('click', () => { const s = api.get(); api.set({ Checked: chipClick(s.Checked, i, s.SelectionMode) }); }));
+    return {
+      update(s) {
+        cg.dataset.mode = s.SelectionMode;
+        chips.forEach((b, i) => { b.setAttribute('aria-pressed', !!s.Checked[i]); b.classList.toggle('press', s._press === i); b.setAttribute('aria-disabled', s.SelectionMode === 'None'); });
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => UTU + '\n' + xtag('utu:ChipGroup', [['SelectionMode', s.SelectionMode], ['Style', '{StaticResource SuggestionChipGroupStyle}'], RT(s)], GENRES.map((g, i) => xtag('utu:Chip', [['Content', g], ['IsChecked', s.Checked[i], false]], null, '    '))) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('ChipGroup', [['SelectionMode', s.SelectionMode, undefined, 'ChipSelectionMode'], '.Style(StaticResource.Get<Style>("SuggestionChipGroupStyle"))', RTc(s), '.Items(\n' + GENRES.map((g, i) => `        new Chip().Content("${g}")${s.Checked[i] ? '.IsChecked(true)' : ''}`).join(',\n') + ')']) },
+  ],
+},
+{
+  id: 'listview', name: 'ListView', ns: 'winui', cat: 'Collections', len: 5, docs: LEARN + 'listview-and-gridview',
+  blurb: 'Shows a vertical list of items with single or multiple selection.',
+  tags: 'list items inbox messages collection selection',
+  defaults: { SelectionMode: 'Single', IsItemClickEnabled: false, Selected: [false, false, false, false] },
+  props: [{ k: 'SelectionMode', t: 'enum', o: ['None', 'Single', 'Multiple'], type: 'ListViewSelectionMode' }, { k: 'IsItemClickEnabled', t: 'bool' }],
+  normalize: (n, p) => n.SelectionMode !== p.SelectionMode ? { ...n, Selected: selNormalize(n.Selected, n.SelectionMode) } : n,
+  story: (t, s) => ({ ...s, _in: track([[0.9, 0], [1.7, 1]], t), _out: track([[3.4, 0], [4.2, 1]], t) }),
+  mount(host, api, ctx) {
+    const rows = ctx.big ? 4 : 3;
+    host.innerHTML = `<div class="lv" role="listbox" aria-label="Messages" style="--rows:${rows}">` + [NEWMSG, ...MSGS].map((m, k) => `<div class="lv-row${k === 0 ? ' lv-new' : ''}" ${k === 0 ? 'aria-hidden="true"' : `role="option" tabindex="${k <= rows ? 0 : -1}"`} data-i="${k - 1}"><span class="lv-chk">${ic('check')}</span><span class="lv-av">${m.n.split(' ').map(w => w[0]).join('')}</span><span class="lv-txt"><span class="lv-n">${m.n}</span><span class="lv-m">${m.m}</span></span><span class="lv-t">${m.t}</span></div>`).join('') + `</div>`;
+    const lv = $('.lv', host), el = $$('.lv-row', host);
+    const pick = i => {
+      const s = api.get(); if (s.SelectionMode === 'None') { api.touch(); return; }
+      api.set({ Selected: s.SelectionMode === 'Single' ? s.Selected.map((_, j) => j === i) : s.Selected.map((v, j) => j === i ? !v : v) });
+    };
+    el.slice(1).forEach((r, i) => {
+      r.addEventListener('click', () => pick(i));
+      r.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(i); } });
+    });
+    return {
+      update(s) {
+        lv.dataset.mode = s.SelectionMode;
+        if (s.SelectionMode === 'Multiple') lv.setAttribute('aria-multiselectable', 'true'); else lv.removeAttribute('aria-multiselectable');
+        const p1 = s._in || 0, p2 = s._out || 0, shift = 48 * (p1 - p2);
+        el.forEach((r, k) => {
+          if (k === 0) {
+            if (p2 > 0) { r.style.transform = `translate(${-40 * p2}px, 0)`; r.style.opacity = 1 - p2; r.style.filter = ''; }
+            else { r.style.transform = `translateY(${-48 * (1 - p1)}px)`; r.style.opacity = p1; r.style.filter = p1 > 0 && p1 < 1 ? `blur(${(6 * (1 - p1)).toFixed(2)}px)` : ''; }
+            return;
+          }
+          const i = k - 1, on = !!s.Selected[i];
+          r.style.transform = `translateY(${i * 48 + shift}px)`;
+          r.classList.toggle('sel', on); r.setAttribute('aria-selected', on);
+        });
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => xtag('ListView', [['ItemsSource', '{Binding Messages}'], ['SelectionMode', s.SelectionMode, 'Single'], ['IsItemClickEnabled', s.IsItemClickEnabled, false], RT(s)], [
+      '    <ListView.ItemTemplate>', '        <DataTemplate>', '            <StackPanel Padding="0,8">',
+      '                <TextBlock Text="{Binding Sender}" />',
+      '                <TextBlock Text="{Binding Preview}"', '                           Style="{StaticResource CaptionTextBlockStyle}" />',
+      '            </StackPanel>', '        </DataTemplate>', '    </ListView.ItemTemplate>']) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('ListView', ['.ItemsSource(x => x.Binding(() => vm.Messages))', ['SelectionMode', s.SelectionMode, 'Single', 'ListViewSelectionMode'], ['IsItemClickEnabled', s.IsItemClickEnabled, false], RTc(s),
+      '.ItemTemplate<Message>(m => new StackPanel()\n        .Padding(0, 8)\n        .Children(\n            new TextBlock().Text(() => m.Sender),\n            new TextBlock().Text(() => m.Preview)\n                .Style(StaticResource.Get<Style>("CaptionTextBlockStyle"))))']) },
+  ],
+},
+{
+  id: 'treeview', name: 'TreeView', ns: 'winui', cat: 'Collections', len: 5, docs: LEARN + 'tree-view',
+  blurb: 'Shows nested items that expand and collapse, like a project folder.',
+  tags: 'tree folder hierarchy nested expand collection',
+  defaults: { SelectionMode: 'Single', AssetsExpanded: false, PagesExpanded: false, ServicesExpanded: false, Selected: [] },
+  props: [{ k: 'SelectionMode', t: 'enum', o: ['None', 'Single', 'Multiple'], type: 'TreeViewSelectionMode' }, { k: 'AssetsExpanded', label: 'Assets IsExpanded', t: 'bool' }, { k: 'PagesExpanded', label: 'Pages IsExpanded', t: 'bool' }, { k: 'ServicesExpanded', label: 'Services IsExpanded', t: 'bool' }],
+  normalize: (n, p) => n.SelectionMode === p.SelectionMode ? n : { ...n, Selected: n.SelectionMode === 'None' ? [] : n.SelectionMode === 'Single' ? n.Selected.slice(0, 1) : n.Selected },
+  story(t, s) {
+    const open = t >= 0.8 && t < 3.4 ? !s.PagesExpanded : s.PagesExpanded;
+    const pick = open && s.SelectionMode !== 'None' && t >= 1.6 && t < 3.0;
+    return { ...s, PagesExpanded: open, Selected: pick ? (s.SelectionMode === 'Single' ? ['SettingsPage.xaml'] : [...s.Selected, 'SettingsPage.xaml']) : s.Selected };
+  },
+  mount(host, api) {
+    host.classList.add('top');
+    const rows = [];
+    TREE.forEach(f => { rows.push({ f }); f.ch.forEach(c => rows.push({ c, f })); });
+    host.innerHTML = `<div class="tv" role="tree" aria-label="Project"><div class="tv-inner">${rows.map(r => r.c
+      ? `<button type="button" role="treeitem" class="tv-row tv-file" style="--lvl:1" data-c="${r.c}">${ic('file')}<span>${r.c}</span></button>`
+      : `<button type="button" role="treeitem" class="tv-row" data-k="${r.f.k}">${ic('caret-right', 'chev')}${ic('folder-simple')}<span>${r.f.c}</span></button>`).join('')}</div></div>`;
+    const tv = $('.tv', host), inner = $('.tv-inner', host), el = $$('.tv-row', host);
+    el.forEach(b => b.addEventListener('click', () => {
+      const s = api.get();
+      if (b.dataset.k) { api.set({ [b.dataset.k]: !s[b.dataset.k] }); return; }
+      const c = b.dataset.c;
+      if (s.SelectionMode === 'None') { api.touch(); return; }
+      api.set({ Selected: s.SelectionMode === 'Single' ? [c] : s.Selected.includes(c) ? s.Selected.filter(x => x !== c) : [...s.Selected, c] });
+    }));
+    return {
+      update(s) {
+        tv.dataset.mode = s.SelectionMode;
+        let y = 0, folderY = 0;
+        rows.forEach((r, i) => {
+          const b = el[i];
+          if (!r.c) { folderY = y; b.style.transform = `translateY(${y}px)`; b.setAttribute('aria-expanded', !!s[r.f.k]); y += 28; return; }
+          const vis = !!s[r.f.k];
+          b.style.transform = `translateY(${vis ? y : folderY}px)`;
+          b.classList.toggle('gone', !vis); b.tabIndex = vis ? 0 : -1; b.setAttribute('aria-hidden', !vis);
+          const on = s.Selected.includes(r.c); b.classList.toggle('sel', on); b.setAttribute('aria-selected', on);
+          if (vis) y += 28;
+        });
+        inner.style.height = y + 'px';
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => xtag('TreeView', [['SelectionMode', s.SelectionMode, 'Single'], RT(s)], [
+      '    <TreeView.RootNodes>',
+      ...TREE.map(f => xtag('TreeViewNode', [['Content', f.c], ['IsExpanded', s[f.k], false]], [
+        '            <TreeViewNode.Children>', ...f.ch.map(c => `                <TreeViewNode Content="${c}" />`), '            </TreeViewNode.Children>'], '        ')),
+      '    </TreeView.RootNodes>']) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('TreeView', [['SelectionMode', s.SelectionMode, 'Single', 'TreeViewSelectionMode'], RTc(s),
+      '.RootNodes(\n' + TREE.map(f => `        new TreeViewNode().Content("${f.c}")${s[f.k] ? '.IsExpanded(true)' : ''}\n            .Children(${f.ch.map(c => `new TreeViewNode().Content("${c}")`).join(', ')})`).join(',\n') + ')']) },
+  ],
+},
+{
+  id: 'navigationview', name: 'NavigationView', ns: 'winui', cat: 'Navigation', len: 5.4, docs: LEARN + 'navigationview',
+  blurb: 'Top level app navigation as a side pane, a compact rail or a top bar.',
+  tags: 'navigation pane menu sidebar shell frame',
+  defaults: { PaneDisplayMode: 'Left', IsSettingsVisible: true, SelectedIndex: 0 },
+  props: [{ k: 'PaneDisplayMode', t: 'enum', o: ['Left', 'LeftCompact', 'Top'], type: 'NavigationViewPaneDisplayMode' }, { k: 'IsSettingsVisible', t: 'bool' }, { k: 'SelectedIndex', label: 'Selected item', t: 'enum', o: [0, 1, 2, 3], labels: ['Home', 'Library', 'Friends', 'Settings'], type: 'IsSelected' }],
+  normalize: n => !n.IsSettingsVisible && n.SelectedIndex === 3 ? { ...n, SelectedIndex: 0 } : n,
+  story(t, s) {
+    const b = s.SelectedIndex, seq = b < 3 ? [(b + 1) % 3, (b + 2) % 3] : [0, 1];
+    return { ...s, SelectedIndex: t < 1.0 ? b : t < 2.4 ? seq[0] : t < 3.8 ? seq[1] : b };
+  },
+  mount(host, api) {
+    host.innerHTML = `<div class="nv"><nav class="nv-pane" aria-label="App"><span class="nv-ind" aria-hidden="true"></span>${NAV.map((n, i) => `<button type="button" class="nv-i${i === 3 ? ' nv-set' : ''}" data-i="${i}" aria-label="${n.c}">${ic(n.i)}<span class="nv-l">${n.c}</span></button>`).join('')}</nav><div class="nv-body"><div class="nv-t"></div><div class="nv-s"></div><span class="bar"></span><span class="bar short"></span></div></div>`;
+    const nv = $('.nv', host), ind = $('.nv-ind', host), items = $$('.nv-i', host), t = $('.nv-t', host), sub = $('.nv-s', host);
+    items.forEach((b, i) => b.addEventListener('click', () => api.set({ SelectedIndex: i })));
+    return {
+      update(s) {
+        nv.dataset.mode = s.PaneDisplayMode; items[3].hidden = !s.IsSettingsVisible;
+        items.forEach((b, i) => { if (i === s.SelectedIndex) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+        const it = items[s.SelectedIndex], n = NAV[s.SelectedIndex];
+        ind.style.transform = s.PaneDisplayMode === 'Top' ? `translateX(${it.offsetLeft + it.offsetWidth / 2 - 8}px)` : `translateY(${it.offsetTop - 4}px)`;
+        t.textContent = n.c; sub.textContent = `${n.sub} · ${n.note}`;
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => xtag('NavigationView', [['PaneDisplayMode', s.PaneDisplayMode], ['IsSettingsVisible', s.IsSettingsVisible, true], RT(s)], [
+      '    <NavigationView.MenuItems>',
+      ...NAV.slice(0, 3).map((n, i) => xtag('NavigationViewItem', [['Content', n.c], ['Icon', n.sym], ['IsSelected', i === s.SelectedIndex, false]], null, '        ')),
+      '    </NavigationView.MenuItems>', '    <Frame x:Name="ContentFrame" />']) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('NavigationView', [['PaneDisplayMode', s.PaneDisplayMode, undefined, 'NavigationViewPaneDisplayMode'], ['IsSettingsVisible', s.IsSettingsVisible, true], RTc(s),
+      '.MenuItems(\n' + NAV.slice(0, 3).map((n, i) => `        new NavigationViewItem().Content("${n.c}")\n            .Icon(new SymbolIcon().Symbol(Symbol.${n.sym}))${i === s.SelectedIndex ? '\n            .IsSelected(true)' : ''}`).join(',\n') + ')',
+      '.Content(new Frame())']) },
+  ],
+},
+{
+  id: 'tabbar', name: 'TabBar', ns: 'toolkit', cat: 'Navigation', len: 5.4, docs: UNODOC + 'uno.toolkit.ui/doc/controls/TabBarAndTabBarItem.html',
+  blurb: 'Switches between sections with a bottom bar on phones or tabs on top.',
+  tags: 'tab bottom navigation bar mobile',
+  defaults: { Style: 'BottomTabBarStyle', SelectedIndex: 0 },
+  props: [{ k: 'Style', t: 'enum', o: ['BottomTabBarStyle', 'TopTabBarStyle'], type: 'Style' }, { k: 'SelectedIndex', t: 'enum', o: [0, 1, 2, 3], labels: ['0 · Home', '1 · Search', '2 · Library', '3 · Profile'], type: 'int' }],
+  story(t, s) {
+    const b = s.SelectedIndex;
+    return { ...s, SelectedIndex: t < 1.1 ? b : t < 2.5 ? (b + 2) % 4 : t < 3.9 ? (b + 1) % 4 : b };
+  },
+  mount(host, api) {
+    host.innerHTML = `<div class="tb"><div class="tb-page"><span class="tb-t"></span><span class="bar"></span><span class="bar short"></span></div><div class="tb-bar" role="tablist"><span class="tb-ind" aria-hidden="true"><span></span></span>${TABS.map((t, i) => `<button type="button" role="tab" class="tb-i" data-i="${i}">${ic(t.i)}<span>${t.c}</span></button>`).join('')}</div></div>`;
+    const tb = $('.tb', host), tabs = $$('.tb-i', host), title = $('.tb-t', host);
+    tabs.forEach((b, i) => {
+      b.addEventListener('click', () => api.set({ SelectedIndex: i }));
+      b.addEventListener('keydown', e => { const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key]; if (!d) return; e.preventDefault(); const n = (i + d + 4) % 4; api.set({ SelectedIndex: n }); tabs[n].focus(); });
+    });
+    return {
+      update(s) {
+        tb.dataset.style = s.Style; tb.style.setProperty('--i', s.SelectedIndex);
+        tabs.forEach((b, i) => { b.setAttribute('aria-selected', i === s.SelectedIndex); b.tabIndex = i === s.SelectedIndex ? 0 : -1; });
+        title.textContent = TABS[s.SelectedIndex].c;
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => UTU + '\n' + xtag('utu:TabBar', [['Style', `{StaticResource ${s.Style}}`], ['SelectedIndex', s.SelectedIndex, -1], RT(s)],
+      TABS.map(t => s.Style === 'TopTabBarStyle' ? `    <utu:TabBarItem Content="${t.c}" />`
+        : `    <utu:TabBarItem Content="${t.c}">\n        <utu:TabBarItem.Icon>\n            <SymbolIcon Symbol="${t.sym}" />\n        </utu:TabBarItem.Icon>\n    </utu:TabBarItem>`)) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('TabBar', [`.Style(StaticResource.Get<Style>("${s.Style}"))`, ['SelectedIndex', s.SelectedIndex, -1], RTc(s),
+      '.Items(\n' + TABS.map(t => `        new TabBarItem().Content("${t.c}")${s.Style === 'TopTabBarStyle' ? '' : `\n            .Icon(new SymbolIcon().Symbol(Symbol.${t.sym}))`}`).join(',\n') + ')']) },
+  ],
+},
+{
+  id: 'progressbar', name: 'ProgressBar', ns: 'winui', cat: 'Status', len: 5.4, docs: LEARN + 'progress-controls',
+  blurb: 'Shows how far a task has come, or that it is paused, failed or still starting.',
+  tags: 'progress upload loading bar paused error indeterminate',
+  defaults: { Value: 64, IsIndeterminate: false, ShowPaused: false, ShowError: false },
+  props: [{ k: 'Value', t: 'number', min: 0, max: 100 }, { k: 'IsIndeterminate', t: 'bool' }, { k: 'ShowPaused', t: 'bool' }, { k: 'ShowError', t: 'bool' }],
+  story(t, s) {
+    if (s.IsIndeterminate || s.ShowPaused || s.ShowError) return s;
+    return { ...s, _live: true, Value: t < 4.9 ? track([[0.6, s.Value], [3.2, 100]], t) : s.Value, _o: track([[4.5, 1], [4.9, 0], [5.3, 1]], t) };
+  },
+  mount(host, api) {
+    host.innerHTML = `<div class="pb"><div class="pb-file"><span class="pb-ic">${ic('music-notes')}</span><span class="pb-meta"><span class="pb-name">night_drive_master.wav</span><span class="pb-st"></span></span></div><div class="pb-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Upload progress"><span class="pb-fill"></span></div><button type="button" class="pbtn" hidden>${ic('arrow-clockwise')}Retry upload</button></div>`;
+    const pb = $('.pb', host), st = $('.pb-st', host), trk = $('.pb-track', host), retry = $('.pbtn', host);
+    retry.addEventListener('click', () => api.set({ ShowError: false }));
+    return {
+      update(s) {
+        const v = clamp(s.Value, 0, 100), done = (6.4 * v / 100).toFixed(1);
+        pb.style.setProperty('--v', v / 100);
+        pb.classList.toggle('ind', s.IsIndeterminate); pb.classList.toggle('paused', s.ShowPaused && !s.ShowError);
+        pb.classList.toggle('error', s.ShowError); pb.classList.toggle('live', !!s._live);
+        st.textContent = s.ShowError ? `Upload failed. The connection dropped at ${done} MB.`
+          : s.ShowPaused ? `Paused at ${done} MB of 6.4 MB`
+          : s.IsIndeterminate ? 'Preparing upload'
+          : v >= 100 ? 'Uploaded 6.4 MB' : `${done} MB of 6.4 MB · ${Math.ceil((100 - v) / 100 * 38)} s left`;
+        if (s.IsIndeterminate) trk.removeAttribute('aria-valuenow'); else trk.setAttribute('aria-valuenow', Math.round(v));
+        const o = s._o ?? 1; trk.style.opacity = o; st.style.opacity = o;
+        retry.hidden = !s.ShowError;
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => xtag('ProgressBar', [['Value', Math.round(s.Value), 0], ['IsIndeterminate', s.IsIndeterminate, false], ['ShowPaused', s.ShowPaused, false], ['ShowError', s.ShowError, false], RT(s)]) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('ProgressBar', [['Value', Math.round(s.Value), 0], ['IsIndeterminate', s.IsIndeterminate, false], ['ShowPaused', s.ShowPaused, false], ['ShowError', s.ShowError, false], RTc(s)]) },
+  ],
+},
+{
+  id: 'infobar', name: 'InfoBar', ns: 'winui', cat: 'Status', len: 5.4, docs: LEARN + 'infobar',
+  blurb: 'Keeps an app wide status message on screen until someone closes it.',
+  tags: 'message banner status severity error warning success alert',
+  defaults: { Severity: 'Error', Title: PRESET.Error.Title, Message: PRESET.Error.Message, IsOpen: true, IsClosable: true },
+  props: [{ k: 'Severity', t: 'enum', o: SEV, type: 'InfoBarSeverity' }, { k: 'Title', t: 'text' }, { k: 'Message', t: 'text' }, { k: 'IsOpen', t: 'bool' }, { k: 'IsClosable', t: 'bool' }],
+  normalize(n, p) {
+    if (n.Severity === p.Severity) return n;
+    const was = PRESET[p.Severity], to = PRESET[n.Severity];
+    return { ...n, Title: n.Title === was.Title ? to.Title : n.Title, Message: n.Message === was.Message ? to.Message : n.Message };
+  },
+  story(t, s) {
+    if (!s.IsOpen) return s;
+    const b = SEV.indexOf(s.Severity), k = t < 1.0 ? 0 : t < 2.2 ? 1 : t < 3.4 ? 2 : t < 4.6 ? 3 : 0;
+    const sev = SEV[(b + k) % 4], pre = PRESET[s.Severity].Title === s.Title;
+    return { ...s, Severity: sev, Title: pre ? PRESET[sev].Title : s.Title, Message: pre ? PRESET[sev].Message : s.Message };
+  },
+  mount(host, api) {
+    host.innerHTML = `<div class="ib-wrap"><div class="ib" role="status"><span class="ib-ic"></span><div><div class="ib-t"></div><div class="ib-m"></div></div><button type="button" class="ib-x" aria-label="Close message">${ic('x')}</button></div><div class="ib-empty"><span>The InfoBar is closed.</span><button type="button" class="pbtn">Show InfoBar</button></div></div>`;
+    const ib = $('.ib', host), icn = $('.ib-ic', host), tt = $('.ib-t', host), mm = $('.ib-m', host), x = $('.ib-x', host), empty = $('.ib-empty', host);
+    x.addEventListener('click', () => api.set({ IsOpen: false }));
+    $('.pbtn', host).addEventListener('click', () => api.set({ IsOpen: true }));
+    let sev = '';
+    return {
+      update(s) {
+        if (sev !== s.Severity) { sev = s.Severity; ib.dataset.sev = sev; icn.innerHTML = ic(SEV_IC[sev]); }
+        tt.textContent = s.Title; mm.textContent = s.Message; x.hidden = !s.IsClosable;
+        ib.classList.toggle('closed', !s.IsOpen); ib.setAttribute('aria-hidden', !s.IsOpen); empty.classList.toggle('on', !s.IsOpen);
+        empty.setAttribute('aria-hidden', s.IsOpen); $('.pbtn', empty).tabIndex = s.IsOpen ? -1 : 0; x.tabIndex = s.IsOpen ? 0 : -1;
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => xtag('InfoBar', [['Severity', s.Severity, 'Informational'], ['Title', s.Title], ['Message', s.Message], ['IsOpen', s.IsOpen, false], ['IsClosable', s.IsClosable, true], RT(s)]) },
+    { label: 'C# Markup', lang: 'cs', gen: s => cs('InfoBar', [['Severity', s.Severity, 'Informational', 'InfoBarSeverity'], ['Title', s.Title], ['Message', s.Message], ['IsOpen', s.IsOpen, false], ['IsClosable', s.IsClosable, true], RTc(s)]) },
+  ],
+},
+];
+
+const FEED_BLOCKS = {
+  Value: ['    <mvux:FeedView.ValueTemplate>', '        <DataTemplate>', '            <ListView ItemsSource="{Binding Data}"', '                      ItemTemplate="{StaticResource DayTemplate}" />', '        </DataTemplate>', '    </mvux:FeedView.ValueTemplate>'],
+  Progress: ['    <mvux:FeedView.ProgressTemplate>', '        <DataTemplate>', '            <local:ForecastSkeleton />', '        </DataTemplate>', '    </mvux:FeedView.ProgressTemplate>'],
+  None: ['    <mvux:FeedView.NoneTemplate>', '        <DataTemplate>', '            <TextBlock Text="No forecast for this city yet" />', '        </DataTemplate>', '    </mvux:FeedView.NoneTemplate>'],
+  Error: ['    <mvux:FeedView.ErrorTemplate>', '        <DataTemplate>', '            <StackPanel Spacing="8">', '                <TextBlock Text="Forecast failed to load" />', '                <Button Content="Retry"', '                        Command="{Binding Refresh}" />', '            </StackPanel>', '        </DataTemplate>', '    </mvux:FeedView.ErrorTemplate>'],
+};
+const RESP_BLOCKS = {
+  Narrow: ['    <utu:ResponsiveView.NarrowTemplate>', '        <DataTemplate>', '            <local:SettingsList />', '        </DataTemplate>', '    </utu:ResponsiveView.NarrowTemplate>'],
+  Wide: ['    <utu:ResponsiveView.WideTemplate>', '        <DataTemplate>', '            <local:SettingsSplitView />', '        </DataTemplate>', '    </utu:ResponsiveView.WideTemplate>'],
+};
+const respLayout = w => (w >= 800 ? 'Wide' : 'Narrow');
+
+const PATTERNS = [
+{
+  id: 'feedview', name: 'FeedView', ns: 'mvux', pattern: true, len: 9, docs: UNODOC + 'uno.extensions/doc/Learn/Mvux/FeedView.html',
+  blurb: 'Binds an async feed and picks a template for each state: progress, value, none and error.',
+  states: 'Progress · Value · None · Error',
+  defaults: { State: 'Value', NextRefreshFails: false },
+  props: [{ k: 'State', label: 'Feed state', t: 'enum', o: ['Value', 'Progress', 'None', 'Error'], type: 'template' }, { k: 'NextRefreshFails', label: 'Next refresh fails', t: 'bool', type: 'simulation' }],
+  story(t, s) {
+    if (s.State !== 'Value') return s;
+    const seq = [[0, 'Value'], [1.0, 'Progress'], [2.4, 'Value'], [4.4, 'Progress'], [5.6, 'Error'], [6.8, 'Progress'], [7.8, 'Value']];
+    let st = 'Value'; for (const [at, v] of seq) if (t >= at) st = v;
+    const press = pressed(t, 1.0) || pressed(t, 4.4) ? 'refresh' : pressed(t, 6.8) ? 'retry' : '';
+    return { ...s, State: st, _press: press };
+  },
+  mount(host, api) {
+    host.innerHTML = `<div class="fv"><div class="fv-head"><div><div class="fv-city">Montréal</div><div class="fv-sub">5 day forecast · °C</div></div><button type="button" class="fv-ref" aria-label="Refresh forecast">${ic('arrow-clockwise')}</button></div><div class="fv-body" aria-live="polite"></div></div>`;
+    const ref = $('.fv-ref', host), body = $('.fv-body', host);
+    let shown = '', timer = 0;
+    const run = fail => { clearTimeout(timer); api.set({ State: 'Progress' }); timer = setTimeout(() => api.set({ State: fail ? 'Error' : 'Value' }), 1200); };
+    ref.addEventListener('click', () => run(api.get().NextRefreshFails));
+    body.addEventListener('click', e => { if (e.target.closest('.fv-retry')) run(false); });
+    const tpl = st => st === 'Value'
+      ? DAYS.map((d, i) => `<div class="fv-row" style="--i:${i}"><span class="fv-d">${d.d}</span>${ic(d.i)}<span class="fv-range" aria-hidden="true"><span class="fv-span" style="--a:${(d.lo + 5) / 20};--b:${(d.hi - d.lo) / 20}"></span></span><span class="fv-hl"><b>${deg(d.hi)}</b> <span>${deg(d.lo)}</span></span></div>`).join('')
+      : st === 'Progress'
+      ? `<span class="sr">Loading forecast</span>` + DAYS.map(() => `<div class="fv-row sk-row" aria-hidden="true"><span class="sk" style="width:32px"></span><span class="sk sk-dot"></span><span class="sk"></span><span class="sk" style="width:56px;justify-self:end"></span></div>`).join('')
+      : st === 'None'
+      ? `<div class="fv-msg">${ic('tray')}<b>No forecast for this city yet</b><span>Readings start once the nearest station reports in.</span></div>`
+      : `<div class="fv-msg err">${ic('warning-circle')}<b>Forecast failed to load</b><span>The weather service timed out after 8 s.</span><button type="button" class="pbtn fv-retry">Retry</button></div>`;
+    return {
+      update(s) {
+        ref.classList.toggle('spin', s.State === 'Progress'); ref.classList.toggle('press', s._press === 'refresh');
+        if (s.State !== shown) { shown = s.State; body.innerHTML = tpl(shown); }
+        $('.fv-retry', body)?.classList.toggle('press', s._press === 'retry');
+      },
+    };
+  },
+  code: [
+    { label: 'XAML', lang: 'xaml', gen: s => ['<!-- xmlns:mvux="using:Uno.Extensions.Reactive.UI" -->', '<mvux:FeedView Source="{Binding Forecast}">',
+      ...['Value', 'Progress', 'None', 'Error'].flatMap(k => k === s.State ? mark(FEED_BLOCKS[k]) : FEED_BLOCKS[k]), '</mvux:FeedView>'].join('\n') },
+    { label: 'Model', lang: 'cs', gen: () => [
+      'public partial record ForecastModel(IWeatherService Weather)', '{',
+      '    // FeedView reads progress, value, none and error from this feed', '    public IListFeed<DayForecast> Forecast =>', '        ListFeed.Async(Weather.GetForecastAsync);', '}', '',
+      'public interface IWeatherService', '{', '    ValueTask<IImmutableList<DayForecast>> GetForecastAsync(CancellationToken ct);', '}', '',
+      'public partial record DayForecast(string Day, int High, int Low);'].join('\n') },
+  ],
+},
+{
+  id: 'responsiveview', name: 'ResponsiveView', ns: 'toolkit', pattern: true, len: 7.4, docs: UNODOC + 'uno.toolkit.ui/doc/controls/ResponsiveView.html',
+  blurb: 'Swaps templates at window width breakpoints. With only Narrow and Wide set, Wide starts at 800 px.',
+  states: 'NarrowTemplate · WideTemplate',
+  defaults: { Width: 420 },
+  props: [{ k: 'Width', label: 'Window width', t: 'number', min: 280, max: 1200, step: 4, type: 'px' }],
+  story(t, s) {
+    const to = s.Width < 800 ? 1024 : 520;
+    return { ...s, _live: true, Width: track([[1.0, s.Width], [2.6, to], [4.4, to], [6.0, s.Width]], t) };
+  },
+  mount(host, api) {
+    const list = sel => ['Account', 'Audio', 'Notifications', 'Privacy'].map(x => `<div class="rv-li${x === sel ? ' sel' : ''}"><span>${x}</span>${ic('caret-right')}</div>`).join('');
+    host.innerHTML = `<div class="rv"><div class="rv-win">
+      <div class="rv-tpl rv-n"><div class="rv-col"><div class="rv-title">Settings</div>${list('')}</div></div>
+      <div class="rv-tpl rv-w"><div class="rv-split"><div class="rv-nav"><div class="rv-title">Settings</div>${list('Audio')}</div><div class="rv-detail"><div class="rv-title">Audio</div>${[['Output', 'Studio monitors'], ['Sample rate', '48 kHz'], ['Buffer', '256 samples'], ['Latency', '5.3 ms']].map(([k, v]) => `<div class="rv-kv"><span>${k}</span><span>${v}</span></div>`).join('')}</div></div></div>
+    </div><div class="rv-meter"><div class="rv-read"><span>Window width <b class="rv-px"></b></span><span>Template <b class="rv-name"></b></span></div>
+      <div class="rv-ruler" role="slider" tabindex="0" aria-label="Window width" aria-valuemin="280" aria-valuemax="1200"><span class="rv-line"></span>${[150, 300, 600, 800, 1080].map(b => `<span class="rv-tick${b === 300 || b === 800 ? ' on' : ''}" style="left:${(b / 1200 * 100).toFixed(2)}%"><span>${b === 300 ? 'Narrow 300' : b === 800 ? 'Wide 800' : ''}</span></span>`).join('')}<span class="rv-mk"><span></span></span></div></div></div>`;
+    const rv = $('.rv', host), ruler = $('.rv-ruler', host), n = $('.rv-n', host), w = $('.rv-w', host), px = $('.rv-px', host), name = $('.rv-name', host);
+    const fromX = x => { const r = ruler.getBoundingClientRect(); return clamp(Math.round((x - r.left) / r.width * 1200 / 4) * 4, 280, 1200); };
+    ruler.addEventListener('pointerdown', e => { ruler.setPointerCapture(e.pointerId); rv.classList.add('drag'); api.set({ Width: fromX(e.clientX) }); });
+    ruler.addEventListener('pointermove', e => { if (ruler.hasPointerCapture(e.pointerId)) api.set({ Width: fromX(e.clientX) }); });
+    ruler.addEventListener('pointerup', () => rv.classList.remove('drag'));
+    ruler.addEventListener('keydown', e => {
+      const d = { ArrowRight: 20, ArrowUp: 20, ArrowLeft: -20, ArrowDown: -20, PageUp: 100, PageDown: -100 }[e.key]; if (!d) return;
+      e.preventDefault(); api.set({ Width: clamp(api.get().Width + d, 280, 1200) });
+    });
+    return {
+      update(s) {
+        const wd = Math.round(s.Width), lay = respLayout(wd);
+        rv.style.setProperty('--w', wd / 1200); rv.classList.toggle('live', !!s._live);
+        px.textContent = `${wd} px`; name.textContent = `${lay}Template`; ruler.setAttribute('aria-valuenow', wd);
+        n.setAttribute('aria-hidden', lay !== 'Narrow'); w.setAttribute('aria-hidden', lay !== 'Wide');
+      },
+    };
+  },
+  code: [
+    { label: 'ResponsiveView', lang: 'xaml', gen: s => [UTU, '<utu:ResponsiveView>', ...['Narrow', 'Wide'].flatMap(k => k === respLayout(Math.round(s.Width)) ? mark(RESP_BLOCKS[k]) : RESP_BLOCKS[k]), '</utu:ResponsiveView>'].join('\n') },
+    { label: 'Responsive extension', lang: 'xaml', gen: () => [UTU,
+      '<StackPanel Orientation="{utu:Responsive Narrow=Vertical, Wide=Horizontal}"', '            Spacing="{utu:Responsive Narrow=8, Wide=24}">',
+      '    <local:SettingsNav />', '    <local:SettingsDetail Visibility="{utu:Responsive Narrow=Collapsed, Wide=Visible}" />', '</StackPanel>'].join('\n') },
+  ],
+},
+];
+const ALL = [...SAMPLES, ...PATTERNS];
+
+/* ---------- instances ---------- */
+let ds = store.get('ds') === 'material' ? 'material' : 'fluent';
+const instances = new Set();
+function createInstance(sample, host, ctx = {}) {
+  const defaults = () => ({ RequestedTheme: 'Default', ...structuredClone(sample.defaults) });
+  let state = defaults(), last = '';
+  const inst = { sample, host, owned: false, onRender: null, onUser: null };
+  host.dataset.ds = ds;
+  const render = s => {
+    const key = JSON.stringify(s); if (key === last) return; last = key;
+    if (s.RequestedTheme && s.RequestedTheme !== 'Default') host.dataset.rt = s.RequestedTheme; else delete host.dataset.rt;
+    inst.view.update(s); inst.onRender?.(s);
+  };
+  const api = {
+    get: () => state,
+    set(p) { const next = { ...state, ...p }; state = sample.normalize ? sample.normalize(next, state) : next; inst.owned = true; render(state); inst.onUser?.(state); },
+    touch() { inst.owned = true; },
+  };
+  inst.api = api;
+  inst.view = sample.mount(host, api, ctx);
+  inst.rest = () => render(state);
+  inst.frame = t => render(sample.story ? sample.story(t, state) : state);
+  inst.reset = () => { state = defaults(); render(state); };
+  inst.refresh = () => { last = ''; render(state); };
+  instances.add(inst);
+  render(state);
+  return inst;
+}
+
+/* ---------- story clock ---------- */
+const runners = [];
+function addRunner(inst, card, offset) {
+  if (!inst.sample.story) return null;
+  const r = { inst, card, offset, visible: false, hover: false, playing: false, t0: Infinity, len: inst.sample.len, gap: 1.4 };
+  const settle = () => { inst.host.classList.add('settle'); setTimeout(() => inst.host.classList.remove('settle'), 520); };
+  const enter = () => { r.hover = true; if (r.playing) settle(); };
+  const leave = () => { if (card.contains(document.activeElement)) return; r.hover = false; r.t0 = performance.now() + 600; };
+  card.addEventListener('pointerenter', enter); card.addEventListener('pointerleave', leave);
+  card.addEventListener('focusin', enter); card.addEventListener('focusout', e => { if (!card.contains(e.relatedTarget)) { r.hover = false; r.t0 = performance.now() + 600; } });
+  runners.push(r);
+  return r;
+}
+function clock(now) {
+  for (const r of runners) {
+    const active = r.visible && !r.hover && !r.inst.owned && !document.hidden && !reduce.matches;
+    if (!active) { if (r.playing) { r.playing = false; r.inst.rest(); } continue; }
+    if (now < r.t0) continue;
+    r.playing = true;
+    const t = ((now - r.t0) / 1000) % (r.len + r.gap);
+    if (t > r.len) r.inst.rest(); else r.inst.frame(t);
+  }
+  requestAnimationFrame(clock);
+}
+
+/* ---------- cards ---------- */
+const grid = $('#grid'), pgrid = $('#pgrid');
+const cards = [];
+function buildCard(sample, idx) {
+  const card = html(`<article class="card${sample.pattern ? ' pcard' : ''}" data-id="${sample.id}">
+    <div class="stage card-stage" role="group" aria-label="${sample.name} live preview"></div>
+    <div class="card-body">
+      <div class="card-top"><h3 class="card-name">${sample.name}</h3><span class="ns">${NS[sample.ns].short}</span></div>
+      <p class="card-blurb">${sample.blurb}</p>
+      <div class="card-foot"><button class="btn btn-ghost btn-sm card-open" type="button" aria-label="Open ${sample.name} sample">Open sample ${ic('arrow-right')}</button><span class="card-meta">${sample.states || `${sample.props.length} ${sample.props.length === 1 ? 'property' : 'properties'}`}</span></div>
+    </div></article>`);
+  (sample.pattern ? pgrid : grid).append(card);
+  const inst = createInstance(sample, $('.stage', card), {});
+  const runner = addRunner(inst, card, idx % 3);
+  $('.card-open', card).addEventListener('click', e => openSheet(sample, e.currentTarget));
+  cards.push({ sample, card, inst, runner });
+}
+SAMPLES.forEach((s, i) => buildCard(s, i));
+PATTERNS.forEach((s, i) => buildCard(s, i));
+
+/* reveal on scroll: only elements below the fold start hidden, so the first frame is complete */
+const io = new IntersectionObserver(entries => {
+  const now = performance.now();
+  let batch = 0;
+  for (const e of entries) {
+    const c = cards.find(x => x.card === e.target);
+    if (!c) continue;
+    if (e.isIntersecting && c.card.classList.contains('pre')) {
+      c.card.style.setProperty('--d', `${batch++ * 85}ms`);
+      c.card.classList.add('intro'); c.card.classList.remove('pre');
+      setTimeout(() => { c.card.classList.remove('intro'); c.card.style.removeProperty('--d'); }, 1700);
+    }
+    if (c.runner) {
+      const was = c.runner.visible; c.runner.visible = e.isIntersecting;
+      if (e.isIntersecting && !was) c.runner.t0 = now + 1000 + c.runner.offset * 700;
+    }
+    if (e.isIntersecting) c.inst.refresh();
+  }
+}, { threshold: 0.3 });
+const revealIo = new IntersectionObserver(entries => {
+  for (const e of entries) if (e.isIntersecting) { e.target.classList.remove('pre'); revealIo.unobserve(e.target); }
+}, { threshold: 0.15 });
+if (!reduce.matches) {
+  for (const c of cards) if (c.card.getBoundingClientRect().top > innerHeight) c.card.classList.add('pre');
+  for (const el of $$('[data-reveal]')) if (el.getBoundingClientRect().top > innerHeight) { el.classList.add('pre'); revealIo.observe(el); }
+}
+cards.forEach(c => io.observe(c.card));
+
+/* ---------- filters and search ---------- */
+const CATS = ['All', 'Input', 'Collections', 'Navigation', 'Status'];
+let cat = 'All';
+const q = $('#q');
+$('#filters').innerHTML = CATS.map(c => `<button type="button" class="fchip" data-cat="${c}" aria-pressed="${c === cat}">${c} <span>${c === 'All' ? SAMPLES.length : SAMPLES.filter(s => s.cat === c).length}</span></button>`).join('');
+$('#filters').addEventListener('click', e => { const b = e.target.closest('.fchip'); if (!b) return; cat = b.dataset.cat; applyFilter(); });
+q.addEventListener('input', () => applyFilter());
+q.addEventListener('keydown', e => { if (e.key === 'Escape' && q.value) { q.value = ''; applyFilter(); } });
+$('#empty-clear').addEventListener('click', () => { q.value = ''; cat = 'All'; applyFilter(); q.focus(); });
+addEventListener('keydown', e => {
+  if (e.key === '/' && !e.metaKey && !e.ctrlKey && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && !$('#sheet').open) { e.preventDefault(); q.focus(); }
+});
+function applyFilter() {
+  const term = fold(q.value.trim());
+  $$('.fchip').forEach(b => b.setAttribute('aria-pressed', b.dataset.cat === cat));
+  let shown = 0, d = 0;
+  for (const c of cards) {
+    if (c.sample.pattern) continue;
+    const s = c.sample;
+    const hay = fold([s.name, s.blurb, s.tags, NS[s.ns].short, NS[s.ns].full, ...s.props.map(p => p.k)].join(' '));
+    const ok = (cat === 'All' || s.cat === cat) && (!term || hay.includes(term));
+    const was = !c.card.hidden;
+    c.card.hidden = !ok;
+    if (ok) {
+      shown++;
+      if (!was && !reduce.matches) { c.card.classList.remove('pre', 'pop'); void c.card.offsetWidth; c.card.style.setProperty('--d', `${d++ * 40}ms`); c.card.classList.add('pop'); }
+    }
+  }
+  $('#empty').hidden = shown > 0;
+  $('#empty-h').textContent = term ? `No controls match “${q.value.trim()}”` : `No controls in ${cat}`;
+  $('#result-status').textContent = shown ? `${shown} ${shown === 1 ? 'control' : 'controls'} shown` : 'No controls match';
+}
+
+/* ---------- design system toggle ---------- */
+function setDs(v) {
+  ds = v; store.set('ds', v);
+  $$('.stage').forEach(s => { s.dataset.ds = v; });
+  $$('[data-ds-btn]').forEach(b => b.setAttribute('aria-pressed', b.dataset.dsBtn === v));
+  instances.forEach(i => i.refresh());
+  updateNote();
+}
+$$('[data-ds-btn]').forEach(b => b.addEventListener('click', () => setDs(b.dataset.dsBtn)));
+
+/* ---------- hero anatomy ---------- */
+const anatCode = $('#anat-code');
+let anatLast = null;
+const hero = createInstance(SAMPLES[0], $('#anat-stage'), {});
+hero.onRender = s => { const code = SAMPLES[0].code[0].gen(s); if (code !== anatLast) { renderCode(anatCode, code, 'xaml', anatLast); anatLast = code; } };
+hero.refresh();
+const heroCard = $('.anat');
+const heroRunner = addRunner(hero, heroCard, 0);
+if (heroRunner) { heroRunner.visible = true; heroRunner.t0 = performance.now() + 1200; }
+new IntersectionObserver(([e]) => { if (heroRunner) heroRunner.visible = e.isIntersecting; }).observe(heroCard);
+
+/* ---------- sheet ---------- */
+const sheet = $('#sheet'), shStage = $('#sh-stage'), shCode = $('#sh-code'), shProps = $('#sh-props');
+let shInst = null, shTab = 0, shLast = null, opener = null;
+$('#sh-copy-ic').innerHTML = ic('copy');
+const TYPE = { bool: 'bool', text: 'string', number: 'double', enum: 'enum' };
+function updateNote() {
+  $('#sh-note').textContent = (ds === 'material' ? 'Material resources: App.xaml merges MaterialToolkitTheme.' : 'Fluent resources: App.xaml merges XamlControlsResources.') + ' Generated by this prototype, so build it once before you ship.';
+}
+function buildForm(sample) {
+  shProps.innerHTML = sample.props.map(p => {
+    const id = `prop-${p.k}`, label = `<label for="${id}"><span class="mono">${p.label || p.k}</span><span class="pf-type">${p.type || TYPE[p.t]}</span></label>`;
+    if (p.t === 'bool') return `<div class="pf-row pf-bool">${label}<input type="checkbox" role="switch" class="pf-sw" id="${id}" data-k="${p.k}"></div>`;
+    if (p.t === 'text') return `<div class="pf-row">${label}<input type="text" class="pf-in" id="${id}" data-k="${p.k}" autocomplete="off" spellcheck="false"></div>`;
+    if (p.t === 'enum') return `<div class="pf-row">${label}<select class="pf-in" id="${id}" data-k="${p.k}">${p.o.map((o, i) => `<option value="${o}">${p.labels?.[i] ?? o}</option>`).join('')}</select></div>`;
+    return `<div class="pf-row">${label}<span class="pf-num"><input type="range" id="${id}" data-k="${p.k}" min="${p.min}" max="${p.max}" step="${p.step || 1}"><output for="${id}"></output></span></div>`;
+  }).join('');
+}
+shProps.addEventListener('submit', e => e.preventDefault());
+shProps.addEventListener('input', e => {
+  const el = e.target, k = el.dataset.k; if (!k || !shInst) return;
+  const p = shInst.sample.props.find(x => x.k === k);
+  const v = p.t === 'bool' ? el.checked : p.t === 'number' ? +el.value : p.t === 'enum' && typeof p.o[0] === 'number' ? +el.value : el.value;
+  shInst.api.set({ [k]: v });
+});
+function syncForm(s) {
+  for (const p of shInst.sample.props) {
+    const el = $('#prop-' + p.k); if (!el) continue;
+    if (p.t === 'bool') el.checked = !!s[p.k];
+    else if (p.t === 'number') { el.value = s[p.k]; el.nextElementSibling.textContent = Math.round(s[p.k]); }
+    else if (document.activeElement !== el) el.value = s[p.k];
+  }
+  $$('#sh-rt button').forEach(b => b.setAttribute('aria-pressed', b.dataset.rt === s.RequestedTheme));
+}
+function renderTabs() {
+  $('#sh-tabs').innerHTML = shInst.sample.code.map((c, i) => `<button type="button" role="tab" id="sh-tab-${i}" aria-selected="${i === shTab}" tabindex="${i === shTab ? 0 : -1}">${c.label}</button>`).join('');
+  shCode.setAttribute('aria-labelledby', `sh-tab-${shTab}`);
+}
+$('#sh-tabs').addEventListener('click', e => { const b = e.target.closest('[role=tab]'); if (!b) return; shTab = +b.id.split('-').pop(); shLast = null; renderTabs(); renderSheetCode(shInst.api.get()); });
+$('#sh-tabs').addEventListener('keydown', e => {
+  const d = { ArrowRight: 1, ArrowLeft: -1 }[e.key]; if (!d) return;
+  const n = shInst.sample.code.length; shTab = (shTab + d + n) % n; shLast = null; renderTabs(); renderSheetCode(shInst.api.get()); $(`#sh-tab-${shTab}`).focus();
+});
+function renderSheetCode(s) {
+  const tab = shInst.sample.code[shTab], code = tab.gen(s);
+  if (code === shLast) return;
+  renderCode(shCode, code, tab.lang, shLast); shLast = code;
+}
+$('#sh-rt').addEventListener('click', e => { const b = e.target.closest('button'); if (b && shInst) shInst.api.set({ RequestedTheme: b.dataset.rt }); });
+$('#sh-reset').addEventListener('click', () => { if (shInst) shInst.reset(); status('Properties reset to the sample defaults'); });
+
+function openSheet(sample, from) {
+  opener = from || document.activeElement;
+  if (shInst) instances.delete(shInst);
+  $('#sh-name').textContent = sample.name;
+  $('#sh-ns').textContent = NS[sample.ns].full;
+  $('#sh-blurb').textContent = sample.blurb;
+  $('#sh-docs').href = sample.docs;
+  $('#sh-docs').setAttribute('aria-label', `${sample.name} documentation, opens in a new tab`);
+  shStage.className = 'stage sh-stage' + (sample.pattern ? ' tall' : '');
+  shStage.innerHTML = '';
+  shTab = 0; shLast = null;
+  shInst = createInstance(sample, shStage, { big: true });
+  buildForm(sample); renderTabs();
+  shInst.onRender = s => { syncForm(s); renderSheetCode(s); };
+  shInst.refresh();
+  updateNote(); resetCopy();
+  sheet.showModal();
+  requestAnimationFrame(() => { sheet.classList.add('shown'); shInst.refresh(); });
+}
+function closeSheet() {
+  if (!sheet.open) return;
+  sheet.classList.remove('shown');
+  const done = () => {
+    sheet.close();
+    if (shInst) { instances.delete(shInst); shInst = null; }
+    opener?.focus?.();
+  };
+  if (reduce.matches) done(); else setTimeout(done, 300);
+}
+sheet.addEventListener('cancel', e => { e.preventDefault(); closeSheet(); });
+sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
+$('#sh-close').addEventListener('click', closeSheet);
+
+const status = msg => { $('#sh-status').textContent = ''; requestAnimationFrame(() => { $('#sh-status').textContent = msg; }); };
+let copyTimer = 0;
+function resetCopy() { clearTimeout(copyTimer); $('#sh-copy-ic').innerHTML = ic('copy'); $('#sh-copy-l').textContent = 'Copy'; }
+function selectText(el) { const r = document.createRange(); r.selectNodeContents(el); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+$('#sh-copy').addEventListener('click', () => {
+  if (!shInst) return;
+  const tab = shInst.sample.code[shTab], text = plain(shLast || '');
+  const ok = () => {
+    $('#sh-copy-ic').innerHTML = ic('check'); $('#sh-copy-l').textContent = `Copied ${tab.label}`;
+    status(`Copied ${tab.label} for ${shInst.sample.name}`);
+    clearTimeout(copyTimer); copyTimer = setTimeout(resetCopy, 2000);
+  };
+  const fail = () => { selectText(shCode); $('#sh-copy-l').textContent = 'Selected, press Ctrl+C'; status('Copy is blocked here. The code is selected, press Ctrl+C to copy it.'); clearTimeout(copyTimer); copyTimer = setTimeout(resetCopy, 4000); };
+  try { navigator.clipboard.writeText(text).then(ok, fail); } catch { fail(); }
+});
+
+$$('[data-copy]').forEach(b => b.addEventListener('click', () => {
+  const text = b.dataset.copy, code = b.previousElementSibling;
+  const ok = () => { b.innerHTML = ic('check'); $('#cmd-status').textContent = `Copied ${text}`; setTimeout(() => { b.innerHTML = ic('copy'); }, 2000); };
+  const fail = () => { selectText(code); $('#cmd-status').textContent = 'Copy is blocked here. The command is selected, press Ctrl+C to copy it.'; };
+  try { navigator.clipboard.writeText(text).then(ok, fail); } catch { fail(); }
+}));
+
+/* ---------- tagline: words light up as they cross a line at 62% of the viewport ---------- */
+const tagline = $('#tagline');
+tagline.innerHTML = tagline.textContent.trim().split(/\s+/).map(w => `<span class="w">${w}</span>`).join(' ');
+const words = $$('.w', tagline);
+let ticking = false, tagOn = false;
+const lightWords = () => { ticking = false; const line = innerHeight * 0.62; for (const w of words) w.classList.toggle('lit', w.getBoundingClientRect().top < line); };
+const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(lightWords); } };
+if (reduce.matches) words.forEach(w => w.classList.add('lit'));
+else {
+  new IntersectionObserver(([e]) => {
+    if (e.isIntersecting && !tagOn) { tagOn = true; addEventListener('scroll', onScroll, { passive: true }); lightWords(); }
+    else if (!e.isIntersecting && tagOn) { tagOn = false; removeEventListener('scroll', onScroll); lightWords(); }
+  }).observe(tagline);
+}
+
+/* ---------- nav: current section and mobile menu ---------- */
+const spyLinks = $$('[data-spy]');
+new IntersectionObserver(entries => {
+  for (const e of entries) if (e.isIntersecting) spyLinks.forEach(a => { if (a.dataset.spy === e.target.id) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+}, { rootMargin: '-40% 0px -55% 0px' }).observe($('#controls'));
+['#patterns', '#start'].forEach(id => new IntersectionObserver(entries => {
+  for (const e of entries) if (e.isIntersecting) spyLinks.forEach(a => { if (a.dataset.spy === e.target.id) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+}, { rootMargin: '-40% 0px -55% 0px' }).observe($(id)));
+new IntersectionObserver(([e]) => { if (e.isIntersecting) spyLinks.forEach(a => a.removeAttribute('aria-current')); }, { rootMargin: '-40% 0px -55% 0px' }).observe($('.hero'));
+
+const menu = $('#menu'), menuBtn = $('#menu-btn');
+const menuItems = [...$$('a', menu), $('.seg', menu)];
+menuItems.forEach((el, i) => el.style.setProperty('--d', `${Math.min(i * 60, 400)}ms`));
+function setMenu(open) {
+  menuBtn.setAttribute('aria-expanded', open); menuBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+  document.documentElement.style.overflow = open ? 'hidden' : '';
+  if (open) { menu.hidden = false; requestAnimationFrame(() => requestAnimationFrame(() => menu.classList.add('open'))); }
+  else { menu.classList.remove('open'); setTimeout(() => { if (menuBtn.getAttribute('aria-expanded') === 'false') menu.hidden = true; }, 300); }
+}
+menuBtn.addEventListener('click', () => setMenu(menuBtn.getAttribute('aria-expanded') !== 'true'));
+$$('a', menu).forEach(a => a.addEventListener('click', () => setMenu(false)));
+addEventListener('keydown', e => { if (e.key === 'Escape' && menuBtn.getAttribute('aria-expanded') === 'true') { setMenu(false); menuBtn.focus(); } });
+matchMedia('(min-width: 768px)').addEventListener('change', e => { if (e.matches) setMenu(false); });
+
+/* ---------- boot ---------- */
+$$('i[data-ic]').forEach(i => { i.outerHTML = ic(i.dataset.ic); });
+setDs(ds);
+applyFilter();
+document.fonts?.ready.then(() => instances.forEach(i => i.refresh()));
+requestAnimationFrame(clock);
+const fromHash = ALL.find(s => s.id === location.hash.slice(1));
+if (fromHash) openSheet(fromHash, $(`.card[data-id="${fromHash.id}"] .card-open`));
+</script>
