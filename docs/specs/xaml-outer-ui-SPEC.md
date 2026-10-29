@@ -1,6 +1,6 @@
 # Spec: Afterhours UI in Uno XAML around a JavaScript room
 
-Status: **draft v2; waves 0–3 done on the Skia renderer, wave 4 next.** Rewritten 2026-10-23 after the migration-scope review.
+Status: **draft v2; waves 0–4 done on the Skia renderer, wave 5 next.** Rewritten 2026-10-23 after the migration-scope review.
 No app code changed yet.
 
 ## Settled inputs
@@ -153,11 +153,11 @@ names the JS function it replaces; that JS is deleted when the row ships.
 | 3 ✓ | (inline in `Stage`) | — | — | "SET COMPLETE" |
 | 3 ✓ | `Jukebox` | F | — (the current room) | `playlistPanel` |
 | 3 ✓ | `Chart` | F | — | `chartPanel` |
-| 4 | `Wardrobe` | F | — | `look` + `classicLook` |
-| 4 | `Profile` | F | — | `profile` |
-| 4 | `RestoreSave` | D | `GameState` | "Restore this world?" / "Recover your last backup" |
-| 4 | `Journal` | F | — | `journal` (quests, daily gift, badges) |
-| 4 | `Help` | F | — | "HOW TO PLAY" + first-visit welcome |
+| 4 ✓ | `Wardrobe` | F | — | `look` (`classicLook` stays a game panel) |
+| 4 ✓ | `Profile` | F | — | `profile` |
+| 4 ✓ | (inline in `Profile`) | — | — | "Restore this world?" / "Recover your last backup" |
+| 4 ✓ | `Journal` | F | `JournalRequest(Tab)` | `journal` (quests, badges, wallet) |
+| 4 ✓ | `Help` | F | — | "HOW TO PLAY" |
 | 5 | `Rooms` | F | `RoomFilter` | `directory` + shared `roomDirectory` |
 | 5 | `CreateRoom` | D | — | "CREATE A ROOM" |
 | 5 | `RoomTools` | F | `RoomId` | `roomTools` + "ROOM SETTINGS" |
@@ -584,6 +584,27 @@ the app package. (2) Make the drawer scrim transparent (or opaque) so the room n
 real mouse (the semantic elements sit under the Skia canvas). The +4.35 MB and +1.3 s are the price; the app
 assembly size on Skia is worth a look first.
 
+## What else can move to C# or XAML (2026-10-29)
+
+After wave 3, JavaScript still owns these. Sizes are of `dist/` today.
+
+| Part | JS today | Move to | How | Payoff | Effort |
+|---|---|---|---|---|---|
+| Panels, waves 4–7 | 17 game panels (journal, profile, save recovery, wardrobe, help, navigator, create room, room tools, message board, room logic, events, arcade menu, companion, portal, chat preferences, your circle) and 10 shared-world panels (sessions, join, sign out, restore, report, shared navigator, away, friends, trading, player) | XAML | the wave pattern: host requests and replies | every panel themed, accessible and tested the same way | waves 4–7, planned |
+| Game rules | `game-core.js` (20 KB: actions, rewards, quests, validation) | C# | Phase B: port with shared test vectors, swap `JsGameStore` for `CoreGameStore` | no rule echo through JS; xUnit owns the rules | medium |
+| Furniture catalog | `furniture.js` (22 KB of data) | C# | a JSON resource read by the catalog and the rules | one source for shop, rules and renderer | small, with Phase B |
+| Shared-world client | `online.js` (32 KB: polling, snapshot apply, chat, trades, stage) | C# | `ISharedWorld` over `HttpClient` against the same TypeScript service | removes the second JS state owner | medium–high |
+| Accounts | `accounts.js` (227 KB, Supabase + Turnstile) | C# + one hosted widget | a Supabase C# client (new dependency) and Turnstile kept in a `BrowserHtmlElement` | −200 KB of JS, auth in DI | medium; R9 spike first |
+| Room renderer | `app.js` (43 KB), `room-view.js`, `avatar-renderer.js`, `movement.js`, `seating.js` | C# on Skia | `SKCanvasElement` draws the isometric room inside the XAML tree; movement and seating are plain logic | no hosted element: the room stays visible under panels, one renderer, one input system, no CSS scoping | high (Phase C) |
+| Arcade rounds | `arcade.js` (8.5 KB) | C# | after the renderer, on the same canvas | consistent input | small–medium |
+| Synth and WAV | `music.js` (5.5 KB) | stays JS | Web Audio has no C# API; C# would only call JS | none | — |
+| Server | `service/` (TypeScript) | ASP.NET Core | only past the five-player cap (decided) | — | — |
+
+**Recommendation:** finish the panels (waves 4–7) first, then Phase B (rules and catalog in C#), then the shared
+client. The room renderer on `SKCanvasElement` is the step that makes the client fully C#/XAML and removes the
+"room hides behind panels" limit; it deserves its own spec (Phase C) once Phase B lands, because it carries the
+most risk (render loop, sprites, hit testing, camera). Accounts depend on the R9 spike.
+
 ## Skia switch (2026-10-29)
 
 **Done: the WASM head runs on the Skia renderer.** Approved 2026-10-29 ("switch to skia"). 56/56 runtime checks
@@ -610,6 +631,29 @@ Decisions made while switching:
   mirror is checked separately: it names controls correctly, but its positions are unreliable in panels and it
   can lag a bound title, so it is a check, not the driver.
 - **List items have accessible names** (`ToString()` on the records lists show).
+
+## Wave 4 (2026-10-29): journal, profile, wardrobe, help
+
+**Done.** 65/65 runtime checks on Skia (`docs/screenshots/xaml/wave4/`), 75 Node and 30 xUnit tests.
+
+- **Architecture.** A new `IResident` (journal, profile, saves, outfit; `JsGame` implements it). The host computes
+  the journal with the game's own rules (`G.progress`, quests, achievements, ledger) and replies with it after a
+  claim; profile saves run the game's `profile` action; restoring a save is inspected first (`inspectSave`,
+  `inspectBackup`) and confirmed inline (`confirmRestore`), as the game did. The wardrobe keeps the outfit as local
+  state and asks the game's avatar renderer for each preview (a PNG data URL); the classic sprite picker stays a
+  game panel. Help is static XAML. Pure display rules live in `ResidentRules` (xUnit).
+- **Design.** Journal: three tabs, quest rows with the game's marks (✓ collected, ✦ ready, ○ in progress), a
+  progress bar and the reward button; badge cards fade until unlocked; the wallet total on the accent tint and
+  the ledger with earned amounts in acid. Profile: portrait, name and motto, chat-colour swatches with a ring on
+  the chosen one and a live name preview, keepsake chips, export / restore / backup. Wardrobe: preview with three
+  poses beside the options (stacked on phones), named parts as chips, colours as round swatches.
+- **Interaction.** Rail "Journal", the daily gift and stage rewards open `!Journal`; the top-bar portrait opens
+  `!Profile`; rail "My look" and "Change outfit" open `!Wardrobe`; "New around here?" opens `!Help`. Errors from the
+  game (a bad save file, no backup) show in the panel's `InfoBar`.
+- **Restoring a save** uses Uno's upload picker (`WasmPickerConfiguration.DownloadUpload`): a plain file input
+  in every browser, which the runtime check drives (R10 resolved).
+- **The runtime check clicks like a person** (move, then press and release with a short hold): Uno's Skia input
+  dropped some instant clicks under load, which made different checks fail on each run.
 
 ## Wave 3 results (2026-10-29)
 
@@ -765,7 +809,7 @@ Each wave is one or more conventional commits on its own branch, merged only wit
   `verify-xaml.mjs`). The documented screen-reader support (semantic DOM overlay, "Enable accessibility") is
   for the Skia renderer, so this is a renderer choice, not configuration. The names stay set in XAML so a
   renderer switch picks them up. See Unresolved Questions.
-- **R10 File import:** `FileOpenPicker` on WASM for save restore. Fallback: a JS file input in a small island.
+- **R10 File import:** resolved in wave 4: `FileOpenPicker` with Uno's upload picker.
 
 ## Unresolved Questions
 
