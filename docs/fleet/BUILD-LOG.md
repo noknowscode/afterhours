@@ -5,10 +5,10 @@ Append only. Milestones, not edits. Decisions live in `docs/specs/xaml-outer-ui-
 | Stat | Value |
 |---|---|
 | Sessions | 1 (single coordinator, no fleet threads) |
-| Milestones logged | 8 |
+| Milestones logged | 9 |
 | Brief → first recognizable XAML chrome | 2 h 35 min (14:35 first spec → 17:10 wave 1 runnable) |
-| Runtime checks | wave 0: 13/13 · wave 1: 30/30 · wave 2: 40/40 · wave 3: 54/54 · Skia: 56/56 · wave 4: 65/65 · wave 5: 76/76 |
-| WASM framework download (brotli) | 5.53 MB baseline → 6.49 MB wave 0 → 6.63 MB wave 1 → 6.41 MB wave 2 → 6.51 MB wave 3 → 10.87 MB on Skia → 11.01 MB wave 5 (sum of `_framework/*.br`) |
+| Runtime checks | wave 0: 13/13 · wave 1: 30/30 · wave 2: 40/40 · wave 3: 54/54 · Skia: 56/56 · wave 4: 65/65 · wave 5: 76/76 · wave 6: 82/82 |
+| WASM framework download (brotli) | 5.53 MB baseline → 6.49 MB wave 0 → 6.63 MB wave 1 → 6.41 MB wave 2 → 6.51 MB wave 3 → 10.87 MB on Skia → 11.01 MB wave 5 → 11.09 MB wave 6 (sum of `_framework/*.br`) |
 
 ## 2026-10-23 15:35 — Wave 0: same-page hosting proven (go)
 
@@ -128,5 +128,19 @@ Runs: 76/76 on 3 of 4 full runs after the fixes; the other stopped on a dropped 
 Surprises: a second click on a closing sheet navigated back twice and could leave the page; on Skia the browser's focus stays on the page body after a XAML click, so room shortcuts fired while a
 XAML button had focus (the wave 1 check had passed by a race); a host export named `rooms` hid the page's global
 list of public rooms and the world failed to open; a record member named `Event` breaks MVUX's generated proxy.
+Threads: 0 (single session)
+
+## 2026-10-29 05:53 — Wave 6: your circle, residents, the shared world, players and trades in XAML
+
+Brief (verbatim):
+> "continue through all waves"
+
+Came back: 1 session, 2 publishes, 2 runtime-check rounds to 82/82 (the first failure was a wave 5 check that
+read a closing sheet too early).
+Numbers: 82/82 checks · 78 Node + 43 xUnit tests · seven routes (Friends, Resident, Player, Trade, Away,
+SharedWorld, ChatPrefs) · 10 game panel titles removed · a two-player friend request and trade driven end to end
+Shots: docs/screenshots/xaml/wave6/
+Surprises: none new; the social sheets reuse the stage's watch pattern, and the whisper target moved to .NET
+because the game's chat selects no longer drive the XAML chat box.
 Threads: 0 (single session)
 

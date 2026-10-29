@@ -168,15 +168,15 @@ names the JS function it replaces; that JS is deleted when the row ships.
 | 5 ✓ | `RoomObject` | D | `ItemRequest(ItemId)` | `openObject` "ROOM INTERACTION" |
 | 5 ✓ | `Companion` | F | — | `petPanel` + "ADOPT A COMPANION" |
 | 5 ✓ | `Arcade` | F | — | `arcade` (picker in XAML; a round and its results stay game panels) |
-| 6 | `Friends` | F | — | "YOUR CIRCLE" + shared `friendsPanel` |
-| 6 | `Resident` | D | `ResidentId` | `residentProfile` |
-| 6 | `Player` | D | `PlayerId` | `playerPanel` "CONNECTED PLAYER" |
-| 6 | `Report` | D | `PlayerId` | "Report a player" |
-| 6 | `Trade` | F | `TradeId?` | `tradePanel` |
-| 6 | `Away` | D | — | `awayPanel` |
-| 6 | `SharedWorld` | F | — | "SHARED WORLD" / "SHARED SESSIONS" info |
-| 6 | `ChatPrefs` | D | — | "CHAT PREFERENCES" |
-| 6 | `Chat` | F | — | chat column on narrow widths |
+| 6 ✓ | `Friends` | F | — | "YOUR CIRCLE" + shared `friendsPanel` "FRIENDS & REQUESTS" |
+| 6 ✓ | `Resident` | D | `ResidentRequest(Name)` | `residentProfile` |
+| 6 ✓ | `Player` | D | `PlayerRequest(Id)` | `playerPanel` "CONNECTED PLAYER" |
+| 6 ✓ | (inline in `Player`) | — | — | "Report a player" |
+| 6 ✓ | `Trade` | F | `TradeRequest(Id)` | `tradePanel` |
+| 6 ✓ | `Away` | D | — | `awayPanel` |
+| 6 ✓ | `SharedWorld` | F | — | "SHARED WORLD" / "SHARED SESSIONS" info (joining stays a game panel until wave 7) |
+| 6 ✓ | `ChatPrefs` | D | — | "CHAT PREFERENCES" |
+| 1 ✓ | `Chat` | F | — | chat column on narrow widths (`ChatPanel`, shipped in wave 1) |
 | 7 | `Join` / `Restore` / `SignOut` | D | — | account panels (Turnstile in `CaptchaHost`, Supabase JS unchanged) — **R9 gated** |
 
 Wave 1 has no routes: it builds `MainPage` (top bar, rail, room heading, action bar, editor bar, now playing,
@@ -631,6 +631,48 @@ Decisions made while switching:
   mirror is checked separately: it names controls correctly, but its positions are unreliable in panels and it
   can lag a bound title, so it is a check, not the driver.
 - **List items have accessible names** (`ToString()` on the records lists show).
+
+## Wave 6 (2026-10-29): your circle, residents, the shared world, players, trades
+
+**Done.** 82/82 runtime checks on Skia (`docs/screenshots/xaml/wave6/`), 78 Node and 43 xUnit tests.
+
+### Architecture Brief (wave 6)
+
+- **Services.** A new `ISocial` (`JsGame` implements it). `WatchSocial` is reference-counted like the stage: the
+  first watcher starts a 300 ms host poll (`emitIfChanged('social', world.socialState())`), so every open social
+  sheet follows the shared world as `online.js` applies the service's snapshots (players arriving, a friend
+  request, the other side of a trade). One `Act(op, id, text)` carries every shared-world action to
+  `online.js`'s `socialAct`, which sends it to the service with the same payloads the old buttons used and toasts
+  the same thanks. Opening the next panel (rooms, stage, friends, a player, a trade, the join form, sign out) goes
+  through the game too, after the sheet closes.
+- **Solo.** Your circle, residents and chat preferences stay in the game's save (`residentState`, `residentAct`,
+  `chatPrefsState`, `saveChatPrefs`, `unblock`); edits reply with the new state.
+- **Whisper.** A panel's Whisper button raises `IRoomView.WhisperTo(target)` in .NET; `MainModel` follows it and
+  sets the chat box to whisper that player or resident. No game DOM is involved.
+- **Stays in the game until wave 7:** the join form, restore and sign-out panels. `panel()` opens `!SharedWorld`
+  when the service is down or you are connected, and the join form otherwise.
+- **Testing.** `SocialRules` (world mode, banner, finding a player, live invites, picks, trade text) in xUnit; Node
+  checks that every action the models and the shared-world page send exists in `socialAct`.
+
+### Design Brief (wave 6)
+
+- Friends: circle cards with ♡ and "View ↗", then connected requests (Accept / Decline) and friends (Follow when
+  online, Remove), "Shared sessions" at the foot. Resident and Player: name, line or motto, a wrap of actions with
+  the first primary; Player's report replaces the actions in place.
+- Shared world: the banner on the accent tint, the account box on a raised surface, three destinations, the
+  room's players with a LIVE tag, doorbell rows, trade invites, then the way back to solo.
+- Trade: both sides as raised cards (✓ when confirmed), your inventory as check boxes in a wrap grid, Update my
+  offer and Confirm; a closed trade offers the inventory.
+
+### Interaction Brief (wave 6)
+
+- The chat column's Friends and gear, a click on a resident or a player, the top bar's SHARED WORLD label and the
+  shared world's own buttons open the sheets. Actions that end the conversation (block, report, kick, ban, follow,
+  whisper) close the sheet; the rest update it in place.
+- A trade sheet follows the service: the inviter waits, the invitee accepts, both see the offer, and a cancel on
+  either side shows "Trade closed" on both.
+- Errors from the service (a full offer, a player who left) show in the sheet's `InfoBar`; the service's own toasts
+  stay.
 
 ## Wave 5 (2026-10-29): rooms, room tools, companion, arcade
 
