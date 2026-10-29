@@ -260,6 +260,104 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     await page.waitForTimeout(1000);
     const wrapped = await page.evaluate(id => AfterhoursWorld.game.state.items.find(i => i.id === id)?.contents, ids.gift);
     record(`${tag}: gift wrap opens from the game and wraps the chosen piece`, wrapOpen && wrapped === ids.plant && !(await visible(page, 'A small surprise')), {wrapOpen, wrapped, expected: ids.plant});
+
+    // Wave 3a: the studio, the song library and the room jukebox (its own block, so names stay local).
+    {
+    const draft = () => game(page, () => { const d = AfterhoursWorld.game.state.draft; return {kick: d.pattern[0].join(''), muted: d.muted.join(), bpm: d.bpm, volume: d.volumes[0], title: d.title}; });
+    const before = await draft();
+    await xamlClick(page, 'Beat studio');
+    const studioOpen = await waitText(page, 'Find your sound', 8000);
+    await page.waitForTimeout(800);
+    // Cells sit on a 32 px pitch below the ruler's "1" (StudioRules.CellPitch); the lane column is 232 px plus a 12 px gap.
+    const origin = await page.evaluate(() => {
+      const leaves = text => [...document.querySelectorAll('*')].filter(e => !e.closest('.ah-root') && e.childElementCount === 0 && e.textContent.trim() === text)
+        .map(e => e.getBoundingClientRect()).filter(r => r.width > 0);
+      const lanes = leaves('INSTRUMENT')[0];
+      const r = leaves('1').find(r => r.x > lanes.x && Math.abs(r.y + r.height / 2 - (lanes.y + lanes.height / 2)) < 12);
+      return r && {x: r.x + r.width / 2, y: r.y + r.height / 2};
+    });
+    const cell = (row, col) => page.mouse.click(origin.x + col * 32, origin.y + (row + 1) * 32);
+    const laneX = origin.x - 14 - 12 - 232;
+    await cell(0, 1);
+    await page.waitForTimeout(500);
+    const toggled = (await draft()).kick;
+    await xamlClick(page, '↶ Undo');
+    await page.waitForTimeout(500);
+    const undone = (await draft()).kick;
+    record(`${tag}: studio opens from the rail; a step toggles and Undo restores it`, studioOpen && toggled[1] !== before.kick[1] && undone === before.kick, {toggled, undone});
+
+    await page.mouse.click(laneX + 62 + 4 + 14, origin.y + 32); // KICK lane: M
+    await page.waitForTimeout(400);
+    const muted = (await draft()).muted;
+    await page.mouse.click(laneX + 62 + 4 + 32 + 14, origin.y + 64); // SNARE lane: S
+    await page.waitForTimeout(400);
+    const soloed = (await draft()).muted;
+    record(`${tag}: M mutes a lane and S solos one`, muted === 'true,false,false,false' && soloed === 'true,false,true,true', {muted, soloed});
+
+    const drag = async (x, y, dx) => { await page.mouse.move(x, y); await page.mouse.down(); for (let i = 1; i <= 8; i++) await page.mouse.move(x + dx * i / 8, y); await page.mouse.up(); await page.waitForTimeout(500); };
+    const tempoAt = await page.evaluate(() => { const r = [...document.querySelectorAll('*')].find(e => !e.closest('.ah-root') && e.childElementCount === 0 && e.textContent.trim() === 'Tempo').getBoundingClientRect(); return {x: r.right + 8, y: r.y + r.height / 2}; });
+    await drag(tempoAt.x + 61, tempoAt.y, 80);
+    const volumeKnob = laneX + 62 + 4 + 32 + 32 + Math.round(0.7 * (232 - 62 - 4 - 64 - 4));
+    await drag(volumeKnob, origin.y + 32, -40);
+    const slid = await draft();
+    record(`${tag}: tempo and volume apply while their sliders move`, slid.bpm > 100 && slid.volume < before.volume, {bpm: slid.bpm, volume: slid.volume});
+
+    await xamlClick(page, '▶ Play');
+    await page.waitForTimeout(1500);
+    const audio = await page.evaluate(() => window.__contexts.map(c => c.state));
+    const pausing = await visible(page, 'Ⅱ Pause');
+    await page.screenshot({path: path.join(out, `${band}-studio.png`)});
+    await xamlClick(page, 'Ⅱ Pause');
+    await page.waitForTimeout(500);
+    record(`${tag}: Play runs the draft and the button follows playback`, audio.includes('running') && pausing && await visible(page, '▶ Play'), {audio, pausing});
+
+    const titleBox = await page.evaluate(() => { const r = [...document.querySelectorAll('input, textarea')].find(i => !i.closest('.ah-root') && i.value === 'Untitled afterhours').getBoundingClientRect(); return {x: r.right - 12, y: r.y + r.height / 2}; });
+    await page.mouse.click(titleBox.x, titleBox.y);
+    await page.keyboard.press('End');
+    await page.keyboard.type(' B-side', {delay: 15});
+    await page.waitForTimeout(400);
+    await xamlClick(page, 'Save track');
+    const listed = await waitText(page, 'Untitled afterhours B-side', 5000) && await visible(page, 'Your discography');
+    const songs = await game(page, () => AfterhoursWorld.game.state.songs.map(s => s.title));
+    await page.screenshot({path: path.join(out, `${band}-library.png`)});
+    record(`${tag}: Save track adds it to the XAML library`, listed && songs.join() === 'Untitled afterhours B-side', {songs});
+
+    const coinsBeforeDisc = await game(page, () => AfterhoursWorld.game.state.coins);
+    await xamlClick(page, 'Press disc · 10 ✦');
+    await page.waitForTimeout(600);
+    const pressed = await game(page, () => ({coins: AfterhoursWorld.game.state.coins, discs: AfterhoursWorld.game.state.discs.length}));
+    await xamlClick(page, 'Press disc · 10 ✦');
+    const again = await waitText(page, 'You already pressed this version.', 3000);
+    record(`${tag}: pressing a disc pays 10 and a repeat shows the game's message`, pressed.coins === coinsBeforeDisc - 10 && pressed.discs === 1 && again, {pressed, again});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
+
+    // The jukebox, opened by the game's Room tools panel.
+    await xamlClick(page, 'Room tools');
+    await page.waitForTimeout(500);
+    await page.evaluate(() => document.querySelector('.ah-root #roomPlaylist').click());
+    const jukeboxOpen = await waitText(page, 'The room has a soundtrack', 5000);
+    await xamlClick(page, 'Untitled afterhours B-side');
+    await page.waitForTimeout(300);
+    await xamlClick(page, 'Save playlist');
+    await page.waitForTimeout(800);
+    const playlist = await game(page, () => { const w = AfterhoursWorld, r = w.game.state.rooms.find(r => r.id === w.game.state.activeRoom); return r.playlist.length === 1 && r.playlist[0] === w.game.state.songs[0].id; });
+    record(`${tag}: the game opens the XAML jukebox and its playlist saves`, jukeboxOpen && playlist && !(await visible(page, 'The room has a soundtrack')), {jukeboxOpen, playlist});
+
+    await xamlClick(page, 'Beat studio');
+    await waitText(page, 'Find your sound', 5000);
+    await xamlClick(page, 'Song library');
+    await page.waitForTimeout(500);
+    await xamlClick(page, 'Delete');
+    const asked = await waitText(page, 'Delete this track?', 4000);
+    await xamlClick(page, 'Delete track');
+    await page.waitForTimeout(800);
+    const left = await game(page, () => ({songs: AfterhoursWorld.game.state.songs.length, playlist: AfterhoursWorld.game.state.rooms.every(r => !r.playlist.length)}));
+    const empty = await waitText(page, 'Your first record starts here.', 4000);
+    record(`${tag}: Delete asks first, then removes the track from the library and playlists`, asked && left.songs === 0 && left.playlist && empty, {asked, left, empty});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    }
   }
 
   if (band === 'phone') {
@@ -270,6 +368,16 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     const width = await page.evaluate(() => Math.max(...[...document.querySelectorAll('*')].filter(e => !e.closest('.ah-root') && e.textContent.trim() === 'Room for imagination').map(e => e.getBoundingClientRect().right)));
     await page.screenshot({path: path.join(out, `${band}-shop.png`)});
     record(`${tag}: shop fits the phone`, await waitText(page, 'Room for imagination') && width <= 390, {width});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+
+    await xamlClick(page, '\uE8D6');
+    // A flyout that just closed can still swallow one click; try once more if needed.
+    if (!(await waitText(page, 'Find your sound', 2500))) await xamlClick(page, '\uE8D6');
+    const studioPhone = await waitText(page, 'Find your sound', 5000);
+    const studioRight = await page.evaluate(() => Math.max(...[...document.querySelectorAll('*')].filter(e => !e.closest('.ah-root') && ['Save track', 'Find your sound'].includes(e.textContent.trim())).map(e => e.getBoundingClientRect().right)));
+    await page.screenshot({path: path.join(out, `${band}-studio.png`)});
+    record(`${tag}: studio opens from the bottom bar and fits the phone`, studioPhone && studioRight <= 390, {studioRight});
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
 
