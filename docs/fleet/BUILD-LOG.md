@@ -5,10 +5,10 @@ Append only. Milestones, not edits. Decisions live in `docs/specs/xaml-outer-ui-
 | Stat | Value |
 |---|---|
 | Sessions | 1 (single coordinator, no fleet threads) |
-| Milestones logged | 5 |
+| Milestones logged | 6 |
 | Brief → first recognizable XAML chrome | 2 h 35 min (14:35 first spec → 17:10 wave 1 runnable) |
-| Runtime checks | wave 0: 13/13 · wave 1: 30/30 · wave 2: 40/40 · wave 3: 54/54 |
-| WASM framework download (brotli) | 5.53 MB baseline → 6.49 MB wave 0 → 6.63 MB wave 1 → 6.41 MB wave 2 → 6.51 MB wave 3 (sum of `_framework/*.br`; Skia spike build 10.76 MB) |
+| Runtime checks | wave 0: 13/13 · wave 1: 30/30 · wave 2: 40/40 · wave 3: 54/54 · Skia: 56/56 |
+| WASM framework download (brotli) | 5.53 MB baseline → 6.49 MB wave 0 → 6.63 MB wave 1 → 6.41 MB wave 2 → 6.51 MB wave 3 → 10.87 MB on Skia (sum of `_framework/*.br`) |
 
 ## 2026-10-23 15:35 — Wave 0: same-page hosting proven (go)
 
@@ -84,4 +84,18 @@ Shots: docs/screenshots/xaml/wave3/
 Surprises: a navigation message dialog closed the drawer it was shown from; `ItemsRepeater` realized only the
 first row inside a horizontal scroller on the phone; a soft button on a raised card is invisible (same fill);
 a wave 1 test slept 50 ms and raced under build load.
+Threads: 0 (single session)
+
+## 2026-10-29 02:45 — Switched to the Skia renderer
+
+Brief (verbatim):
+> "switch to skia, and conttinue with whats next. is there more that can be changed to c# or xaml?"
+
+Came back: 1 session, 9 publishes, the runtime check ported to an in-app XAML probe.
+Numbers: 56/56 checks on Skia · framework 10.87 MB brotli · room ready about 5.7 s (localhost) · JS heap 11–14 MB ·
+fonts at boot: 5 of ours plus the Fluent icons (Open Sans's 38 files gone) · symbol font 300 KB, emoji 719 KB lazy
+Shots: docs/screenshots/xaml/skia/
+Surprises: the Toolkit drawer's slide left Uno's accessibility mirror with stale positions (off by up to
+900 px); a transparent scrim still blanks the hosted room; Uno's default font is a 38-file family; an
+`ItemsControl` reported zero size while its cells drew, so the probe walks into zero-size containers.
 Threads: 0 (single session)

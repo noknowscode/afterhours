@@ -44,9 +44,15 @@ public sealed partial record Connection(string Label, bool Connected);
 
 public sealed partial record Chrome(RoomInfo Room, EditorState Editor, ActionState Actions, NowPlaying NowPlaying, Connection Connection);
 
-public sealed partial record ChatLine(bool System, string Name, string Text, string Color);
+public sealed partial record ChatLine(bool System, string Name, string Text, string Color)
+{
+    public override string ToString() => System ? Text : $"{Name}: {Text}";
+}
 
-public sealed partial record WhisperTarget(string Id, string Name);
+public sealed partial record WhisperTarget(string Id, string Name)
+{
+    public override string ToString() => Name;
+}
 
 public sealed partial record ChatState(ImmutableList<ChatLine> Lines, ImmutableList<WhisperTarget> WhisperTargets);
 

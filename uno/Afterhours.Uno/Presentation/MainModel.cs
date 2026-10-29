@@ -4,9 +4,15 @@ using Afterhours.Uno.Services;
 
 namespace Afterhours.Uno.Presentation;
 
-public sealed partial record RoomStop(PublicRoom Room, bool Current);
+public sealed partial record RoomStop(PublicRoom Room, bool Current)
+{
+    public override string ToString() => $"{Room.Title}, {Room.Detail}{(Current ? ", you are here" : "")}";
+}
 
-public sealed partial record ChatMode(string Id, string Name);
+public sealed partial record ChatMode(string Id, string Name)
+{
+    public override string ToString() => Name;
+}
 
 public partial record MainModel(IGameStore Store, IRoomView RoomView, INavigator Navigator)
 {

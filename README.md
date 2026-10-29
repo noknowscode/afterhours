@@ -54,10 +54,16 @@ remain client-side. See [the detailed roadmap](REMAKE-ROADMAP.txt) for limits.
 ## Uno Platform WebAssembly
 
 `uno/` is a real Uno Platform / WinUI application targeting .NET 10 Browser
-WebAssembly. Its XAML (MVUX) draws the menus, HUD, room heading, actions and chat,
-and hosts the JavaScript room in the same page through a `BrowserHtmlElement`.
-The room renderer, synth and most panels remain JavaScript; the migration plan is in
+WebAssembly with the Skia renderer. Its XAML (MVUX) draws the menus, HUD, room
+heading, actions, chat, shop, studio and stage, and hosts the JavaScript room in the
+same page through a `BrowserHtmlElement`. Screen readers work once a user presses Tab
+and activates "Enable accessibility". The room renderer, synth and the remaining
+panels are JavaScript; the migration plan is in
 [docs/specs/xaml-outer-ui-SPEC.md](docs/specs/xaml-outer-ui-SPEC.md).
+
+`node scripts/verify-xaml.mjs [url] [outDir]` drives a published build in Chromium at
+four widths and with two shared-world players. It reads the XAML tree through the
+app's `UiProbe` export and clicks real coordinates.
 
 Install .NET 10 and the Uno prerequisites, then run:
 
