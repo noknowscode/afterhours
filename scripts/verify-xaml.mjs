@@ -57,7 +57,12 @@ const find = async (page, text, ms = 5000) => {
   throw Error('No visible XAML element with text ' + JSON.stringify(String(text)) + '. Last shown: ' + shown);
 };
 // Like a person: move there, then press and release with a short hold (Uno's Skia input can drop an instant click).
-const press = async (page, x, y) => { await page.mouse.move(x, y); await page.waitForTimeout(60); await page.mouse.down(); await page.waitForTimeout(50); await page.mouse.up(); };
+const press = async (page, x, y) => {
+  // Approach from a few pixels away so the element sees the pointer enter before the press.
+  await page.mouse.move(x - 4, y - 4); await page.waitForTimeout(40);
+  await page.mouse.move(x, y); await page.waitForTimeout(80);
+  await page.mouse.down(); await page.waitForTimeout(60); await page.mouse.up();
+};
 const xamlClick = async (page, text) => { const n = await find(page, text); await press(page, n.x + n.w / 2, n.y + n.h / 2); };
 // Real keystrokes into a TextBox found by its accessible name (Uno's TextBox ignores fill()).
 const typeInto = async (page, name, text, {end = false} = {}) => {
@@ -106,6 +111,21 @@ const waitSpoken = async (page, names, ms = 10000) => {
   for (const start = Date.now(); missing.length && Date.now() - start < ms; await page.waitForTimeout(300)) missing = await unspokenNames(page, names);
   return missing;
 };
+// Clicks a sheet's button that opens the next sheet; a click right after a sheet opens can be dropped, so once more.
+const clickThrough = async (page, button, heading) => {
+  await xamlClick(page, button);
+  if (!(await waitText(page, heading, 2500)) && await visible(page, button)) await xamlClick(page, button);
+  const open = await waitText(page, heading, 5000);
+  await page.waitForTimeout(400);
+  return open;
+};
+// Opens a sheet and lets its layout settle before anything types into it.
+const openSheet = async (page, button, heading) => {
+  await xamlClick(page, button);
+  const open = await waitText(page, heading, 5000);
+  await page.waitForTimeout(400);
+  return open;
+};
 const closeGameDialog = page => page.evaluate(() => { const d = document.querySelector('.ah-root #modal'); if (d?.open) d.close(); });
 const game = (page, fn) => page.evaluate(fn);
 
@@ -147,13 +167,24 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     await xamlClick(page, 'Dance');
     record(`${tag}: dance runs and relabels`, await waitText(page, 'Stop dancing', 3000));
     await xamlClick(page, 'Stop dancing');
+    if (!(await waitText(page, 'Dance', 2500))) await xamlClick(page, 'Stop dancing');
+    await waitText(page, 'Dance', 3000);
 
-    // Room keys stay with the room: '1'/'2' typed while a XAML button has focus must not act.
+    // Room keys stay with the room: '1'/'2' typed while a XAML button has focus must not act (on Skia the browser's
+    // focus stays on the body, so the app reports XAML focus to the game).
     const before = await game(page, () => document.querySelector('.ah-root #dance').textContent);
     await page.keyboard.press('2');
     await page.waitForTimeout(300);
-    const unchanged = await game(page, () => document.querySelector('.ah-root #dance').textContent) === before;
-    record(`${tag}: room shortcuts ignore XAML focus`, unchanged);
+    const danceAfter = await game(page, () => document.querySelector('.ah-root #dance').textContent);
+    // Back in the room (a click on it), the same key dances.
+    const room = await game(page, () => { const r = document.querySelector('.ah-root canvas#room').getBoundingClientRect(); return {x: r.x + r.width / 2, y: r.y + r.height * 0.75}; });
+    await press(page, room.x, room.y);
+    await page.waitForTimeout(300);
+    await page.keyboard.press('2');
+    await page.waitForTimeout(300);
+    const danceInRoom = await game(page, () => document.querySelector('.ah-root #dance').textContent);
+    if (danceInRoom !== before) await page.keyboard.press('2');
+    record(`${tag}: room shortcuts ignore XAML focus and work in the room`, danceAfter === before && danceInRoom !== before, {before, danceAfter, danceInRoom});
 
     // Chat from the XAML composer reaches the game's chat and comes back as a line.
     await typeInto(page, 'Room message', 'hello from xaml');
@@ -182,8 +213,8 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     record(`${tag}: play starts audio and shows pause`, audio.includes('running') && await visible(page, 'Ⅱ'), {audio});
     await xamlClick(page, 'Ⅱ');
 
-    // A game panel opened from XAML (the companion stays a game panel until wave 5).
-    await xamlClick(page, 'Companion');
+    // A game panel opened from XAML (your circle stays a game panel until wave 6).
+    await xamlClick(page, 'Friends');
     await page.waitForTimeout(500);
     record(`${tag}: dock opens a game panel`, await game(page, () => document.querySelector('.ah-root #modal').open));
     await page.screenshot({path: path.join(out, `${band}-game-panel.png`)});
@@ -262,10 +293,8 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     // Blueprints, opened by the game's own Room tools panel (in your room).
     await xamlClick(page, 'My room');
     await page.waitForTimeout(900);
-    await xamlClick(page, 'Room tools');
-    await page.waitForTimeout(500);
-    await page.evaluate(() => document.querySelector('.ah-root #blueprints').click());
-    await page.waitForTimeout(1200);
+    await openSheet(page, 'Room tools', 'ROOM SETTINGS');
+    await clickThrough(page, 'Blueprints', 'Keep a room in your pocket');
     const blueprintsOpen = await waitText(page, 'Keep a room in your pocket') && !(await game(page, () => document.querySelector('.ah-root #modal').open));
     await xamlClick(page, 'Save current layout');
     await page.waitForTimeout(800);
@@ -355,10 +384,8 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     await page.waitForTimeout(600);
 
     // The jukebox, opened by the game's Room tools panel.
-    await xamlClick(page, 'Room tools');
-    await page.waitForTimeout(500);
-    await page.evaluate(() => document.querySelector('.ah-root #roomPlaylist').click());
-    const jukeboxOpen = await waitText(page, 'The room has a soundtrack', 5000);
+    await openSheet(page, 'Room tools', 'ROOM SETTINGS');
+    const jukeboxOpen = await clickThrough(page, 'Playlist', 'The room has a soundtrack');
     await xamlClick(page, 'Untitled afterhours B-side');
     await page.waitForTimeout(300);
     await xamlClick(page, 'Save playlist');
@@ -413,6 +440,123 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     record(`${tag}: Leave takes you off the stage`, left && !(await game(page, () => document.body.classList.contains('is-playing'))), {left});
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
+    }
+
+    // Wave 5: the room navigator, room tools and their sheets, the companion, the arcade, room objects and portals.
+    {
+    const roomTitle = () => game(page, () => document.querySelector('.ah-root #roomTitle').textContent);
+    await xamlClick(page, 'Explore rooms');
+    const navigatorOpen = await waitText(page, 'Find your people', 6000);
+    await typeInto(page, 'Search rooms', 'jazz');
+    // Cards are named "title, mood" (the rail lists the public rooms by title too).
+    const searched = await waitText(page, 'Midnight Diner, late-night jazz', 3000) && !(await visible(page, /^The Greenhouse, /));
+    await page.screenshot({path: path.join(out, `${band}-rooms.png`)});
+    await xamlClick(page, 'Midnight Diner');
+    await page.waitForTimeout(1200);
+    const entered = (await roomTitle()).startsWith('Midnight Diner') && !(await visible(page, 'Find your people'));
+    record(`${tag}: the navigator searches and enters a public room`, navigatorOpen && searched && entered, {navigatorOpen, searched, title: await roomTitle()});
+
+    const roomsBefore = await game(page, () => AfterhoursWorld.game.state.rooms.length);
+    await xamlClick(page, 'Explore rooms');
+    await waitText(page, 'Find your people', 5000);
+    const createOpen = await clickThrough(page, '+ Create a room', 'A room of your own');
+    await typeInto(page, 'Room name', 'Wave five den');
+    await xamlClick(page, 'Create room');
+    await page.waitForTimeout(1200);
+    const created = await game(page, () => AfterhoursWorld.game.state.rooms.map(r => r.name));
+    record(`${tag}: a room is created in the navigator and you arrive in it`, createOpen && created.length === roomsBefore + 1 && created.includes('Wave five den') && (await roomTitle()).startsWith('Wave five den'), {created, title: await roomTitle()});
+
+    const toolsOpen = await openSheet(page, 'Room tools', 'ROOM SETTINGS');
+    await typeInto(page, 'Description', 'late records');
+    await xamlClick(page, 'Save settings');
+    await page.waitForTimeout(800);
+    const described = await game(page, () => AfterhoursWorld.room().description);
+    record(`${tag}: room tools save the room's settings`, toolsOpen && described === 'late records' && !(await visible(page, 'ROOM SETTINGS')), {described});
+
+    await openSheet(page, 'Room tools', 'ROOM SETTINGS');
+    const logicOpen = await clickThrough(page, 'Room logic', 'Give your room a little magic');
+    await xamlClick(page, 'Add rule');
+    const ruled = await waitText(page, 'When enter → lights', 3000) && await game(page, () => AfterhoursWorld.room().rules.length) === 1;
+    await xamlClick(page, 'Remove rule');
+    await page.waitForTimeout(600);
+    const unruled = await game(page, () => AfterhoursWorld.room().rules.length) === 0 && !(await visible(page, 'When enter → lights'));
+    record(`${tag}: room logic adds and removes a rule`, logicOpen && ruled && unruled, {logicOpen, ruled, unruled});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
+
+    await openSheet(page, 'Room tools', 'ROOM SETTINGS');
+    const boardOpen = await clickThrough(page, 'Message board', 'Leave a little something');
+    await typeInto(page, 'Your note', 'see you at two');
+    await xamlClick(page, 'Pin note');
+    const pinned = await waitText(page, 'see you at two', 3000) && await game(page, () => AfterhoursWorld.room().notes[0]?.text) === 'see you at two';
+    await page.screenshot({path: path.join(out, `${band}-message-board.png`)});
+    record(`${tag}: the message board pins a note`, boardOpen && pinned, {boardOpen, pinned});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
+
+    await openSheet(page, 'Room tools', 'ROOM SETTINGS');
+    const eventOpen = await clickThrough(page, 'Host an event', 'Bring the room together');
+    await xamlClick(page, 'Host event');
+    await page.waitForTimeout(800);
+    const hosting = await game(page, () => AfterhoursWorld.room().event?.name);
+    record(`${tag}: an event is hosted from room tools`, eventOpen && hosting === 'Listening party' && !(await visible(page, 'Bring the room together')), {hosting});
+
+    const coinsBeforePet = await game(page, () => AfterhoursWorld.game.state.coins);
+    await xamlClick(page, 'Companion');
+    const adoptOpen = await waitText(page, 'A little company', 5000);
+    const portrait = (await nodes(page, 'Your companion')).at(-1);
+    const portraitColours = portrait ? await colours(page, portrait) : 0;
+    await xamlClick(page, 'Adopt · 50 ✦');
+    const adopted = await waitText(page, 'YOUR COMPANION', 3000) && await waitText(page, 'Full belly', 2000);
+    const coinsAfterPet = await game(page, () => AfterhoursWorld.game.state.coins);
+    await xamlClick(page, 'Train');
+    const trained = await waitText(page, /^Training XP: 15\./, 3000);
+    await page.screenshot({path: path.join(out, `${band}-companion.png`)});
+    record(`${tag}: a companion is adopted, drawn and trained`, adoptOpen && portraitColours > 20 && adopted && coinsAfterPet === coinsBeforePet - 50 && trained, {adoptOpen, portraitColours, adopted, coinsBeforePet, coinsAfterPet, trained});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
+
+    await xamlClick(page, 'Arcade');
+    const arcadeOpen = await waitText(page, 'Just one more round', 5000) && await waitText(page, /^BEST \d+$/, 1000);
+    await xamlClick(page, 'Play Tile Rush');
+    await page.waitForTimeout(800);
+    const round = await game(page, () => !!document.querySelector('.ah-root #modal')?.open && !!document.querySelector('.ah-root #arcadeHost'));
+    record(`${tag}: the arcade picker starts a round in the game`, arcadeOpen && round && !(await visible(page, 'Just one more round')), {arcadeOpen, round});
+    await game(page, () => AfterhoursWorld.close());
+    await page.waitForTimeout(500);
+
+    // A lamp placed here opens its object sheet; its first action is the game's.
+    const lamp = await game(page, () => {
+      const out = AfterhoursWorld.act('buy', {type: 'lamp'});
+      const item = AfterhoursWorld.game.state.items.find(i => i.id === out.result.id);
+      Object.assign(item, {placed: true, roomId: AfterhoursWorld.game.state.activeRoom, x: 2, y: 2, rot: 0});
+      AfterhoursWorld.sync();
+      return item.id;
+    });
+    await page.evaluate(id => AfterhoursWorld.useItem(id), lamp);
+    const objectOpen = await waitText(page, 'ROOM INTERACTION', 5000) && await waitText(page, 'Turn light off', 2000);
+    await page.waitForTimeout(800);
+    // The art sits under the piece's name.
+    const name = (await nodes(page, await game(page, () => AfterhoursFurniture.catalog.lamp.name))).at(-1);
+    const artColours = name ? await colours(page, {x: name.x, y: name.y + name.h + 12, w: 240, h: 188}) : 0;
+    await page.screenshot({path: path.join(out, `${band}-room-object.png`)});
+    await xamlClick(page, 'Turn light off');
+    await page.waitForTimeout(800);
+    record(`${tag}: a room object opens its sheet with art, and an action closes it`, objectOpen && artColours > 20 && !(await visible(page, 'ROOM INTERACTION')), {objectOpen, artColours});
+
+    const portal = await game(page, () => {
+      const out = AfterhoursWorld.act('buy', {type: 'portal'});
+      const item = AfterhoursWorld.game.state.items.find(i => i.id === out.result.id);
+      Object.assign(item, {placed: true, roomId: AfterhoursWorld.game.state.activeRoom, x: 4, y: 2, rot: 0});
+      AfterhoursWorld.sync();
+      window.AfterhoursHost.open('Portal', {itemId: item.id});
+      return item.id;
+    });
+    const portalOpen = await waitText(page, 'Where does this lead?', 5000);
+    await xamlClick(page, /^Your afterhours/);
+    await page.waitForTimeout(800);
+    const linked = await page.evaluate(id => { const s = AfterhoursWorld.game.state; return s.items.find(i => i.id === id).destination === s.rooms[0].id; }, portal);
+    record(`${tag}: a portal links to another of your rooms`, portalOpen && linked && !(await visible(page, 'Where does this lead?')), {portalOpen, linked});
     }
 
     // Wave 4: journal, help, wardrobe and profile (last: restoring a save replaces the world).
@@ -587,6 +731,15 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
   await xamlClick(b.page, 'Back to the stage');
   const back = await waitText(b.page, 'The room is listening', 3000) && !(await visible(b.page, 'This week’s chart'));
   record('shared: the weekly chart opens from the stage and ranks the applauded track', over && chartOpen && ranked && back, {over, chartOpen, ranked, back});
+  // Wave 5: the shared navigator lists the public rooms and joins one.
+  await a.page.keyboard.press('Escape');
+  await a.page.waitForTimeout(600);
+  const sharedNavigator = await openSheet(a.page, 'Explore rooms', 'Rooms with a heartbeat') && await waitText(a.page, 'SHARED NAVIGATOR', 1000);
+  await a.page.screenshot({path: path.join(out, 'shared-rooms.png')});
+  await xamlClick(a.page, 'Midnight Diner');
+  await a.page.waitForTimeout(2000);
+  const joined = await a.page.evaluate(() => document.querySelector('.ah-root #roomTitle').textContent);
+  record('shared: the XAML navigator joins a shared public room', sharedNavigator && joined.startsWith('Midnight Diner') && !(await visible(a.page, 'Rooms with a heartbeat')), {sharedNavigator, joined});
   for (const p of players) {
     record('shared: no page errors', !p.errors.length, {errors: p.errors.slice(0, 3)});
     await p.context.close();

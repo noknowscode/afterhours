@@ -100,6 +100,34 @@ test('panels that moved to XAML are requests to the host, not game markup', asyn
   assert.match(game, /function profile\(\)\{openPanel\('Profile'\);\}/);
   assert.match(game, /look=function\(\)\{openPanel\('Wardrobe'\);\};/);
   assert.match(game, /button\('help',\(\)=>openPanel\('Help'\)\);/);
+  for (const title of ['ROOM NAVIGATOR', 'CREATE A ROOM', 'ROOM SETTINGS', 'ROOM TOOLS', 'MESSAGE BOARD', 'ROOM LOGIC', 'HOST AN EVENT',
+    'ADOPT A COMPANION', 'YOUR COMPANION', 'ROOM INTERACTION', 'LINK A PORTAL'])
+    assert.ok(!game.includes(`'${title}'`), title + ' is still built by the game');
+  assert.ok(!online.includes("'SHARED NAVIGATOR'"), 'the shared navigator is still built by the online client');
+  assert.match(game, /function directory\(filter='all'\)\{openPanel\('Rooms',\{filter\}\);\}/);
+  assert.match(online, /function roomDirectory\(\)\{W\.openPanel\('Rooms',\{filter:'all'\}\);\}/);
+  for (const [fn, route] of [['notesPanel', 'MessageBoard'], ['rulesPanel', 'RoomLogic'], ['eventPanel', 'RoomEvent'], ['arcade', 'Arcade'], ['petPanel', 'Companion']])
+    assert.match(game, new RegExp(`function ${fn}\\(\\)\\{openPanel\\('${route}'\\);\\}`), fn + ' does not open ' + route);
+  assert.match(game, /openPanel\('RoomTools'\)/);
+  assert.match(game, /openPanel\('RoomObject',\{itemId:item\.id\}\)/);
+  assert.match(game, /openPanel\('Portal',\{itemId:item\.id\}\)/);
+});
+
+test('every function the app imports is exported by host.mjs', async () => {
+  const bridge = await readFile(new URL('../uno/Afterhours.Uno/Interop/GameHost.cs', import.meta.url), 'utf8');
+  const host = await import('../dist/host.mjs');
+  const imported = new Set([...bridge.matchAll(/\[JSImport\("(\w+)", Module\)\]/g)].map(m => m[1]));
+  assert.ok(imported.size > 40, 'expected the bridge to import the host functions');
+  for (const name of imported) assert.equal(typeof host[name], 'function', name + ' is not exported by host.mjs');
+});
+
+test('every room panel room tools asks for exists in the game', async () => {
+  const game = await readFile(new URL('../dist/game.js', import.meta.url), 'utf8');
+  const page = await readFile(new URL('../uno/Afterhours.Uno/Views/RoomToolsPage.xaml', import.meta.url), 'utf8');
+  const asked = new Set([...page.matchAll(/Command="\{Binding Open\}" CommandParameter="(\w+)"/g)].map(m => m[1]));
+  const panels = game.slice(game.indexOf('const roomPanels={'), game.indexOf('function saveRoomSettings('));
+  assert.equal(asked.size, 6);
+  for (const name of asked) assert.match(panels, new RegExp(`\\b${name}:`), name + ' is not a room panel in game.js');
 });
 
 test('every outfit part the wardrobe offers is one the game knows', () => {
