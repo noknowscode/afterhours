@@ -13,18 +13,21 @@ public class LatestTests
         latest.Set(new Box(1));
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var seen = new List<int>();
+        // Latest keeps only the newest value, so each Set waits until the watcher has taken the previous one.
+        var took = new SemaphoreSlim(0);
         var watching = Task.Run(async () =>
         {
             await foreach (var box in latest.Watch(cts.Token))
             {
                 seen.Add(box.N);
+                took.Release();
                 if (box.N == 3)
                     break;
             }
         });
-        await Task.Delay(50);
+        await took.WaitAsync(cts.Token);
         latest.Set(new Box(2));
-        await Task.Delay(50);
+        await took.WaitAsync(cts.Token);
         latest.Set(new Box(3));
         await watching;
         Assert.Equal([1, 2, 3], seen);
