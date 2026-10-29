@@ -1,6 +1,6 @@
 {
   "base": "http://127.0.0.1:4177/",
-  "date": "2026-10-29T01:24:39.514Z",
+  "date": "2026-10-29T01:50:35.136Z",
   "results": [
     {
       "key": "wide 1440px: boot panel gone, coins shown",
@@ -118,8 +118,8 @@
       "key": "wide 1440px: gift wrap opens from the game and wraps the chosen piece",
       "pass": true,
       "wrapOpen": true,
-      "wrapped": "f7862a2f-e79d-4a64-b62a-c04b77d5c380",
-      "expected": "f7862a2f-e79d-4a64-b62a-c04b77d5c380"
+      "wrapped": "0acab72b-510e-44ff-927b-fd779b4684e7",
+      "expected": "0acab72b-510e-44ff-927b-fd779b4684e7"
     },
     {
       "key": "wide 1440px: studio opens from the rail; a step toggles and Undo restores it",
@@ -179,6 +179,30 @@
         "playlist": true
       },
       "empty": true
+    },
+    {
+      "key": "wide 1440px: the dock opens the XAML stage; a song queues, counts down and plays",
+      "pass": true,
+      "stageOpen": true,
+      "next": true,
+      "onStage": true,
+      "audio": [
+        "running",
+        "running"
+      ]
+    },
+    {
+      "key": "wide 1440px: a finished set shows its reward in the stage panel",
+      "pass": true,
+      "done": true,
+      "reward": true,
+      "coinsBefore": 425,
+      "coinsAfter": 465
+    },
+    {
+      "key": "wide 1440px: Leave takes you off the stage",
+      "pass": true,
+      "left": true
     },
     {
       "key": "wide 1440px: no page errors or failed requests",
@@ -276,6 +300,23 @@
     {
       "key": "shared: a XAML chat line reaches the other player's XAML chat",
       "pass": true
+    },
+    {
+      "key": "shared: the XAML stage queues a set, plays it to the room and takes applause",
+      "pass": true,
+      "sharedOpen": true,
+      "queued": true,
+      "heard": true,
+      "applauded": true,
+      "counted": true
+    },
+    {
+      "key": "shared: the weekly chart opens from the stage and ranks the applauded track",
+      "pass": true,
+      "over": true,
+      "chartOpen": true,
+      "ranked": true,
+      "back": true
     },
     {
       "key": "shared: no page errors",

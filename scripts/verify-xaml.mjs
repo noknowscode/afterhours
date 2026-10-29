@@ -145,8 +145,8 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     record(`${tag}: play starts audio and shows pause`, audio.includes('running') && await visible(page, 'Ⅱ'), {audio});
     await xamlClick(page, 'Ⅱ');
 
-    // A game panel opened from XAML.
-    await xamlClick(page, 'Stage');
+    // A game panel opened from XAML (the companion stays a game panel until wave 5).
+    await xamlClick(page, 'Companion');
     await page.waitForTimeout(500);
     record(`${tag}: dock opens a game panel`, await game(page, () => document.querySelector('.ah-root #modal').open));
     await page.screenshot({path: path.join(out, `${band}-game-panel.png`)});
@@ -358,6 +358,36 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
     }
+
+    // Wave 3b: the solo stage from the dock, through a whole set to its reward.
+    {
+    await game(page, () => AfterhoursWorld.act('song', {...AfterhoursWorld.game.state.draft, id: '', title: 'Stage sketch'}));
+    await xamlClick(page, 'Stage');
+    const stageOpen = await waitText(page, 'Your moment on Side B', 6000) && await waitText(page, 'Open mic · your slot is ready');
+    const coinsBefore = await game(page, () => AfterhoursWorld.game.state.coins);
+    await xamlClick(page, 'Stage sketch');
+    const next = await waitText(page, 'YOU’RE NEXT', 4000);
+    const onStage = await waitText(page, 'ON STAGE', 8000) && await waitText(page, /^\d+s remaining$/, 3000);
+    const audio = await page.evaluate(() => window.__contexts.map(c => c.state));
+    await page.screenshot({path: path.join(out, `${band}-stage.png`)});
+    record(`${tag}: the dock opens the XAML stage; a song queues, counts down and plays`, stageOpen && next && onStage && audio.includes('running'), {stageOpen, next, onStage, audio});
+
+    const done = await waitText(page, 'You found your frequency', 26000);
+    const reward = await visible(page, '+40 credits');
+    const coinsAfter = await game(page, () => AfterhoursWorld.game.state.coins);
+    await page.screenshot({path: path.join(out, `${band}-set-complete.png`)});
+    record(`${tag}: a finished set shows its reward in the stage panel`, done && reward && coinsAfter === coinsBefore + 40, {done, reward, coinsBefore, coinsAfter});
+
+    await xamlClick(page, 'Back to the stage');
+    // The now-playing bar shows the title too, so pick the song by its picker label.
+    await xamlClick(page, 'Join stage ↗');
+    await waitText(page, 'YOU’RE NEXT', 4000);
+    await xamlClick(page, 'Leave queue / stage');
+    const left = await waitText(page, 'Open mic · your slot is ready', 4000);
+    record(`${tag}: Leave takes you off the stage`, left && !(await game(page, () => document.body.classList.contains('is-playing'))), {left});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    }
   }
 
   if (band === 'phone') {
@@ -419,6 +449,33 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
   await b.page.waitForTimeout(600);
   await b.page.screenshot({path: path.join(out, 'shared-receiver.png')});
   record('shared: a XAML chat line reaches the other player\'s XAML chat', (await xamlText(b.page, /hi from the other tab/)).length > 0);
+
+  // Wave 3b: the shared stage. One player queues a track, the other applauds it, and the chart ranks it.
+  // The server may suffix a display name (xamlalpha-e0d2).
+  await game(a.page, () => AfterhoursWorld.act('song', {...AfterhoursWorld.game.state.draft, id: '', title: 'Shared sketch'}));
+  await a.page.waitForTimeout(1000);
+  await xamlClick(a.page, 'Stage');
+  const sharedOpen = await waitText(a.page, 'The room is listening', 6000);
+  await xamlClick(a.page, 'Shared sketch');
+  const queued = await waitText(a.page, /^(UP NEXT|ON STAGE)$/, 8000);
+  await xamlClick(b.page, 'Stage');
+  await waitText(b.page, 'The room is listening', 6000);
+  const heard = await waitText(b.page, 'ON STAGE', 8000) && await waitText(b.page, /^by xamlalpha(-\w+)? · \d+s remaining$/, 3000);
+  await xamlClick(b.page, '♡ Applaud');
+  const applauded = await waitText(b.page, 'Applauded ✓', 5000);
+  const counted = await waitText(a.page, '1 applause', 5000) && await visible(a.page, 'Your performance');
+  await b.page.screenshot({path: path.join(out, 'shared-stage.png')});
+  record('shared: the XAML stage queues a set, plays it to the room and takes applause', sharedOpen && queued && heard && applauded && counted, {sharedOpen, queued, heard, applauded, counted});
+
+  const over = await waitText(b.page, 'The stage is open. Be the first to play tonight.', 26000);
+  await xamlClick(b.page, 'Weekly chart ↗');
+  const chartOpen = await waitText(b.page, 'This week’s chart', 5000);
+  const ranked = await waitText(b.page, 'Shared sketch', 5000);
+  await b.page.waitForTimeout(600); // let the drawer finish sliding in
+  await b.page.screenshot({path: path.join(out, 'shared-chart.png')});
+  await xamlClick(b.page, 'Back to the stage');
+  const back = await waitText(b.page, 'The room is listening', 3000) && !(await visible(b.page, 'This week’s chart'));
+  record('shared: the weekly chart opens from the stage and ranks the applauded track', over && chartOpen && ranked && back, {over, chartOpen, ranked, back});
   for (const p of players) {
     record('shared: no page errors', !p.errors.length, {errors: p.errors.slice(0, 3)});
     await p.context.close();
