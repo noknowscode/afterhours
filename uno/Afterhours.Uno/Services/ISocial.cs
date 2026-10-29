@@ -6,9 +6,13 @@ public interface ISocial
     // While anyone watches, the game sends the social state as it changes.
     IAsyncEnumerable<SocialState> WatchSocial(CancellationToken ct);
 
+    // The social state now (the join panel reads it once).
+    SocialState Now();
+
     // A shared-world action by name (friend, accept, decline, unfriend, follow, block, report, kick, ban, letIn, deny,
-    // trade, tradeAccept, tradeOffer, tradeConfirm, tradeCancel, awaySeen, link, leave, retry), or a panel the game
-    // opens next (rooms, stage, friends, sessions, player, openTrade, signOut). Result is a new trade's id.
+    // trade, tradeAccept, tradeOffer, tradeConfirm, tradeCancel, awaySeen, link, leave, retry, join with the name as text,
+    // restore, confirmSignOut), or a panel the game opens next (rooms, stage, friends, sessions, player, openTrade,
+    // signOut, restorePanel). Result is a new trade's id.
     Task<SocialReply> Act(string op, string id = "", string text = "");
 
     ResidentState? Resident(string name);

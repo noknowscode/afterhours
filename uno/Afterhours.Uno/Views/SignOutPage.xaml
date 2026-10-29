@@ -1,0 +1,18 @@
+<Page x:Class="Afterhours.Uno.Views.SignOutPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=340, Narrow=420}">
+  <!-- Sign out on this device. Opened with !SignOut (the shared world, for a linked character). -->
+  <StackPanel Padding="24" Spacing="12">
+    <TextBlock Text="SIGN OUT" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+    <TextBlock Text="Your place is saved." Style="{StaticResource TitleText}" />
+    <TextBlock Text="Your rooms, furniture and tracks stay saved. Use Restore account with Google when you return. This signs out only this device."
+               Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+    <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button Content="Sign out" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding SignOut}" />
+      <Button Content="Stay here" Style="{StaticResource SoftButtonStyle}" Command="{Binding Stay}" />
+    </StackPanel>
+  </StackPanel>
+</Page>

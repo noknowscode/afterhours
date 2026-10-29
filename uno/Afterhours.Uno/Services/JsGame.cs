@@ -191,6 +191,8 @@ public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, I
         }
     }
 
+    public SocialState Now() => _mounted ? JsonSerializer.Deserialize(GameHost.SocialNow(), Ctx.SocialState) ?? SocialState.Empty : SocialState.Empty;
+
     public async Task<SocialReply> Act(string op, string id = "", string text = "") =>
         _mounted ? JsonSerializer.Deserialize(await GameHost.Social(op, id, text), Ctx.SocialReply)! : SocialReply.NotReady;
 

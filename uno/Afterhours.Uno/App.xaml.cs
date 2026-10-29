@@ -87,7 +87,10 @@ public partial class App : Application
             new DataViewMap<TradePage, TradeModel, TradeRequest>(),
             new ViewMap<AwayPage, AwayModel>(),
             new ViewMap<SharedWorldPage, SharedWorldModel>(),
-            new ViewMap<ChatPrefsPage, ChatPrefsModel>());
+            new ViewMap<ChatPrefsPage, ChatPrefsModel>(),
+            new ViewMap<JoinPage, JoinModel>(),
+            new ViewMap<RestorePage, RestoreModel>(),
+            new ViewMap<SignOutPage, SignOutModel>());
         routes.Register(
             new RouteMap("", View: views.FindByViewModel<ShellModel>(), Nested:
             [
@@ -119,6 +122,9 @@ public partial class App : Application
                 new("Away", View: views.FindByViewModel<AwayModel>()),
                 new("SharedWorld", View: views.FindByViewModel<SharedWorldModel>()),
                 new("ChatPrefs", View: views.FindByViewModel<ChatPrefsModel>()),
+                new("Join", View: views.FindByViewModel<JoinModel>()),
+                new("Restore", View: views.FindByViewModel<RestoreModel>()),
+                new("SignOut", View: views.FindByViewModel<SignOutModel>()),
             ]));
     }
 

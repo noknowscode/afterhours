@@ -1,0 +1,18 @@
+<Page x:Class="Afterhours.Uno.Views.RestorePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=340, Narrow=420}">
+  <!-- Restore a linked character. Opened with !Restore (the join panel). -->
+  <StackPanel Padding="24" Spacing="12">
+    <TextBlock Text="RESTORE YOUR CHARACTER" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+    <TextBlock Text="Welcome back." Style="{StaticResource TitleText}" />
+    <TextBlock Text="Sign in with the Google account you linked before. This opens that account’s saved character. Guest progress from another character is not merged."
+               Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+    <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button Content="Continue with Google" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Continue}" />
+      <Button Content="Back" Style="{StaticResource SoftButtonStyle}" Command="{Binding Back}" />
+    </StackPanel>
+  </StackPanel>
+</Page>

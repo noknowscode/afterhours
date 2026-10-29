@@ -1,0 +1,34 @@
+<Page x:Class="Afterhours.Uno.Views.JoinPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      xmlns:interop="using:Afterhours.Uno.Interop"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=340, Narrow=440}">
+  <!-- Join the shared world. Opened with !Join (the top bar's JOIN SHARED WORLD). -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+  </Page.Resources>
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="12">
+      <TextBlock Text="JOIN THE SHARED WORLD" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="See you after hours" Style="{StaticResource TitleText}" />
+      <TextBlock Text="Meet real players, share a room, hear the same performance, and trade furniture. Your online character and your solo world have separate progress."
+                 Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+      <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+      <TextBox Header="Your name" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="20" AutomationProperties.Name="Your name" />
+      <!-- The host's security check (Cloudflare Turnstile) draws into this native element when the world asks for it. -->
+      <interop:RoomHost x:Name="Challenge" MinHeight="70" Visibility="{Binding NeedsCheck, Converter={StaticResource ShownWhen}}" />
+      <Button Content="{Binding JoinLabel}" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Join}" />
+      <TextBlock Text="A guest character is remembered in this browser. Keep this browser’s data to retain access. No email or password required."
+                 Style="{StaticResource CaptionText}" TextWrapping="Wrap" Visibility="{Binding Unmanaged, Converter={StaticResource ShownWhen}}" />
+      <StackPanel Spacing="8" Visibility="{Binding Managed, Converter={StaticResource ShownWhen}}">
+        <TextBlock Text="Your progress saves to the shared world. Link Google after joining to recover it on another device. An unlinked guest depends on this browser."
+                   Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+        <TextBlock Text="Google recovery is invite-only during this playtest. Ask the host to add your Google email before linking. Keep this browser’s data to return as a guest."
+                   Style="{StaticResource CaptionText}" TextWrapping="Wrap" Visibility="{Binding InviteOnly, Converter={StaticResource ShownWhen}}" />
+        <Button Content="Restore account with Google" Style="{StaticResource SoftButtonStyle}" Command="{Binding Restore}" />
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Page>

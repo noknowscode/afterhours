@@ -104,4 +104,15 @@ public static class SocialRules
     public static string AccountText(AccountStatus account) => account.Anonymous
         ? "Link Google to bring your rooms, tracks, and furniture with you on another device."
         : "Sign in with the same Google account to recover your saved progress.";
+
+    public static string JoinLabel(SocialState s) => (s.Managed, s.Join?.Remembered == true) switch
+    {
+        (true, true) => "Continue my character",
+        (true, false) => "Play as a guest",
+        (false, true) => "Continue online character",
+        _ => "Create online character",
+    };
+
+    // A managed world checks a new guest with the host's security widget first.
+    public static bool NeedsCheck(SocialState s) => s.Managed && s.Join?.Remembered != true;
 }

@@ -195,6 +195,9 @@ internal static partial class GameHost
     [JSImport("socialWatch", Module)]
     public static partial void SocialWatch(bool on);
 
+    [JSImport("socialNow", Module)]
+    public static partial string SocialNow();
+
     [JSImport("social", Module)]
     public static partial Task<string> Social(string op, string id, string text);
 

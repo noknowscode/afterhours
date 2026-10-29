@@ -92,7 +92,7 @@ public partial record MainModel(IGameStore Store, IRoomView RoomView, INavigator
                     navigator.NavigateRouteAsync(navigator, "Player", qualifier: Qualifiers.Dialog, data: new PlayerRequest(id)),
                 "Trade" when request.Text("id") is { } id =>
                     navigator.NavigateRouteAsync(navigator, "Trade", qualifier: Qualifiers.Dialog, data: new TradeRequest(id)),
-                "Friends" or "Away" or "SharedWorld" or "ChatPrefs" =>
+                "Friends" or "Away" or "SharedWorld" or "ChatPrefs" or "Join" or "Restore" or "SignOut" =>
                     navigator.NavigateRouteAsync(navigator, request.Route, qualifier: Qualifiers.Dialog),
                 "Profile" or "Wardrobe" or "Help" or "RoomTools" or "RoomLogic" or "RoomEvent" or "MessageBoard" or "Companion" or "Arcade" =>
                     navigator.NavigateRouteAsync(navigator, request.Route, qualifier: Qualifiers.Dialog),

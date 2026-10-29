@@ -71,8 +71,10 @@
         },name,W.getScene().spriteIndex);
         token=out.token;next=out.snapshot;
       }
-      W.saveWorld();solo=G.clone(W.game.state);online=true;lastGameRevision=-1;apply(next);renderRoom();W.close();W.toast('You joined the shared world.');awayPanel();
-    }catch(e){const error=get('panelError');if(error){error.hidden=false;error.textContent=e.message;}else W.toast(e.message);}
+      W.saveWorld();solo=G.clone(W.game.state);online=true;lastGameRevision=-1;apply(next);renderRoom();W.close();W.toast('You joined the shared world.');
+      // After the join sheet has closed.
+      setTimeout(awayPanel,600);return null;
+    }catch(e){return e.message;}
   }
   function disconnect(){
     if(!online)return;
@@ -81,43 +83,21 @@
     get('connectionLabel').textContent='SOLO WORLD';$('footer>span').textContent='Saved on this device · Resident characters are NPCs';
     W.close();W.toast('Back in your solo world. Online progress is kept on the service.');
   }
-  // Shared sessions (the offline note and the connected world) are a XAML panel in the Uno app; joining and
-  // signing out stay game panels until the account panels move.
-  function panel(){
-    if(!ready||online){W.openPanel('SharedWorld');return;}
-    joinPanel();
-  }
-  function joinPanel(){
-    W.panel('See you after hours','JOIN THE SHARED WORLD',`<p>Meet real players, share a room, hear the same performance, and trade furniture. Your online character and your solo world have separate progress.</p><form id="joinWorldForm"><label class="form-field">Your name<input id="onlineName" maxlength="20" value="${h(W.game.state.profile.name)}"></label><button class="primary">${localStorage.getItem('afterhours-online-token')?'Continue online character':'Create online character'}</button></form><p class="small-note">A guest character is remembered in this browser. Keep this browser’s data to retain access. No email or password required.</p>`);
-    if(managed){
-      get('joinWorldForm').querySelector('button').textContent=window.AfterhoursAccount?.remembered()?'Continue my character':'Play as a guest';
-      get('joinWorldForm').insertAdjacentHTML('beforeend','<div id="accountChallenge"></div>');
-      get('joinWorldForm').nextElementSibling.innerHTML='Your progress saves to the shared world. Link Google after joining to recover it on another device. An unlinked guest depends on this browser.<br><button class="soft-button" id="restoreAccount">Restore account with Google</button>';
-      if(window.AFTERHOURS_AUTH?.googleInviteOnly)get('restoreAccount').insertAdjacentHTML('beforebegin','<p>Google recovery is invite-only during this playtest. Ask the host to add your Google email before linking. Keep this browser’s data to return as a guest.</p>');
-      W.button('restoreAccount',restorePanel);
+  // Shared sessions, joining, restoring and signing out are XAML panels in the Uno app; socialAct runs their actions.
+  function panel(){W.openPanel(!ready||online?'SharedWorld':'Join');}
+  function restorePanel(){W.openPanel('Restore');}
+  function signOutPanel(){W.openPanel('SignOut');}
+  // Joins with the name from the join panel. A managed world first shows the security check in the panel's
+  // challenge element (a native element the app marks with data-account-challenge).
+  async function join(name){
+    let captcha;
+    if(managed&&!window.AfterhoursAccount?.remembered()){
+      const host=document.querySelector('[data-account-challenge]');
+      if(!host)throw Error('The security check could not be shown. Please try again.');
+      captcha=await window.AfterhoursAccount.challenge(host);
     }
-    get('joinWorldForm').onsubmit=async e=>{
-      e.preventDefault();const button=get('joinWorldForm').querySelector('button');button.disabled=true;
-      try{
-        let captcha;
-        if(managed&&!window.AfterhoursAccount?.remembered())captcha=await window.AfterhoursAccount.challenge(get('accountChallenge'));
-        await connect(get('onlineName').value,captcha);
-      }catch(error){W.toast(error.message);}finally{button.disabled=false;}
-    };
-  }
-  function signOutPanel(){
-    W.panel('Your place is saved.','SIGN OUT','<p>Your rooms, furniture and tracks stay saved. Use Restore account with Google when you return. This signs out only this device.</p><button class="primary" id="confirmSignOut">Sign out</button><button class="soft-button" id="cancelSignOut">Stay here</button>');
-    W.button('cancelSignOut',()=>{W.close();panel();});
-    W.button('confirmSignOut',async()=>{
-      const button=get('confirmSignOut');button.disabled=true;
-      try{await window.AfterhoursAccount.signOut();disconnect();token='';account=null;W.toast('Signed out. Restore with Google to continue your saved character.');}
-      catch(error){button.disabled=false;W.toast(error.message);}
-    });
-  }
-  function restorePanel(){
-    W.panel('Welcome back.','RESTORE YOUR CHARACTER','<p>Sign in with the Google account you linked before. This opens that account’s saved character. Guest progress from another character is not merged.</p><button id="confirmRestore" class="primary">Continue with Google</button><button id="cancelRestore" class="soft-button">Back</button>');
-    W.button('cancelRestore',joinPanel);
-    W.button('confirmRestore',()=>window.AfterhoursAccount.restore().catch(error=>W.toast(error.message)));
+    const error=await connect(name,captcha);
+    if(error)throw Error(error);
   }
   function playerPanel(id){select('peer',id);W.openPanel('Player',{id});}
   // The shared navigator is a XAML panel; it reads roomsState and joins through joinRoomKey.
@@ -199,7 +179,8 @@
       inventory:open?W.game.state.items.filter(i=>i.placed===false&&!i.wrapped&&!i.contents).map(i=>({id:i.id,name:piece(i),offered:(t.offers?.[self]||[]).includes(i.id)})):[]};
   }
   function socialState(){
-    if(!online)return {ready,connected:false,managed};
+    if(!online)return {ready,connected:false,managed,join:{name:W.game.state.profile.name,remembered:managed?!!window.AfterhoursAccount?.remembered():!!localStorage.getItem('afterhours-online-token'),
+      inviteOnly:!!window.AFTERHOURS_AUTH?.googleInviteOnly}};
     const self=state.self.id,away=state.away||[];
     const person=(p,here)=>({id:p.id,name:p.name,level:p.level||1,motto:p.motto||'',online:here||!!p.online,status:here?'Here tonight':p.online?'Here now':p.lastSeen?'Seen '+ago(p.lastSeen):'Offline'});
     return {ready,connected:true,managed,name:state.self.name,
@@ -222,6 +203,12 @@
       case 'player':playerPanel(id);return {ok:true};
       case 'openTrade':W.openPanel('Trade',{id});return {ok:true};
       case 'signOut':signOutPanel();return {ok:true};
+      case 'restorePanel':restorePanel();return {ok:true};
+      case 'join':try{await join(text);return {ok:true};}catch(error){return {ok:false,error:error.message};}
+      case 'restore':try{await window.AfterhoursAccount.restore();return {ok:true};}catch(error){return {ok:false,error:error.message};}
+      case 'confirmSignOut':
+        try{await window.AfterhoursAccount.signOut();disconnect();token='';account=null;W.toast('Signed out. Restore with Google to continue your saved character.');return {ok:true};}
+        catch(error){return {ok:false,error:error.message};}
       case 'link':try{await window.AfterhoursAccount.link();return {ok:true};}catch(error){return {ok:false,error:error.message};}
       case 'follow':{const friend=state?.friends.find(p=>p.id===id);return {ok:!!friend&&await joinRoom(friend.room)};}
     }
@@ -301,7 +288,7 @@
   async function health(){if(!base)return;try{const out=await request('/api/health',undefined,false);ready=out.ok===true;managed=out.accounts==='supabase';if(ready&&!online)label.textContent='JOIN SHARED WORLD';}catch{ready=false;}}
   health().then(()=>{
     if(ready&&managed&&localStorage.getItem('afterhours-account-resume')){
-      localStorage.removeItem('afterhours-account-resume');connect(W.game.state.profile.name);
+      localStorage.removeItem('afterhours-account-resume');connect(W.game.state.profile.name).then(error=>{if(error)W.toast(error);});
     }
   });
 })();

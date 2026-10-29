@@ -306,3 +306,4 @@ export function openResident(name) { world.openResident(name); }
 export function chatPrefs() { return reply({ ok: true, result: world.chatPrefsState() }); }
 export function saveChatPrefs(mute) { return reply({ ok: true, result: world.saveChatPrefs(mute) }); }
 export function unblock(name) { return reply({ ok: true, result: world.unblock(name) }); }
+export function socialNow() { return JSON.stringify(world.socialState()); }

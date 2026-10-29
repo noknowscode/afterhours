@@ -28,10 +28,13 @@ public sealed partial record AwayItem(string Icon, string Text, string Ago);
 
 public sealed partial record AccountStatus(bool Anonymous, bool InviteOnly);
 
+// Before you join: the name to suggest, whether this browser already has a character, and the invite-only note.
+public sealed partial record JoinInfo(string Name, bool Remembered, bool InviteOnly);
+
 // Ready: the shared world's service answers. Connected: this player joined it. The lists are empty until then.
 public sealed partial record SocialState(bool Ready, bool Connected, bool Managed, string? Name, AccountStatus? Account,
     ImmutableList<string>? Circle, ImmutableList<Player>? Peers, ImmutableList<Player>? Friends, ImmutableList<PersonRef>? Requests,
-    ImmutableList<PersonRef>? Doors, ImmutableList<Trade>? Trades, bool InOwnRoom, ImmutableList<AwayItem>? Away, int AwayMore)
+    ImmutableList<PersonRef>? Doors, ImmutableList<Trade>? Trades, bool InOwnRoom, ImmutableList<AwayItem>? Away, int AwayMore, JoinInfo? Join = null)
 {
     public static SocialState Empty { get; } = new(false, false, false, null, null, [], [], [], [], [], [], false, [], 0);
 }
