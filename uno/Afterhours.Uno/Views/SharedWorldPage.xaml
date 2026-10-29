@@ -1,0 +1,118 @@
+<Page x:Class="Afterhours.Uno.Views.SharedWorldPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=360, Narrow=500}">
+  <!-- The shared world. Opened with !SharedWorld (the top bar's connection label, Shared sessions). -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+  </Page.Resources>
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="12">
+      <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+
+      <!-- The service does not answer. -->
+      <StackPanel Spacing="12" Visibility="{Binding Mode.Offline, Converter={StaticResource ShownWhen}}">
+        <TextBlock Text="SHARED SESSIONS" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+        <TextBlock Text="A world with real people" Style="{StaticResource TitleText}" />
+        <TextBlock Text="Solo play works from this file. Shared sessions need the Afterhours game service." Style="{StaticResource BodyText}"
+                   TextWrapping="Wrap" TextTrimming="None" />
+        <Border Padding="14" CornerRadius="{StaticResource ChipRadius}" Background="{StaticResource SurfaceAccentTintBrush}">
+          <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                     Text="The public Uno WebAssembly edition connects to the shared world automatically when you choose Join. For local play, launch the included Afterhours launcher, then open its address in another browser." />
+        </Border>
+        <Button Content="Check connection again" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Retry}" />
+      </StackPanel>
+
+      <!-- The service answers, but you have not joined. -->
+      <StackPanel Spacing="12" Visibility="{Binding Mode.NotJoined, Converter={StaticResource ShownWhen}}">
+        <TextBlock Text="SHARED WORLD" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+        <TextBlock Text="See you after hours" Style="{StaticResource TitleText}" />
+        <Button Content="Join the shared world" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Open}" CommandParameter="sessions" />
+      </StackPanel>
+
+      <StackPanel Spacing="12" Visibility="{Binding Mode.Connected, Converter={StaticResource ShownWhen}}">
+        <TextBlock Text="SHARED WORLD" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+        <TextBlock Text="The world is better together" Style="{StaticResource TitleText}" />
+        <Border Padding="14" CornerRadius="{StaticResource ChipRadius}" Background="{StaticResource SurfaceAccentTintBrush}">
+          <TextBlock Text="{Binding Banner}" Style="{StaticResource BodyStrongText}" TextWrapping="Wrap" />
+        </Border>
+        <StackPanel Spacing="8" Padding="14" CornerRadius="{StaticResource ChipRadius}" Background="{StaticResource SurfaceRaisedBrush}"
+                    Visibility="{Binding HasAccount, Converter={StaticResource ShownWhen}}">
+          <TextBlock Text="{Binding AccountTitle}" Style="{StaticResource BodyStrongText}" />
+          <TextBlock Text="{Binding AccountText}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+          <TextBlock Text="Ask the host to add your Google email to the private playtest before linking." Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                     Visibility="{Binding InviteOnly, Converter={StaticResource ShownWhen}}" />
+          <Button Content="Link Google account" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Link}"
+                  Visibility="{Binding CanLink, Converter={StaticResource ShownWhen}}" />
+        </StackPanel>
+        <VariableSizedWrapGrid Orientation="Horizontal" ItemHeight="44" ItemWidth="150">
+          <Button Content="Shared rooms" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Open}" CommandParameter="rooms" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+          <Button Content="Music stage" Style="{StaticResource SoftButtonStyle}" Command="{Binding Open}" CommandParameter="stage" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+          <Button Content="Friends &amp; requests" Style="{StaticResource SoftButtonStyle}" Command="{Binding Open}" CommandParameter="friends" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+        </VariableSizedWrapGrid>
+
+        <TextBlock Text="In this room" Style="{StaticResource BodyStrongText}" />
+        <TextBlock Text="No other players here yet. Open the game in another browser to meet in Side B." Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                   Visibility="{Binding NoPeers, Converter={StaticResource ShownWhen}}" />
+        <ItemsControl ItemsSource="{Binding Peers}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Button Margin="0,0,0,6" Padding="14,10" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Style="{StaticResource SoftButtonStyle}"
+                      AutomationProperties.Name="{Binding}" CommandParameter="{Binding}" Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.ViewPlayer}">
+                <Grid ColumnSpacing="12">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="●" Foreground="{StaticResource AcidBrush}" VerticalAlignment="Center" />
+                  <StackPanel Grid.Column="1">
+                    <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrongText}" />
+                    <TextBlock Text="{Binding Detail}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="2" Text="LIVE" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" VerticalAlignment="Center" />
+                </Grid>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <ItemsControl ItemsSource="{Binding Doors}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Grid Margin="0,0,0,6" Padding="12,8" ColumnSpacing="8" CornerRadius="{StaticResource ChipRadius}" Background="{StaticResource SurfaceRaisedBrush}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Style="{StaticResource BodyStrongText}" VerticalAlignment="Center" TextWrapping="Wrap"><Run Text="{Binding Name}" /><Run Text=" rang the doorbell" /></TextBlock>
+                <Button Grid.Column="1" Content="Let in" Style="{StaticResource PrimaryButtonStyle}" CommandParameter="{Binding}"
+                        Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.LetIn}" />
+                <Button Grid.Column="2" Content="Decline" Style="{StaticResource SoftButtonStyle}" CommandParameter="{Binding}"
+                        Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Deny}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <ItemsControl ItemsSource="{Binding Invites}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Button Content="{Binding Label}" Margin="0,0,0,6" HorizontalAlignment="Stretch" Style="{StaticResource SoftButtonStyle}" CommandParameter="{Binding}"
+                      Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.ViewTrade}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Content="Return to solo world" Style="{StaticResource SoftButtonStyle}" Command="{Binding Leave}" />
+          <Button Content="Sign out on this device" Style="{StaticResource QuietButtonStyle}" Command="{Binding Open}" CommandParameter="signOut"
+                  Visibility="{Binding CanSignOut, Converter={StaticResource ShownWhen}}" />
+        </StackPanel>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Page>

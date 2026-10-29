@@ -191,4 +191,28 @@ internal static partial class GameHost
 
     [JSImport("petPortrait", Module)]
     public static partial string PetPortrait();
+
+    [JSImport("socialWatch", Module)]
+    public static partial void SocialWatch(bool on);
+
+    [JSImport("social", Module)]
+    public static partial Task<string> Social(string op, string id, string text);
+
+    [JSImport("resident", Module)]
+    public static partial string Resident(string name);
+
+    [JSImport("residentAct", Module)]
+    public static partial string ResidentAct(string name, string op);
+
+    [JSImport("openResident", Module)]
+    public static partial void OpenResident(string name);
+
+    [JSImport("chatPrefs", Module)]
+    public static partial string ChatPrefs();
+
+    [JSImport("saveChatPrefs", Module)]
+    public static partial string SaveChatPrefs(bool mute);
+
+    [JSImport("unblock", Module)]
+    public static partial string Unblock(string name);
 }

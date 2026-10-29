@@ -39,6 +39,7 @@ public partial class App : Application
                         services.AddSingleton<IStage>(game);
                         services.AddSingleton<IResident>(game);
                         services.AddSingleton<IRooms>(game);
+                        services.AddSingleton<ISocial>(game);
                     }
                 })
                 .UseNavigation(ReactiveViewModelMappings.ViewModelMappings, RegisterRoutes)
@@ -79,7 +80,14 @@ public partial class App : Application
             new DataViewMap<PortalPage, PortalModel, ItemRequest>(),
             new DataViewMap<RoomObjectPage, RoomObjectModel, ItemRequest>(),
             new ViewMap<CompanionPage, CompanionModel>(),
-            new ViewMap<ArcadePage, ArcadeModel>());
+            new ViewMap<ArcadePage, ArcadeModel>(),
+            new ViewMap<FriendsPage, FriendsModel>(),
+            new DataViewMap<ResidentPage, ResidentModel, ResidentRequest>(),
+            new DataViewMap<PlayerPage, PlayerModel, PlayerRequest>(),
+            new DataViewMap<TradePage, TradeModel, TradeRequest>(),
+            new ViewMap<AwayPage, AwayModel>(),
+            new ViewMap<SharedWorldPage, SharedWorldModel>(),
+            new ViewMap<ChatPrefsPage, ChatPrefsModel>());
         routes.Register(
             new RouteMap("", View: views.FindByViewModel<ShellModel>(), Nested:
             [
@@ -104,6 +112,13 @@ public partial class App : Application
                 new("RoomObject", View: views.FindByViewModel<RoomObjectModel>()),
                 new("Companion", View: views.FindByViewModel<CompanionModel>()),
                 new("Arcade", View: views.FindByViewModel<ArcadeModel>()),
+                new("Friends", View: views.FindByViewModel<FriendsModel>()),
+                new("Resident", View: views.FindByViewModel<ResidentModel>()),
+                new("Player", View: views.FindByViewModel<PlayerModel>()),
+                new("Trade", View: views.FindByViewModel<TradeModel>()),
+                new("Away", View: views.FindByViewModel<AwayModel>()),
+                new("SharedWorld", View: views.FindByViewModel<SharedWorldModel>()),
+                new("ChatPrefs", View: views.FindByViewModel<ChatPrefsModel>()),
             ]));
     }
 

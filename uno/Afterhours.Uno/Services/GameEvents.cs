@@ -24,6 +24,12 @@ public sealed class GameEvents
     public Latest<StageView> Stage { get; } = new();
     public EventStream<OpenRequest> OpenRequests { get; } = new();
 
+    // Sent only while a social panel watches.
+    public Latest<SocialState> Social { get; } = new();
+
+    // Whisper targets picked in a panel, for the chat box (raised in .NET, not by the game).
+    public EventStream<string> Whispers { get; } = new();
+
     // Save keys the Inventory projection is built from.
     private static readonly string[] InventoryKeys = ["coins", "activeRoom", "items", "rooms", "discs", "blueprints"];
 
@@ -67,6 +73,9 @@ public sealed class GameEvents
                 break;
             case "stage":
                 Stage.Set(root.GetProperty("stage").Deserialize(ctx.StageView) ?? StageView.Closed);
+                break;
+            case "social":
+                Social.Set(root.GetProperty("social").Deserialize(ctx.SocialState) ?? SocialState.Empty);
                 break;
             case "playback":
                 Playback.Set(root.GetProperty("playback").Deserialize(ctx.Playback)!);

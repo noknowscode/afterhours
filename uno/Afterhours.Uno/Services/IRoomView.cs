@@ -31,5 +31,10 @@ public interface IRoomView
     // on Skia the browser's focus stays on the page body, so the game cannot tell by itself.
     void XamlFocus(bool focused);
 
+    // Points the chat box at a whisper target (a connected player's id or a resident's name).
+    void WhisperTo(string target);
+
+    IAsyncEnumerable<string> WatchWhispers(CancellationToken ct);
+
     void Reload();
 }

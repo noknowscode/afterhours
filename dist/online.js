@@ -3,8 +3,8 @@
   const W=window.AfterhoursWorld,G=AfterhoursGame,base=window.AFTERHOURS_API||(location.protocol.startsWith('http')?location.origin:'');
   const get=id=>document.getElementById(id),h=W.h;
   let ready=false,online=false,token='',state=null,solo=null,remote=null,applying=false,joining=false,lastPose=0,lastResponse=0,polling=false,lastGameRevision=-1,managed=false,account=null,retryAfter=0;
-  let requestChain=Promise.resolve(),pending=0,lastChatIds=new Set(),seenNotifications=new Set(),seenDoorRequests=new Set(),rendered=new Map(),extrasTimer=null,lastTradeStatus='',lastStage='',listen=false,networkErrors=0;
-  let rosterSignature='',friendsSignature='',poseSignature='';
+  let requestChain=Promise.resolve(),pending=0,lastChatIds=new Set(),seenNotifications=new Set(),seenDoorRequests=new Set(),rendered=new Map(),extrasTimer=null,lastStage='',listen=false,networkErrors=0;
+  let poseSignature='';
   const sharedMusic=new AfterhoursMusic(),originalDispatch=W.game.dispatch.bind(W.game),originalSave=W.game.save.bind(W.game),oldEnter=enterRoom,oldSeat=useSeat,oldStand=standUp,oldEditing=startEditing;
   async function request(path,body,auth=true){
     if(auth&&Date.now()<retryAfter)throw Error('The playtest is taking a short pause. Your saved character is safe; retry in a minute.');
@@ -50,19 +50,11 @@
     if(lastChatIds.size>500)lastChatIds=new Set(next.chats.map(m=>m.id));
     for(const notice of next.notifications){if(!seenNotifications.has(notice.id)){seenNotifications.add(notice.id);W.toast(notice.text);}}
     W.refreshWhispers();
-    const active=next.trades.find(t=>['pending','open'].includes(t.status));
-    const status=active?active.id+':'+active.status+':'+active.confirmed.join(',')+':'+JSON.stringify(active.offers):'';
-    if(get('sharedTrade')&&status!==lastTradeStatus){lastTradeStatus=status;tradePanel(active||next.trades[0]);}
     const stage=next.stage;
     if(stage?.id!==lastStage){
       lastStage=stage?.id||'';sharedMusic.stop();
       if(stage&&listen)playStage(stage);
     }
-    const rosterKey=JSON.stringify([next.peers.map(p=>[p.id,p.name,p.level,p.motto]),next.doorRequests,next.trades.map(t=>[t.id,t.status])]);
-    const friendsKey=JSON.stringify([next.friends,next.friendRequests]);
-    if(get('onlineFriends')&&friendsKey!==friendsSignature)renderFriends(get('onlineFriends'));
-    if(get('sharedGuestList')&&rosterKey!==rosterSignature)renderGuests();
-    rosterSignature=rosterKey;friendsSignature=friendsKey;
   }
   async function connect(name,captchaToken){
     try{
@@ -89,82 +81,45 @@
     get('connectionLabel').textContent='SOLO WORLD';$('footer>span').textContent='Saved on this device · Resident characters are NPCs';
     W.close();W.toast('Back in your solo world. Online progress is kept on the service.');
   }
+  // Shared sessions (the offline note and the connected world) are a XAML panel in the Uno app; joining and
+  // signing out stay game panels until the account panels move.
   function panel(){
-    if(!ready){
-      W.panel('A world with real people','SHARED SESSIONS',`<p>Solo play works from this file. Shared sessions need the Afterhours game service.</p><div class="session-banner">The public Uno WebAssembly edition connects to the shared world automatically when you choose Join. For local play, launch the included Afterhours launcher, then open its address in another browser.</div><button id="retryWorld" class="primary">Check connection again</button>`);
-      W.button('retryWorld',async()=>{await health();panel();});return;
-    }
-    if(!online){
-      W.panel('See you after hours','JOIN THE SHARED WORLD',`<p>Meet real players, share a room, hear the same performance, and trade furniture. Your online character and your solo world have separate progress.</p><form id="joinWorldForm"><label class="form-field">Your name<input id="onlineName" maxlength="20" value="${h(W.game.state.profile.name)}"></label><button class="primary">${localStorage.getItem('afterhours-online-token')?'Continue online character':'Create online character'}</button></form><p class="small-note">A guest character is remembered in this browser. Keep this browser’s data to retain access. No email or password required.</p>`);
-      if(managed){
-        get('joinWorldForm').querySelector('button').textContent=window.AfterhoursAccount?.remembered()?'Continue my character':'Play as a guest';
-        get('joinWorldForm').insertAdjacentHTML('beforeend','<div id="accountChallenge"></div>');
-        get('joinWorldForm').nextElementSibling.innerHTML='Your progress saves to the shared world. Link Google after joining to recover it on another device. An unlinked guest depends on this browser.<br><button class="soft-button" id="restoreAccount">Restore account with Google</button>';
-        if(window.AFTERHOURS_AUTH?.googleInviteOnly)get('restoreAccount').insertAdjacentHTML('beforebegin','<p>Google recovery is invite-only during this playtest. Ask the host to add your Google email before linking. Keep this browser’s data to return as a guest.</p>');
-        W.button('restoreAccount',restorePanel);
-      }
-      get('joinWorldForm').onsubmit=async e=>{
-        e.preventDefault();const button=get('joinWorldForm').querySelector('button');button.disabled=true;
-        try{
-          let captcha;
-          if(managed&&!window.AfterhoursAccount?.remembered())captcha=await window.AfterhoursAccount.challenge(get('accountChallenge'));
-          await connect(get('onlineName').value,captcha);
-        }catch(error){W.toast(error.message);}finally{button.disabled=false;}
-      };return;
-    }
-    W.panel('The world is better together','SHARED WORLD',`<div class="session-banner">Connected as <b>${h(state.self.name)}</b> · ${state.peers.length} other players in this room</div><div class="button-row"><button id="sharedRooms" class="primary">Shared rooms</button><button id="sharedStageOpen" class="soft-button">Music stage</button><button id="sharedFriendsOpen" class="soft-button">Friends & requests</button></div><div id="sharedGuestList"></div><div id="doorRequests"></div><div id="tradeInvites"></div><button class="soft-button" id="leaveOnline">Return to solo world</button>`);
+    if(!ready||online){W.openPanel('SharedWorld');return;}
+    joinPanel();
+  }
+  function joinPanel(){
+    W.panel('See you after hours','JOIN THE SHARED WORLD',`<p>Meet real players, share a room, hear the same performance, and trade furniture. Your online character and your solo world have separate progress.</p><form id="joinWorldForm"><label class="form-field">Your name<input id="onlineName" maxlength="20" value="${h(W.game.state.profile.name)}"></label><button class="primary">${localStorage.getItem('afterhours-online-token')?'Continue online character':'Create online character'}</button></form><p class="small-note">A guest character is remembered in this browser. Keep this browser’s data to retain access. No email or password required.</p>`);
     if(managed){
-      get('sharedGuestList').insertAdjacentHTML('beforebegin',`<div class="session-banner account-status"><b>${account?.anonymous?'Keep your place.':'Your character is linked.'}</b><p>${account?.anonymous?'Link Google to bring your rooms, tracks, and furniture with you on another device.':'Sign in with the same Google account to recover your saved progress.'}</p>${account?.anonymous?'<button class="primary" id="linkAccount">Link Google account</button>':''}</div>`);
-      W.button('linkAccount',()=>window.AfterhoursAccount.link().catch(error=>W.toast(error.message)));
-      if(account?.anonymous&&window.AFTERHOURS_AUTH?.googleInviteOnly)get('linkAccount').insertAdjacentHTML('beforebegin','<p>Ask the host to add your Google email to the private playtest before linking.</p>');
-      if(!account?.anonymous){
-        get('leaveOnline').insertAdjacentHTML('afterend','<button class="soft-button" id="signOutAccount">Sign out on this device</button>');
-        W.button('signOutAccount',()=>{
-          W.panel('Your place is saved.','SIGN OUT','<p>Your rooms, furniture and tracks stay saved. Use Restore account with Google when you return. This signs out only this device.</p><button class="primary" id="confirmSignOut">Sign out</button><button class="soft-button" id="cancelSignOut">Stay here</button>');
-          W.button('cancelSignOut',panel);
-          W.button('confirmSignOut',async()=>{
-            const button=get('confirmSignOut');button.disabled=true;
-            try{await window.AfterhoursAccount.signOut();disconnect();token='';account=null;W.toast('Signed out. Restore with Google to continue your saved character.');}
-            catch(error){button.disabled=false;W.toast(error.message);}
-          });
-        });
-      }
+      get('joinWorldForm').querySelector('button').textContent=window.AfterhoursAccount?.remembered()?'Continue my character':'Play as a guest';
+      get('joinWorldForm').insertAdjacentHTML('beforeend','<div id="accountChallenge"></div>');
+      get('joinWorldForm').nextElementSibling.innerHTML='Your progress saves to the shared world. Link Google after joining to recover it on another device. An unlinked guest depends on this browser.<br><button class="soft-button" id="restoreAccount">Restore account with Google</button>';
+      if(window.AFTERHOURS_AUTH?.googleInviteOnly)get('restoreAccount').insertAdjacentHTML('beforebegin','<p>Google recovery is invite-only during this playtest. Ask the host to add your Google email before linking. Keep this browser’s data to return as a guest.</p>');
+      W.button('restoreAccount',restorePanel);
     }
-    W.button('sharedRooms',roomDirectory);W.button('sharedStageOpen',stagePanel);W.button('sharedFriendsOpen',friendsPanel);W.button('leaveOnline',disconnect);renderGuests();
+    get('joinWorldForm').onsubmit=async e=>{
+      e.preventDefault();const button=get('joinWorldForm').querySelector('button');button.disabled=true;
+      try{
+        let captcha;
+        if(managed&&!window.AfterhoursAccount?.remembered())captcha=await window.AfterhoursAccount.challenge(get('accountChallenge'));
+        await connect(get('onlineName').value,captcha);
+      }catch(error){W.toast(error.message);}finally{button.disabled=false;}
+    };
+  }
+  function signOutPanel(){
+    W.panel('Your place is saved.','SIGN OUT','<p>Your rooms, furniture and tracks stay saved. Use Restore account with Google when you return. This signs out only this device.</p><button class="primary" id="confirmSignOut">Sign out</button><button class="soft-button" id="cancelSignOut">Stay here</button>');
+    W.button('cancelSignOut',()=>{W.close();panel();});
+    W.button('confirmSignOut',async()=>{
+      const button=get('confirmSignOut');button.disabled=true;
+      try{await window.AfterhoursAccount.signOut();disconnect();token='';account=null;W.toast('Signed out. Restore with Google to continue your saved character.');}
+      catch(error){button.disabled=false;W.toast(error.message);}
+    });
   }
   function restorePanel(){
     W.panel('Welcome back.','RESTORE YOUR CHARACTER','<p>Sign in with the Google account you linked before. This opens that account’s saved character. Guest progress from another character is not merged.</p><button id="confirmRestore" class="primary">Continue with Google</button><button id="cancelRestore" class="soft-button">Back</button>');
-    W.button('cancelRestore',panel);
+    W.button('cancelRestore',joinPanel);
     W.button('confirmRestore',()=>window.AfterhoursAccount.restore().catch(error=>W.toast(error.message)));
   }
-  function renderGuests(){
-    const host=get('sharedGuestList');if(!host||!state)return;
-    host.innerHTML='<h3>In this room</h3><div class="directory-list">'+(state.peers.map(p=>`<button class="directory-room" data-live-user="${p.id}"><span class="room-symbol">●</span><span><b>${h(p.name)}</b><small>Level ${p.level} · ${h(p.motto)}</small></span><span class="live-pill">LIVE</span></button>`).join('')||'<p>No other players here yet. Open the game in another browser to meet in Side B.</p>')+'</div>';
-    host.querySelectorAll('[data-live-user]').forEach(b=>b.onclick=()=>playerPanel(b.dataset.liveUser));
-    if(get('doorRequests')){
-      get('doorRequests').innerHTML=state.doorRequests.map(p=>`<div class="directory-room"><span><b>${h(p.name)} rang the doorbell</b></span><button class="soft-button" data-door="${p.id}">Let in</button><button class="soft-button" data-deny="${p.id}">Decline</button></div>`).join('');
-      get('doorRequests').querySelectorAll('[data-door]').forEach(b=>b.onclick=()=>send('door',{user:b.dataset.door,allow:true}).then(panel));
-      get('doorRequests').querySelectorAll('[data-deny]').forEach(b=>b.onclick=()=>send('door',{user:b.dataset.deny,allow:false}).then(panel));
-    }
-    if(get('tradeInvites')){
-      const active=state.trades.filter(t=>['pending','open'].includes(t.status));
-      get('tradeInvites').innerHTML=active.map(t=>`<button class="outline" data-open-trade="${t.id}">Furniture trade · ${h(t.people.find(p=>p.id!==state.self.id)?.name)} ↗</button>`).join('');
-      get('tradeInvites').querySelectorAll('[data-open-trade]').forEach(b=>b.onclick=()=>tradePanel(state.trades.find(t=>t.id===b.dataset.openTrade)));
-    }
-  }
-  function playerPanel(id){select('peer',id);
-    const p=state.peers.concat(state.friends).find(p=>p.id===id);if(!p)return;
-    W.panel(p.name,'CONNECTED PLAYER',`<p>${h(p.motto)}</p><p>Level ${p.level} · ${p.online?'Here tonight':'Offline'}</p><div class="button-row"><button class="primary" id="requestFriend">Add friend</button><button class="soft-button" id="inviteTrade">Trade furniture</button><button class="soft-button" id="whisperPlayer">Whisper</button><button class="soft-button" id="blockPlayer">Block</button><button class="soft-button" id="reportPlayer">Report</button>${state.room.startsWith('home:'+state.self.id+':')?'<button class="soft-button" id="kickPlayer">Remove from room</button><button class="soft-button" id="banPlayer">Ban from room</button>':''}</div>`);
-    W.button('requestFriend',()=>send('friend',{user:id}).then(()=>W.toast('Friend request sent.')));
-    W.button('inviteTrade',()=>send('trade',{user:id}).then(out=>tradePanel(out.snapshot.trades.find(t=>t.id===out.result.id))));
-    W.button('whisperPlayer',()=>{get('chatMode').value='whisper';W.refreshWhispers();get('whisperTarget').hidden=false;get('whisperTarget').value=id;W.close();get('chatInput').focus();});
-    W.button('blockPlayer',()=>send('block',{user:id}).then(()=>{W.close();W.toast('Player blocked.');}));
-    W.button('reportPlayer',()=>{
-      W.panel('Report a player','COMMUNITY',`<p>Tell us what happened. The report is stored for the world’s operator to review.</p><label class="form-field">Reason<textarea id="reportReason" maxlength="300"></textarea></label><button id="submitReport" class="primary">Submit report</button>`);
-      W.button('submitReport',()=>send('report',{user:id,reason:get('reportReason').value}).then(()=>{W.close();W.toast('Report submitted.');}));
-    });
-    W.button('kickPlayer',()=>send('kick',{user:id}).then(panel));W.button('banPlayer',()=>send('ban',{user:id}).then(panel));
-  }
+  function playerPanel(id){select('peer',id);W.openPanel('Player',{id});}
   // The shared navigator is a XAML panel; it reads roomsState and joins through joinRoomKey.
   function roomDirectory(){W.openPanel('Rooms',{filter:'all'});}
   const publicNames=['Side B','Midnight Diner','The Greenhouse','Cloud Nine'];
@@ -223,23 +178,8 @@
       send('extras',{room:r.id,rules:r.rules||[],playlist:r.playlist,event:r.event,draft:W.game.state.draft,avatar:W.getScene().spriteIndex},true).catch(()=>{});
     },900);
   };
-  function renderFriends(host){
-    if(!online||!host)return;
-    host.innerHTML='<h3>Connected friends</h3>'+state.friendRequests.map(p=>`<div class="directory-room"><span><b>${h(p.name)}</b><small>Wants to be friends</small></span><button class="soft-button" data-accept-friend="${p.id}">Accept</button><button class="soft-button" data-decline-friend="${p.id}">Decline</button></div>`).join('')+
-      state.friends.map(p=>`<div class="directory-room"><span><b>${h(p.name)}</b><small>${p.online?'Here now':p.lastSeen?'Seen '+ago(p.lastSeen):'Offline'}</small></span><button class="soft-button" data-follow-friend="${p.id}" ${p.online?'':'disabled'}>Follow</button><button class="text-button" data-remove-friend="${p.id}">Remove</button></div>`).join('');
-    if(!state.friends.length&&!state.friendRequests.length)host.innerHTML+='<p>Click a connected player to send a friend request.</p>';
-    host.querySelectorAll('[data-accept-friend]').forEach(b=>b.onclick=()=>send('answerFriend',{user:b.dataset.acceptFriend,accept:true}));
-    host.querySelectorAll('[data-decline-friend]').forEach(b=>b.onclick=()=>send('answerFriend',{user:b.dataset.declineFriend,accept:false}));
-    host.querySelectorAll('[data-follow-friend]').forEach(b=>b.onclick=()=>joinRoom(state.friends.find(p=>p.id===b.dataset.followFriend).room));
-    host.querySelectorAll('[data-remove-friend]').forEach(b=>b.onclick=()=>send('unfriend',{user:b.dataset.removeFriend}));
-  }
   const ago=time=>{const m=Math.round((Date.now()-time)/60000);if(m<1)return'just now';if(m<60)return m+' min ago';if(m<1440)return Math.round(m/60)+' h ago';return m<10080?new Date(time).toLocaleDateString(undefined,{weekday:'short'}):new Date(time).toLocaleDateString();};
-  function awayPanel(){
-    const items=state?.away||[];if(!items.length)return;const icon={visit:'⌂',friend:'♡',chart:'★'};
-    W.panel('While you were away','SINCE YOUR LAST VISIT','<div class="away-list">'+items.slice(0,10).map(e=>`<div class="away-item"><span aria-hidden="true">${icon[e.kind]||'•'}</span><p>${h(e.text)}</p><small>${ago(e.time)}</small></div>`).join('')+
-      (items.length>10?`<p class="small-note">and ${items.length-10} more</p>`:'')+'</div><button class="primary" id="awayDone">Got it</button>');
-    W.button('awayDone',()=>{send('awaySeen').catch(()=>{});W.close();});
-  }
+  function awayPanel(){if(state?.away?.length)W.openPanel('Away');}
   // The weekly chart and the shared stage are XAML panels in the Uno app; these feed them.
   function chartPanel(){W.openPanel('Chart');}
   function chartState(){
@@ -247,27 +187,51 @@
     const row=(e,mark)=>({mark:mark||String(e.rank),title:e.title,artist:e.artist,listeners:e.listeners,own:e.user===self});
     return {week:'WEEK '+chart.week.slice(-2)+' · RESETS MONDAY',top:chart.top.map(e=>row(e)),last:(chart.last?.top||[]).map(e=>row(e,['①','②','③'][e.rank-1]))};
   }
-  function friendsPanel(){W.panel('Your people','FRIENDS & REQUESTS','<div id="onlineFriends"></div>');renderFriends(get('onlineFriends'));}
-  function tradePanel(trade){
-    if(!trade){panel();return;}const other=trade.people.find(p=>p.id!==state.self.id),self=state.self.id;
-    lastTradeStatus=['pending','open'].includes(trade.status)?trade.id+':'+trade.status+':'+trade.confirmed.join(',')+':'+JSON.stringify(trade.offers):'';
-    if(!['pending','open'].includes(trade.status)){
-      W.panel(trade.status==='completed'?'A fair exchange.':'Trade closed','FURNITURE TRADING',`<p>${trade.status==='completed'?'Both players confirmed. Your furniture changed owners exactly once.':'Nothing changed hands.'}</p><button id="tradeInventory" class="primary">Open inventory</button>`);
-      W.button('tradeInventory',()=>W.openCatalog('owned'));return;
+  function friendsPanel(){W.openPanel('Friends');}
+  function tradePanel(trade){if(trade)W.openPanel('Trade',{id:trade.id});else panel();}
+  // The shared world as data for the hosting app's social panels.
+  const awayIcons={visit:'⌂',friend:'♡',chart:'★'};
+  function tradeView(t){
+    const self=state.self.id,open=t.status==='open',pending=t.status==='pending',piece=i=>AfterhoursFurniture.catalog[i.type].name;
+    return {id:t.id,status:t.status,other:t.people.find(p=>p.id!==self)?.name||'',canAccept:pending&&t.participants[1]===self,waiting:pending&&t.participants[1]!==self,
+      open,closed:!open&&!pending,completed:t.status==='completed',confirmed:t.confirmed.includes(self),
+      sides:open?t.people.map(p=>({name:p.name,confirmed:t.confirmed.includes(p.id),pieces:(t.items?.[p.id]||[]).map(piece)})):[],
+      inventory:open?W.game.state.items.filter(i=>i.placed===false&&!i.wrapped&&!i.contents).map(i=>({id:i.id,name:piece(i),offered:(t.offers?.[self]||[]).includes(i.id)})):[]};
+  }
+  function socialState(){
+    if(!online)return {ready,connected:false,managed};
+    const self=state.self.id,away=state.away||[];
+    const person=(p,here)=>({id:p.id,name:p.name,level:p.level||1,motto:p.motto||'',online:here||!!p.online,status:here?'Here tonight':p.online?'Here now':p.lastSeen?'Seen '+ago(p.lastSeen):'Offline'});
+    return {ready,connected:true,managed,name:state.self.name,
+      account:managed&&account?{anonymous:!!account.anonymous,inviteOnly:!!window.AFTERHOURS_AUTH?.googleInviteOnly}:null,
+      peers:state.peers.map(p=>person(p,true)),friends:state.friends.map(p=>person(p,false)),
+      requests:state.friendRequests.map(p=>({id:p.id,name:p.name})),doors:(state.doorRequests||[]).map(p=>({id:p.id,name:p.name})),
+      trades:state.trades.map(tradeView),inOwnRoom:state.room.startsWith('home:'+self+':'),
+      away:away.slice(0,10).map(e=>({icon:awayIcons[e.kind]||'•',text:e.text,ago:ago(e.time)})),awayMore:Math.max(0,away.length-10)};
+  }
+  // One social action from the hosting app; replies {ok, error, result} (a new trade's id).
+  const thanks={friend:'Friend request sent.',block:'Player blocked.',report:'Report submitted.'};
+  async function socialAct(op,id,text){
+    switch(op){
+      case 'retry':await health();return {ok:ready};
+      case 'leave':disconnect();return {ok:true};
+      case 'rooms':roomDirectory();return {ok:true};
+      case 'stage':stagePanel();return {ok:true};
+      case 'friends':friendsPanel();return {ok:true};
+      case 'sessions':panel();return {ok:true};
+      case 'player':playerPanel(id);return {ok:true};
+      case 'openTrade':W.openPanel('Trade',{id});return {ok:true};
+      case 'signOut':signOutPanel();return {ok:true};
+      case 'link':try{await window.AfterhoursAccount.link();return {ok:true};}catch(error){return {ok:false,error:error.message};}
+      case 'follow':{const friend=state?.friends.find(p=>p.id===id);return {ok:!!friend&&await joinRoom(friend.room)};}
     }
-    let body=`<div id="sharedTrade"><p>Trading with <b>${h(other.name)}</b>. Changes to either offer clear both confirmations.</p>`;
-    if(trade.status==='pending'){
-      body+=trade.participants[1]===self?'<button id="acceptTrade" class="primary">Accept trade invitation</button>':'<p>Waiting for the other player to accept…</p>';
-    }else{
-      body+='<div class="trade-columns">'+trade.people.map(p=>`<div><h3>${h(p.name)} ${trade.confirmed.includes(p.id)?'✓':''}</h3><div class="trade-offer">${trade.items[p.id].map(i=>`<span>${h(AfterhoursFurniture.catalog[i.type].name)}</span>`).join('')||'<small>No pieces offered</small>'}</div></div>`).join('')+'</div>';
-      body+='<p>Choose up to eight pieces from your inventory:</p><div class="trade-inventory">'+W.game.state.items.filter(i=>i.placed===false&&!i.wrapped&&!i.contents).map(i=>`<label><input type="checkbox" data-trade-item="${i.id}" ${trade.offers[self].includes(i.id)?'checked':''}>${h(AfterhoursFurniture.catalog[i.type].name)}</label>`).join('')+'</div>';
-      body+='<div class="button-row"><button id="updateTradeOffer" class="soft-button">Update my offer</button><button id="confirmTrade" class="primary" '+(trade.confirmed.includes(self)?'disabled':'')+'>'+(trade.confirmed.includes(self)?'Confirmed · waiting':'Confirm this exchange')+'</button></div>';
-    }
-    body+='<button id="cancelTrade" class="text-button">Cancel trade</button></div>';
-    W.panel('An exchange between friends','FURNITURE TRADING',body,true);
-    W.button('acceptTrade',()=>send('tradeAccept',{id:trade.id}));W.button('cancelTrade',()=>send('tradeCancel',{id:trade.id}).then(out=>tradePanel(out.snapshot.trades.find(t=>t.id===trade.id))));
-    W.button('updateTradeOffer',()=>send('tradeOffer',{id:trade.id,items:Array.from(get('modalBody').querySelectorAll('[data-trade-item]:checked')).map(i=>i.dataset.tradeItem)}));
-    W.button('confirmTrade',()=>send('tradeConfirm',{id:trade.id}).then(out=>tradePanel(out.snapshot.trades.find(t=>t.id===trade.id))));
+    if(!online)return {ok:false,error:'Join the shared world first.'};
+    const action={friend:['friend',{user:id}],accept:['answerFriend',{user:id,accept:true}],decline:['answerFriend',{user:id,accept:false}],unfriend:['unfriend',{user:id}],
+      block:['block',{user:id}],report:['report',{user:id,reason:text}],kick:['kick',{user:id}],ban:['ban',{user:id}],letIn:['door',{user:id,allow:true}],deny:['door',{user:id,allow:false}],
+      trade:['trade',{user:id}],tradeAccept:['tradeAccept',{id}],tradeOffer:['tradeOffer',{id,items:JSON.parse(text||'[]')}],tradeConfirm:['tradeConfirm',{id}],tradeCancel:['tradeCancel',{id}],awaySeen:['awaySeen',{}]}[op];
+    if(!action)return {ok:false,error:'That action is not available.'};
+    try{const out=await send(...action);if(thanks[op])W.toast(thanks[op]);return {ok:true,result:out.result?.id??null};}
+    catch(error){return {ok:false,error:error.message};}
   }
   function stagePanel(){W.stagePanel();}
   function stageState(){
@@ -310,7 +274,7 @@
     W.ctx.fillStyle='#b5e8b2';W.ctx.beginPath();W.ctx.arc(x+22,y+26,3,0,Math.PI*2);W.ctx.fill();
   }
   const api={
-    directory:roomDirectory,roomsState,joinRoomKey,connected:()=>online,remoteRoom:()=>remote,peers:()=>state?.peers||[],panel,renderFriends,stagePanel,chartPanel,queueSong,stageState,toggleListen,
+    directory:roomDirectory,roomsState,joinRoomKey,connected:()=>online,remoteRoom:()=>remote,peers:()=>state?.peers||[],panel,socialState,socialAct,stagePanel,chartPanel,queueSong,stageState,toggleListen,
     leaveStage:()=>send('leaveQueue').catch(()=>{}),applaud:()=>send('vote').catch(()=>{}),
     visitOwnRoom:id=>joinRoom('home:'+state.self.id+':'+id),
     rollDice:id=>send('command',{type:'itemAction',payload:{id,action:'roll'}}).then(out=>out.result),

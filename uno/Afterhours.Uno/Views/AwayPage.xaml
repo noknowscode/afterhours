@@ -1,0 +1,30 @@
+<Page x:Class="Afterhours.Uno.Views.AwayPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=340, Narrow=440}">
+  <!-- Since your last visit. Opened with !Away when you join the shared world and something happened. -->
+  <StackPanel Padding="24" Spacing="12">
+    <TextBlock Text="SINCE YOUR LAST VISIT" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+    <TextBlock Text="While you were away" Style="{StaticResource TitleText}" />
+    <ItemsControl ItemsSource="{Binding Items}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Grid Padding="0,8" ColumnSpacing="12" BorderBrush="{StaticResource LineBrush}" BorderThickness="0,0,0,1">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="24" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{Binding Icon}" Foreground="{StaticResource AcidBrush}" AutomationProperties.AccessibilityView="Raw" />
+            <TextBlock Grid.Column="1" Text="{Binding Text}" Style="{StaticResource BodyText}" TextWrapping="Wrap" />
+            <TextBlock Grid.Column="2" Text="{Binding Ago}" Style="{StaticResource CaptionText}" />
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+    <TextBlock Text="{Binding More}" Style="{StaticResource CaptionText}" />
+    <Button Content="Got it" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Done}" />
+  </StackPanel>
+</Page>

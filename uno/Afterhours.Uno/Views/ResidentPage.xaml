@@ -1,0 +1,19 @@
+<Page x:Class="Afterhours.Uno.Views.ResidentPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=340, Narrow=420}">
+  <!-- A resident character. Opened with !Resident and a ResidentRequest(name) (a click on a resident, your circle). -->
+  <StackPanel Padding="24" Spacing="12">
+    <TextBlock Text="RESIDENT CHARACTER" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+    <TextBlock Text="{Binding Resident.Name}" Style="{StaticResource TitleText}" />
+    <TextBlock Text="{Binding Resident.Line}" Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+    <TextBlock Text="This resident is part of the solo world." Style="{StaticResource CaptionText}" />
+    <VariableSizedWrapGrid Orientation="Horizontal" ItemHeight="44" ItemWidth="170">
+      <Button Content="{Binding FriendLabel}" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding ToggleFriend}" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+      <Button Content="Whisper" Style="{StaticResource SoftButtonStyle}" Command="{Binding Whisper}" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+      <Button Content="{Binding BlockLabel}" Style="{StaticResource SoftButtonStyle}" Command="{Binding ToggleBlock}" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+    </VariableSizedWrapGrid>
+  </StackPanel>
+</Page>

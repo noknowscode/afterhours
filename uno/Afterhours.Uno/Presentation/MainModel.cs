@@ -86,6 +86,14 @@ public partial record MainModel(IGameStore Store, IRoomView RoomView, INavigator
                     data: new RoomsRequest(request.Text("filter") ?? "all")),
                 "Portal" or "RoomObject" when request.Text("itemId") is { } item =>
                     navigator.NavigateRouteAsync(navigator, request.Route, qualifier: Qualifiers.Dialog, data: new ItemRequest(item)),
+                "Resident" when request.Text("name") is { } name =>
+                    navigator.NavigateRouteAsync(navigator, "Resident", qualifier: Qualifiers.Dialog, data: new ResidentRequest(name)),
+                "Player" when request.Text("id") is { } id =>
+                    navigator.NavigateRouteAsync(navigator, "Player", qualifier: Qualifiers.Dialog, data: new PlayerRequest(id)),
+                "Trade" when request.Text("id") is { } id =>
+                    navigator.NavigateRouteAsync(navigator, "Trade", qualifier: Qualifiers.Dialog, data: new TradeRequest(id)),
+                "Friends" or "Away" or "SharedWorld" or "ChatPrefs" =>
+                    navigator.NavigateRouteAsync(navigator, request.Route, qualifier: Qualifiers.Dialog),
                 "Profile" or "Wardrobe" or "Help" or "RoomTools" or "RoomLogic" or "RoomEvent" or "MessageBoard" or "Companion" or "Arcade" =>
                     navigator.NavigateRouteAsync(navigator, request.Route, qualifier: Qualifiers.Dialog),
                 _ => Task.CompletedTask,
@@ -93,7 +101,27 @@ public partial record MainModel(IGameStore Store, IRoomView RoomView, INavigator
         }
     }
 
-    public Task Mount(string elementId) => RoomView.MountAsync(elementId);
+    private bool _followingWhispers;
+
+    public Task Mount(string elementId)
+    {
+        if (!_followingWhispers)
+        {
+            _followingWhispers = true;
+            _ = FollowWhispers();
+        }
+        return RoomView.MountAsync(elementId);
+    }
+
+    // A panel's Whisper button points the chat box at that player or resident.
+    private async Task FollowWhispers()
+    {
+        await foreach (var target in RoomView.WatchWhispers(CancellationToken.None))
+        {
+            await Mode.UpdateAsync(_ => "whisper", CancellationToken.None);
+            await WhisperTarget.UpdateAsync(_ => target, CancellationToken.None);
+        }
+    }
 
     private async IAsyncEnumerable<IImmutableList<RoomStop>> Stops([EnumeratorCancellation] CancellationToken ct)
     {

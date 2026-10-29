@@ -285,3 +285,24 @@ export function pet() { return withPet({ ok: true }); }
 export function adoptPet(name) { return withPet(world.adoptPet(name)); }
 export function petAction(action) { return withPet(world.petAction(action)); }
 export function petPortrait() { return world.petPortrait(); }
+
+// Social: your circle, residents, chat preferences and the shared world. While a social panel watches, the shared
+// state (players, friends, doors, trades) is sent when it changes; the game polls the service about once a second.
+let socialTimer = null;
+export function socialWatch(on) {
+  clearInterval(socialTimer);
+  socialTimer = null;
+  delete sent.parts.social;
+  if (on) {
+    const push = () => emitIfChanged('social', world.socialState());
+    push();
+    socialTimer = setInterval(push, 300);
+  }
+}
+export async function social(op, id, text) { return reply(await window.AfterhoursOnline.socialAct(op, id, text)); }
+export function resident(name) { const result = world.residentState(name); return reply({ ok: !!result, result }); }
+export function residentAct(name, op) { return reply({ ok: true, result: world.residentAct(name, op) }); }
+export function openResident(name) { world.openResident(name); }
+export function chatPrefs() { return reply({ ok: true, result: world.chatPrefsState() }); }
+export function saveChatPrefs(mute) { return reply({ ok: true, result: world.saveChatPrefs(mute) }); }
+export function unblock(name) { return reply({ ok: true, result: world.unblock(name) }); }

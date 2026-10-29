@@ -6,11 +6,12 @@ namespace Afterhours.Uno.Services;
 
 // Phase A: both interfaces are backed by the JavaScript game running in the same page.
 [System.Runtime.Versioning.SupportedOSPlatform("browser")]
-public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, IStage, IResident, IRooms
+public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, IStage, IResident, IRooms, ISocial
 {
     private static readonly TimeSpan OpenTimeout = TimeSpan.FromSeconds(15);
     private bool _mounted;
     private int _stageWatchers;
+    private int _socialWatchers;
 
     public IAsyncEnumerable<Hud> WatchHud(CancellationToken ct) => events.Hud.Watch(ct);
 
@@ -173,6 +174,45 @@ public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, I
     public string PetPortrait() => _mounted ? GameHost.PetPortrait() : "";
 
     private HostReply<RoomState> RoomReply(Func<string> call) => Host(call, Ctx.HostReplyRoomState) ?? new(false, NotReady, null);
+
+    public async IAsyncEnumerable<SocialState> WatchSocial([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
+    {
+        if (_mounted && ++_socialWatchers == 1)
+            GameHost.SocialWatch(true);
+        try
+        {
+            await foreach (var social in events.Social.Watch(ct))
+                yield return social;
+        }
+        finally
+        {
+            if (_mounted && --_socialWatchers == 0)
+                GameHost.SocialWatch(false);
+        }
+    }
+
+    public async Task<SocialReply> Act(string op, string id = "", string text = "") =>
+        _mounted ? JsonSerializer.Deserialize(await GameHost.Social(op, id, text), Ctx.SocialReply)! : SocialReply.NotReady;
+
+    public ResidentState? Resident(string name) => Host(() => GameHost.Resident(name), Ctx.HostReplyResidentState)?.Result;
+
+    public ResidentState? ResidentAct(string name, string op) => Host(() => GameHost.ResidentAct(name, op), Ctx.HostReplyResidentState)?.Result;
+
+    public void OpenResident(string name)
+    {
+        if (_mounted)
+            GameHost.OpenResident(name);
+    }
+
+    public ChatPrefs ChatPrefs() => Host(GameHost.ChatPrefs, Ctx.HostReplyChatPrefs)?.Result ?? Services.ChatPrefs.Empty;
+
+    public ChatPrefs SaveChatPrefs(bool muteResidents) => Host(() => GameHost.SaveChatPrefs(muteResidents), Ctx.HostReplyChatPrefs)?.Result ?? Services.ChatPrefs.Empty;
+
+    public ChatPrefs Unblock(string name) => Host(() => GameHost.Unblock(name), Ctx.HostReplyChatPrefs)?.Result ?? Services.ChatPrefs.Empty;
+
+    public void WhisperTo(string target) => events.Whispers.Publish(target);
+
+    public IAsyncEnumerable<string> WatchWhispers(CancellationToken ct) => events.Whispers.Watch(ct);
 
     private const string NotReady = "Your world is still opening.";
 

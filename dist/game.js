@@ -540,24 +540,27 @@
       },1500);
     }
   },true);
-  button('socialSettings',()=>{
-    panel('Make space for yourself','CHAT PREFERENCES',`<label class="setting-toggle"><input id="muteResidents" type="checkbox" ${game.state.settings.muteGuests?'checked':''}>Mute resident replies</label><p>Resident characters are part of the solo world. Real connected guests appear with a live indicator.</p><button id="saveChatPreferences" class="primary">Save preferences</button><div class="panel-section"><h3>Blocked residents</h3>${game.state.blocked.map(name=>`<button class="soft-button" data-unblock="${h(name)}">Unblock ${h(name)}</button>`).join('')||'<p>Nobody is blocked.</p>'}</div>`);
-    button('saveChatPreferences',()=>{game.state.settings.muteGuests=get('muteResidents').checked;game.save();close();});
-    buttons('[data-unblock]',b=>{game.state.blocked=game.state.blocked.filter(n=>n!==b.dataset.unblock);game.save();close();});
-  });
-  function residentProfile(person){select('resident',person.name);
-    const friend=game.state.friends.includes(person.name),blocked=game.state.blocked.includes(person.name);
-    panel(person.name,'RESIDENT CHARACTER',`<p>${h(residentReplies[person.name][0])}</p><p>This resident is part of the solo world.</p><div class="button-row"><button class="primary" id="residentFriend">${friend?'Remove from circle':'Add to my circle'}</button><button class="soft-button" id="residentWhisper">Whisper</button><button class="soft-button" id="residentBlock">${blocked?'Unblock':'Block replies'}</button></div>`);
-    button('residentFriend',()=>{game.state.friends=friend?game.state.friends.filter(n=>n!==person.name):[...game.state.friends,person.name];game.save();residentProfile(person);});
-    button('residentWhisper',()=>{get('chatMode').value='whisper';refreshWhispers();get('whisperTarget').hidden=false;get('whisperTarget').value=person.name;close();get('chatInput').focus();});
-    button('residentBlock',()=>{game.state.blocked=blocked?game.state.blocked.filter(n=>n!==person.name):[...game.state.blocked,person.name];game.save();close();});
+  // Chat preferences, residents and your circle are XAML panels in the Uno app; these feed them.
+  button('socialSettings',()=>openPanel('ChatPrefs'));
+  function chatPrefsState(){return {muteResidents:!!game.state.settings.muteGuests,blocked:game.state.blocked.slice()};}
+  function saveChatPrefs(mute){game.state.settings.muteGuests=!!mute;game.save();return chatPrefsState();}
+  function unblock(name){game.state.blocked=game.state.blocked.filter(n=>n!==name);game.save();return chatPrefsState();}
+  function residentProfile(person){select('resident',person.name);openPanel('Resident',{name:person.name});}
+  function residentState(name){
+    if(!residentReplies[name])return null;
+    return {name,line:residentReplies[name][0],friend:game.state.friends.includes(name),blocked:game.state.blocked.includes(name)};
   }
-  button('friendsTab',()=>{
-    panel('Good company','YOUR CIRCLE',`<p>Your resident circle lives on this device. Connected players appear below when you join a shared session.</p><div class="directory-list">${game.state.friends.map(name=>`<button class="directory-room" data-friend="${h(name)}"><span class="room-symbol">♡</span><span><b>${h(name)}</b><small>Resident character</small></span><em>View ↗</em></button>`).join('')||'<p>Click a resident in a room to add them to your circle.</p>'}</div><div id="onlineFriends"></div><button id="openSharedSession" class="primary">Shared sessions</button>`);
-    buttons('[data-friend]',b=>residentProfile(people.find(p=>p.name===b.dataset.friend)));
-    button('openSharedSession',()=>window.AfterhoursOnline?.panel());
-    window.AfterhoursOnline?.renderFriends(get('onlineFriends'));
-  });
+  // friend and block toggle; the circle and the block list are lists of resident names.
+  function residentAct(name,op){
+    const s=game.state,toggle=list=>list.includes(name)?list.filter(n=>n!==name):[...list,name];
+    if(op==='friend')s.friends=toggle(s.friends);else if(op==='block')s.blocked=toggle(s.blocked);
+    game.save();return residentState(name);
+  }
+  // Your circle and, when connected, the shared world (players, friends, doors, trades).
+  function socialState(){
+    return {circle:game.state.friends.slice(),...(window.AfterhoursOnline?.socialState()||{ready:false,connected:false})};
+  }
+  button('friendsTab',()=>openPanel('Friends'));
   button('roomTab',()=>populateChat());
   canvas.addEventListener('pointerup',e=>{
     if(editor.active||e.button!==0)return;
@@ -639,7 +642,8 @@
         atlas:{url:new URL(image.getAttribute('src'),location.href).href,width:image.naturalWidth,height:image.naturalHeight},crop};})}),
     shopImages:()=>[...new Set(Object.keys(Furniture.catalog).map(type=>furnitureArt(type).image))],
     updateHUD,showStudio:studio,roomsState,goToRoom,createRoom,roomState,roomPanels,saveRoomSettings,addNote,deleteNote,addRule,deleteRule,hostEvent,endEvent,
-    arcadeState,playArcade:kind=>startArcade(kind),petState,adoptPet,petAction,petPortrait,objectState,objectAction,objectMove,linkPortal,journalState,claimQuest,profileState,saveProfile,exportSave,inspectSave,inspectBackup,confirmRestore,
+    arcadeState,playArcade:kind=>startArcade(kind),chatPrefsState,saveChatPrefs,unblock,residentState,residentAct,socialState,
+    openResident:name=>{const person=people.find(p=>p.name===name);if(person)residentProfile(person);},petState,adoptPet,petAction,petPortrait,objectState,objectAction,objectMove,linkPortal,journalState,claimQuest,profileState,saveProfile,exportSave,inspectSave,inspectBackup,confirmRestore,
     wardrobeState,presetOutfit,outfitPreview,saveLook,classicLook:()=>classicLook(),studioEdit,playTrack,exportWav,savePlaylist,startPlaylist,
     pressDisc:id=>act('disc',{id},'Pressed onto a collectible disc.'),deleteSong:id=>act('deleteSong',{id}),perform:id=>queueSong(id),
     stageState,stageAct,openPanel,showJournal:()=>journal(),

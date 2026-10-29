@@ -1,0 +1,62 @@
+<Page x:Class="Afterhours.Uno.Views.TradePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=360, Narrow=560}">
+  <!-- A furniture trade. Opened with !Trade and a TradeRequest(id) (a player's Trade furniture, the shared world). -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+    <conv:BoolToVisibilityConverter x:Key="HiddenWhen" Invert="True" />
+  </Page.Resources>
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="12">
+      <TextBlock Text="FURNITURE TRADING" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="{Binding Title}" Style="{StaticResource TitleText}" />
+      <TextBlock Text="{Binding Note}" Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+      <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+
+      <Button Content="Accept trade invitation" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Accept}"
+              Visibility="{Binding Trade.CanAccept, Converter={StaticResource ShownWhen}}" />
+      <TextBlock Text="Waiting for the other player to accept…" Style="{StaticResource CaptionText}"
+                 Visibility="{Binding Trade.Waiting, Converter={StaticResource ShownWhen}}" />
+
+      <StackPanel Spacing="12" Visibility="{Binding Trade.Open, Converter={StaticResource ShownWhen}}">
+        <ItemsControl ItemsSource="{Binding Sides}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <StackPanel Margin="0,0,0,8" Padding="12,10" Spacing="4" CornerRadius="{StaticResource ChipRadius}" Background="{StaticResource SurfaceRaisedBrush}"
+                          AutomationProperties.Name="{Binding}">
+                <TextBlock Text="{Binding Title}" Style="{StaticResource BodyStrongText}" />
+                <TextBlock Text="{Binding Pieces}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Text="Choose up to eight pieces from your inventory:" Style="{StaticResource BodyText}" />
+        <ItemsControl ItemsSource="{Binding Pieces}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <VariableSizedWrapGrid Orientation="Horizontal" ItemHeight="40" ItemWidth="170" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <CheckBox Content="{Binding Name}" IsChecked="{Binding Offered, Mode=OneWay}" CommandParameter="{Binding}"
+                        Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Toggle}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Content="Update my offer" Style="{StaticResource SoftButtonStyle}" Command="{Binding UpdateOffer}" />
+          <Button Content="{Binding ConfirmLabel}" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Confirm}" IsEnabled="{Binding CanConfirm}" />
+        </StackPanel>
+      </StackPanel>
+
+      <Button Content="Open inventory" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding OpenInventory}"
+              Visibility="{Binding Trade.Closed, Converter={StaticResource ShownWhen}}" />
+      <Button Content="Cancel trade" Style="{StaticResource QuietButtonStyle}" Command="{Binding Cancel}"
+              Visibility="{Binding Trade.Closed, Converter={StaticResource HiddenWhen}}" />
+    </StackPanel>
+  </ScrollViewer>
+</Page>
