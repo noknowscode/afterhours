@@ -8,7 +8,7 @@ The original sage dashboard and primitive block artwork have been replaced. The 
 All four rooms have new art: Side B's amber vinyl bar; the pink neon Midnight Diner; a lush rooftop Greenhouse; and the violet Cloud Nine lounge. Six illustrated avatar looks replace simple shirt-color variations. Outfit selection saves locally. The room adds zoom controls and respects reduced-motion preferences for interface motion and character movement.
 
 PLAY
-Open index.html in the dist folder, or open the standalone Afterhours.html in the outputs folder. Click the floor or focus the room and hold arrow keys or WASD to move. Wave and dance with the controls or keys 1 and 2. Choose an avatar through My look. Use Beat studio to edit and play the original synthesized loop. Choose My room, then Decorate to arrange your own layout. Decorate also takes you home directly from a public room.
+Build and start the Uno app (npm run build:uno, then npm run start:uno) and open it in a browser. Click the floor or focus the room and hold arrow keys or WASD to move. Wave and dance with the controls or keys 1 and 2. Choose an avatar through My look. Use Beat studio to edit and play the original synthesized loop. Choose My room, then Decorate to arrange your own layout. Decorate also takes you home directly from a public room.
 
 REAL IN THIS PROTOTYPE
 Rendered rooms, walking, gestures, room switching, avatar selection, local chat, music sequencing and playback, zoom, local furniture purchases, and browser persistence.

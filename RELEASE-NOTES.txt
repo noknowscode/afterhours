@@ -8,6 +8,19 @@ requests per UTC day bound this supervised playtest. No paid plan was enabled.
 Friends can play as guests; Google linking remains invite-only in Testing.
 The owner deferred adding friends' Google emails. The game explains this limit.
 
+THE INTERFACE IS NOW XAML (29 October 2026)
+Every menu and panel around the room is now drawn by the Uno app's XAML: the
+top bar, rail, chat and 30 panels from the shop to trades and the join form.
+The room, the synth and an arcade round stay JavaScript inside the same page.
+Panels open as one right-hand sheet; on phones they fill the screen. Screen
+readers work after pressing Tab and choosing "Enable accessibility".
+Fixed on the way: room shortcuts (1, 2, Space) no longer fire while a button
+has keyboard focus, and a double click on a sheet button can no longer close
+the next sheet or leave the page. Saves, the shared world and accounts are
+unchanged. The standalone Afterhours.html download is retired; the compiled
+app is the only client. 85 automated browser checks, 78 Node and 44 C# tests
+cover the build.
+
 ROOMS, CONVERSATION AND FURNISHING
 The room now fills the main view, with a closer fixed-angle camera, Fit and
 Follow controls, desktop panning and touch-drag panning outside Decorate mode.
@@ -114,7 +127,7 @@ Both downloads and SHA256SUMS.txt were verified before publication. The owner-
 approved temporary publishing workflow was removed after success.
 
 Development downloads:
-- Afterhours.html: standalone solo game; open it in a desktop browser.
+- Afterhours.html: standalone solo game (v0.5.0 only; retired since).
 - afterhours-uno-wasm.zip: compiled Uno app and local shared-world launcher.
   Extract it, follow PLAY.txt, and run node Launch-Afterhours.mjs (Node.js 22+).
   Players do not need .NET to run the compiled download.

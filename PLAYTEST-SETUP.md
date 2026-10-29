@@ -5,6 +5,11 @@ https://afterhours-playtest.matthewtmattei.workers.dev/ . The compiled Uno app,
 Cloudflare Workers/Durable Objects/D1 and Supabase Auth stay on Free plans.
 No billing, upgrade, paid plan or trial was enabled.
 
+The interface around the room is now the Uno app's XAML (29 October 2026). The
+steps below are unchanged; the acceptance checks further down need a fresh run on
+this build before the next session. Screen-reader users press Tab and choose
+**Enable accessibility** once per visit.
+
 ## Joining with friends
 
 1. Open the link on a desktop browser and choose **Join shared world**.

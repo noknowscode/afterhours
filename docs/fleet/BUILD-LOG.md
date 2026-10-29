@@ -5,7 +5,7 @@ Append only. Milestones, not edits. Decisions live in `docs/specs/xaml-outer-ui-
 | Stat | Value |
 |---|---|
 | Sessions | 1 (single coordinator, no fleet threads) |
-| Milestones logged | 10 |
+| Milestones logged | 11 |
 | Brief → first recognizable XAML chrome | 2 h 35 min (14:35 first spec → 17:10 wave 1 runnable) |
 | Runtime checks | wave 0: 13/13 · wave 1: 30/30 · wave 2: 40/40 · wave 3: 54/54 · Skia: 56/56 · wave 4: 65/65 · wave 5: 76/76 · wave 6: 82/82 · wave 7: 85/85 |
 | WASM framework download (brotli) | 5.53 MB baseline → 6.49 MB wave 0 → 6.63 MB wave 1 → 6.41 MB wave 2 → 6.51 MB wave 3 → 10.87 MB on Skia → 11.01 MB wave 5 → 11.09 MB wave 6 → 11.10 MB wave 7 (sum of `_framework/*.br`) |
@@ -157,5 +157,18 @@ Surprises: Cloudflare is blocked from the container, so the spike proved hosting
 native element shows the hosted room through it; Playwright's request stub missed the health call because the
 app's service worker answered it; a shared world that kept every test run's chat made joins slow enough to time
 out, so the check server now starts on a fresh data folder.
+Threads: 0 (single session)
+
+## 2026-10-29 06:55 — Wave 8: docs; Phase A complete
+
+Brief (verbatim):
+> "continue through all waves"
+
+Came back: 1 session, docs only (no new build).
+Numbers: 30 panel routes in XAML · 0 game panels reachable from the chrome except an arcade round and its results ·
+85/85 runtime checks · 78 Node + 44 xUnit tests · framework 11.10 MB brotli (10.87 MB at the Skia switch)
+Shots: docs/screenshots/xaml/wave2 … wave7/
+Surprises: none; the standalone packager and download are retired as approved on 2026-10-23.
+Quote: "continue through all waves" took waves 5 to 8 in one session (about 4 h 10 min from 02:45 to 06:55 UTC).
 Threads: 0 (single session)
 

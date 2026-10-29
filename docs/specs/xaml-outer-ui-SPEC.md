@@ -215,8 +215,8 @@ chat column) and the four interfaces.
 - Downloads (save export, WAV) stay JS `a.download`. File import uses the XAML `FileOpenPicker` on WASM (R10),
   then calls `IGameStore.Restore`.
 - OAuth redirect stays on `account-callback.html`.
-- `npm start` and `Afterhours.html` keep the full JS UI until the end of Phase A. After that, whether to keep
-  the JS panels for the standalone build is an Unresolved Question.
+- ~~`npm start` and `Afterhours.html` keep the full JS UI until the end of Phase A.~~ Retired in wave 8 as approved
+  on 2026-10-23: the Uno app is the only client; `npm start` serves the raw game files for tests only.
 
 ### Testing and validation
 
@@ -631,6 +631,21 @@ Decisions made while switching:
   mirror is checked separately: it names controls correctly, but its positions are unreliable in panels and it
   can lag a bound title, so it is a check, not the driver.
 - **List items have accessible names** (`ToString()` on the records lists show).
+
+## Wave 8 (2026-10-29): docs and the end of Phase A
+
+**Done.** Phase A is complete: every panel the chrome opens is XAML. Left in JavaScript by design: the room
+renderer (Phase B), the synth and WAV export, an arcade round and its results, the classic sprite picker, and the
+account flows in `accounts.js` (called from XAML).
+
+- README: play locally through the Uno app, the Uno section rewritten, the runtime check's fresh data folder.
+- RELEASE-NOTES: the XAML interface, the two fixes found on the way, the retired standalone download.
+- PLAYTEST-SETUP: the build note and the accessibility instruction; the acceptance checks still need a human run on
+  this build.
+- Retired: `scripts/package-prototype.py` and the standalone `Afterhours.html` (approved 2026-10-23).
+- Screenshots: one folder per wave under `docs/screenshots/xaml/`, each with `results.json`.
+- **Not run in this session (offer):** the wave 8 quality gates (`uno-break-it`, `gold-standard-pass`,
+  `uno-audit`, a full `uno-completeness-audit`) and the five-player playtest acceptance, which needs people.
 
 ## Wave 7 (2026-10-29): joining, restoring and signing out
 

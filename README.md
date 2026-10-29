@@ -16,20 +16,26 @@ supervised 10–20 minute group session. See [joining and test results](PLAYTEST
 
 ## Play locally
 
-Install Node.js 22 or newer, then:
+Install Node.js 22 or newer, .NET 10 with the `wasm-tools` workload, and the Uno
+prerequisites, then:
 
 ```sh
 npm ci
-npm start
+npm run build:uno
+npm run start:uno
 ```
 
 Open **http://127.0.0.1:4176**. Solo progress stays in the browser.
 Choose **Join shared world** for a separate persistent online character.
 Open **http://localhost:4176** in a second browser tab to test another character.
 The local service binds only to this computer. Shared progress is stored in
-`local-data/world.json`; protect that file and keep backups.
+`local-data/world.json` (or the folder in `AFTERHOURS_DATA`); protect that file
+and keep backups.
 
-The standalone `Afterhours.html` download supports solo play without a server.
+The Uno app is the only client: its XAML draws every menu and panel around the
+JavaScript room. `npm start` still serves the service with the raw game files for
+service and game tests, but their panels open only inside the app. The standalone
+`Afterhours.html` download is retired.
 
 ## What you can play
 
@@ -54,16 +60,23 @@ remain client-side. See [the detailed roadmap](REMAKE-ROADMAP.txt) for limits.
 ## Uno Platform WebAssembly
 
 `uno/` is a real Uno Platform / WinUI application targeting .NET 10 Browser
-WebAssembly with the Skia renderer. Its XAML (MVUX) draws the menus, HUD, room
-heading, actions, chat, shop, studio and stage, and hosts the JavaScript room in the
-same page through a `BrowserHtmlElement`. Screen readers work once a user presses Tab
-and activates "Enable accessibility". The room renderer, synth and the remaining
-panels are JavaScript; the migration plan is in
-[docs/specs/xaml-outer-ui-SPEC.md](docs/specs/xaml-outer-ui-SPEC.md).
+WebAssembly with the Skia renderer. Its XAML (MVUX, Navigation Extensions, Toolkit)
+draws the top bar, rail, HUD, room heading, actions, chat and all 30 panel routes: shop
+and inventory, studio, stage and chart, journal, profile and wardrobe, the room
+navigator and room tools, the companion and arcade picker, your circle, the shared
+world, players, trades and the account panels. The JavaScript room renders in the
+same page through a `BrowserHtmlElement`; the synth, an arcade round and its results,
+and the account flows (`accounts.js`) stay JavaScript. Screen readers work once a
+user presses Tab and activates "Enable accessibility". The migration record is in
+[docs/specs/xaml-outer-ui-SPEC.md](docs/specs/xaml-outer-ui-SPEC.md) and
+[docs/fleet/BUILD-LOG.md](docs/fleet/BUILD-LOG.md).
 
 `node scripts/verify-xaml.mjs [url] [outDir]` drives a published build in Chromium at
-four widths and with two shared-world players. It reads the XAML tree through the
-app's `UiProbe` export and clicks real coordinates.
+four widths, with two shared-world players and with a stubbed managed world (85 checks).
+It reads the XAML tree through the app's `UiProbe` export and clicks real coordinates.
+Start the server on a fresh data folder for it
+(`AFTERHOURS_DATA=/tmp/afterhours-check PORT=4177 npm run start:uno`): a world that
+keeps every run's chat slows joining until checks time out.
 
 Install .NET 10 and the Uno prerequisites, then run:
 
@@ -114,7 +127,7 @@ account flow both retained the same character and complete server-saved game
 state in the current browser. Recovery from another browser/device is unverified.
 
 [Download v0.5.0](https://github.com/mtmattei/afterhours/releases/tag/v0.5.0) for
-the standalone HTML and compiled Uno ZIP. That published preview predates the
+the earlier standalone HTML and compiled Uno ZIP. That published preview predates the
 managed-account work now on main; its contents have not been silently replaced.
 
 ## Layout
