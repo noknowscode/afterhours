@@ -8,6 +8,8 @@
     <!-- A member Uno has not implemented silently does nothing at runtime; fail the build instead. -->
     <WarningsAsErrors>$(WarningsAsErrors);Uno0001</WarningsAsErrors>
     <UnoSingleProject>true</UnoSingleProject>
+    <!-- The app's own DM Sans is the default text font (set in SymbolFonts); skip the Open Sans package and its 38 files. -->
+    <UnoDefaultFont>None</UnoDefaultFont>
     <!-- Browser targets use NuGet/runtime packs and do not need Windows SDK registry discovery. -->
     <TargetPlatformSdkPath>$(MSBuildSDKsPath)</TargetPlatformSdkPath>
     <TargetPlatformDisplayName>Browser WebAssembly</TargetPlatformDisplayName>
@@ -33,6 +35,7 @@
       Toolkit;
       MVUX;
       Navigation;
+      SkiaRenderer;
     </UnoFeatures>
   </PropertyGroup>
 

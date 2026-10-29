@@ -14,6 +14,7 @@ public partial class App : Application
     /// </summary>
     public App()
     {
+        SymbolFonts.Configure();
         this.InitializeComponent();
     }
 
@@ -47,6 +48,9 @@ public partial class App : Application
 #endif
         MainWindow.SetWindowIcon();
         Host = await builder.NavigateAsync<Shell>();
+        // The runtime check reads the XAML tree through UiProbe (the Skia renderer has no DOM to inspect).
+        if (OperatingSystem.IsBrowser())
+            Interop.UiProbe.Root = MainWindow.Content?.XamlRoot;
     }
 
     private static void RegisterRoutes(IViewRegistry views, IRouteRegistry routes)

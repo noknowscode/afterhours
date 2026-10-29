@@ -48,15 +48,24 @@ public sealed partial record CatalogTabs(string Tab)
     public bool ShowsFurniture => !IsDiscs;
 }
 
-public sealed partial record CollectionChip(string Key, string Name, int Count, bool Selected);
+public sealed partial record CollectionChip(string Key, string Name, int Count, bool Selected)
+{
+    public override string ToString() => $"{Name}, {Count} pieces";
+}
 
 public sealed partial record CollectionHeading(string Name, string Tagline);
 
-public sealed partial record DiscView(string Id, string Title, string Detail);
+public sealed partial record DiscView(string Id, string Title, string Detail)
+{
+    public override string ToString() => $"{Title}, {Detail}";
+}
 
 public sealed partial record BlueprintView(string Id, string Name, string Pieces);
 
-public sealed partial record GiftOption(string Id, string Name);
+public sealed partial record GiftOption(string Id, string Name)
+{
+    public override string ToString() => Name;
+}
 
 public static class ShopRules
 {

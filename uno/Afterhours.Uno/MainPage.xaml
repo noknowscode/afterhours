@@ -241,7 +241,7 @@
                         IsEnabled="{Binding Chrome.Editor.CanStore}" />
                 <Button Content="Undo" Style="{StaticResource SoftButtonStyle}" Command="{Binding Run}" CommandParameter="undo"
                         IsEnabled="{Binding Chrome.Editor.CanUndo}" />
-                <Button Content="＋ Furniture" Style="{StaticResource SoftButtonStyle}" Command="{Binding OpenInventory}" />
+                <Button Content="+ Furniture" Style="{StaticResource SoftButtonStyle}" Command="{Binding OpenInventory}" />
                 <Button Content="Done" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Run}" CommandParameter="finish" />
               </StackPanel>
             </Grid>

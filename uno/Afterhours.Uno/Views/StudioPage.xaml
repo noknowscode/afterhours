@@ -155,7 +155,12 @@
           <StackPanel Orientation="Horizontal" Spacing="8">
             <ComboBox ItemsSource="{Binding Lengths}" DisplayMemberPath="Label" SelectedValuePath="Value"
                       SelectedValue="{Binding Length, Mode=TwoWay}" AutomationProperties.Name="Pattern length" />
-            <Button Content="↶ Undo" Style="{StaticResource SoftButtonStyle}" Command="{Binding Undo}" IsEnabled="{Binding CanUndo}" />
+            <Button Style="{StaticResource SoftButtonStyle}" Command="{Binding Undo}" IsEnabled="{Binding CanUndo}" AutomationProperties.Name="Undo">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <FontIcon Style="{StaticResource IconText}" Glyph="&#xE7A7;" FontSize="14" />
+                <TextBlock Text="Undo" />
+              </StackPanel>
+            </Button>
             <Button Content="Clear" Style="{StaticResource SoftButtonStyle}" Command="{Binding Clear}" />
           </StackPanel>
         </StackPanel>
@@ -187,7 +192,7 @@
           <ColumnDefinition Width="Auto" />
         </Grid.ColumnDefinitions>
         <TextBlock Text="{Binding SongCount}" Style="{StaticResource BodyText}" VerticalAlignment="Center" />
-        <Button Grid.Column="1" Content="＋ New track" Style="{StaticResource SoftButtonStyle}" Command="{Binding StartNewTrack}" />
+        <Button Grid.Column="1" Content="+ New track" Style="{StaticResource SoftButtonStyle}" Command="{Binding StartNewTrack}" />
       </Grid>
       <mvux:FeedView Grid.Row="1" Source="{Binding Songs}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
                      Visibility="{Binding Confirm.IsOpen, Converter={StaticResource HiddenWhen}}">

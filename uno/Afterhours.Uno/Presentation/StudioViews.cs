@@ -28,7 +28,10 @@ public sealed partial record LaneView(int Key, string Name, bool Muted, double V
     public string VolumeName => $"{Name} volume";
 }
 
-public sealed partial record Choice(string Value, string Label);
+public sealed partial record Choice(string Value, string Label)
+{
+    public override string ToString() => Label;
+}
 
 // Sleeve is the pack colour as "#rrggbb" (the middle of the game's sleeve gradient).
 public sealed partial record SongCard(string Id, string Title, string Detail, string Pack, string Sleeve)

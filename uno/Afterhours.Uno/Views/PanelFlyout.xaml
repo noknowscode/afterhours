@@ -1,15 +1,32 @@
 <Flyout x:Class="Afterhours.Uno.Views.PanelFlyout"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:utu="using:Uno.Toolkit.UI"
         xmlns:uen="using:Uno.Extensions.Navigation.UI"
         Placement="Full">
-  <!-- Every !Route panel opens in this right drawer; each page sets its own width. Mirrors Uno.Extensions' NavigationFlyout. -->
+  <!-- Every !Route panel opens as this right-hand sheet; each page sets its own width. Mirrors Uno.Extensions'
+       NavigationFlyout. No slide animation: on Skia WASM the accessibility overlay keeps the positions controls
+       had mid-slide, so screen-reader focus (and the runtime check) would land in the wrong place. -->
   <Flyout.FlyoutPresenterStyle>
-    <Style TargetType="FlyoutPresenter" BasedOn="{StaticResource RightDrawerFlyoutPresenterStyle}">
-      <Setter Property="utu:DrawerFlyoutPresenter.DrawerLength" Value="Auto" />
-      <Setter Property="utu:DrawerFlyoutPresenter.LightDismissOverlayBackground" Value="{StaticResource DrawerScrimBrush}" />
+    <Style TargetType="FlyoutPresenter">
+      <Setter Property="MaxWidth" Value="Infinity" />
+      <Setter Property="MaxHeight" Value="Infinity" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="CornerRadius" Value="0" />
       <Setter Property="Background" Value="{StaticResource SurfacePanelBrush}" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="FlyoutPresenter">
+            <Grid>
+              <!-- Tapping the scrim closes the sheet (PanelFlyout.xaml.cs). -->
+              <Border x:Name="Scrim" Background="{StaticResource DrawerScrimBrush}" />
+              <Border HorizontalAlignment="Right" Background="{TemplateBinding Background}">
+                <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+              </Border>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
   </Flyout.FlyoutPresenterStyle>
   <Grid>

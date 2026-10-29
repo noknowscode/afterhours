@@ -31,6 +31,8 @@
   <SolidColorBrush x:Key="DrawerScrimBrush" Color="#99000000" />
 
   <FontFamily x:Key="BodyFontFamily">ms-appx:///Assets/Fonts/DMSans_Regular.ttf#DM Sans</FontFamily>
+  <!-- Fluent controls (TextBox, ComboBox, buttons) read this key; on Skia it would otherwise be a generic fallback. -->
+  <FontFamily x:Key="ContentControlThemeFontFamily">ms-appx:///Assets/Fonts/DMSans_Regular.ttf#DM Sans</FontFamily>
   <FontFamily x:Key="BodyStrongFontFamily">ms-appx:///Assets/Fonts/DMSans_Bold.ttf#DM Sans</FontFamily>
   <FontFamily x:Key="DisplayFontFamily">ms-appx:///Assets/Fonts/BarlowCondensed_ExtraBold.ttf#Barlow Condensed ExtraBold</FontFamily>
   <FontFamily x:Key="BrandFontFamily">ms-appx:///Assets/Fonts/SpaceGrotesk_Bold.ttf#Space Grotesk</FontFamily>
