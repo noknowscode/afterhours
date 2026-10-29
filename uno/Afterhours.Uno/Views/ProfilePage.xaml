@@ -1,0 +1,111 @@
+<Page x:Class="Afterhours.Uno.Views.ProfilePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=360, Narrow=520}">
+  <!-- The resident profile. Opened with !Profile (the top bar's portrait). -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+    <conv:BoolToVisibilityConverter x:Key="HiddenWhen" Invert="True" />
+    <conv:DataUrlImageConverter x:Key="DataUrlImage" />
+    <conv:HexBrushConverter x:Key="Hex" Fallback="{StaticResource InkBrush}" />
+    <conv:BoolToBrushConverter x:Key="Ring" TrueBrush="{StaticResource InkBrush}" FalseBrush="{StaticResource SurfacePanelBrush}" />
+  </Page.Resources>
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="14">
+      <TextBlock Text="RESIDENT PROFILE" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="This is you" Style="{StaticResource TitleText}" />
+      <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+
+      <!-- Restoring a save asks first, in place of the form (as the game did). -->
+      <StackPanel Spacing="12" Visibility="{Binding Restore.IsOpen, Converter={StaticResource ShownWhen}}">
+        <TextBlock Text="SAVE RECOVERY" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+        <TextBlock Text="{Binding Restore.Prompt.Title}" Style="{StaticResource TitleText}" />
+        <TextBlock Text="{Binding Restore.Prompt.Message}" Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Content="{Binding Restore.Prompt.Action}" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding ConfirmRestore}" />
+          <Button Content="Keep my world" Style="{StaticResource SoftButtonStyle}" Command="{Binding KeepWorld}" />
+        </StackPanel>
+      </StackPanel>
+
+      <StackPanel Spacing="14" Visibility="{Binding Restore.IsOpen, Converter={StaticResource HiddenWhen}}">
+        <Grid ColumnSpacing="14">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <Border Width="68" Height="72" CornerRadius="{StaticResource ChipRadius}" Background="{StaticResource SurfaceRaisedBrush}">
+            <Image Source="{Binding Portrait.Png, Converter={StaticResource DataUrlImage}}" Stretch="UniformToFill" AutomationProperties.Name="Your portrait" />
+          </Border>
+          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+            <TextBlock Text="{Binding Profile.Name}" Style="{StaticResource BodyStrongText}" FontSize="18" />
+            <TextBlock Text="{Binding Summary}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+          </StackPanel>
+        </Grid>
+
+        <TextBox Header="Display name" Text="{Binding DisplayName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="20" AutomationProperties.Name="Display name" />
+        <TextBox Header="Motto" Text="{Binding Motto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="120" AutomationProperties.Name="Motto" />
+
+        <StackPanel Spacing="8">
+          <TextBlock Text="Chat name colour" Style="{StaticResource BodyText}" />
+          <ItemsControl ItemsSource="{Binding Colors}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="8" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <!-- A ring marks the chosen colour (shape, not colour alone). -->
+                <Button Width="32" Height="32" Padding="0" CornerRadius="16" BorderThickness="2" BorderBrush="{Binding Selected, Converter={StaticResource Ring}}"
+                        Background="{Binding Hex, Converter={StaticResource Hex}}" AutomationProperties.Name="{Binding Name}"
+                        Style="{StaticResource StepButtonStyle}" CommandParameter="{Binding}"
+                        Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.PickColor}">
+                  <Border Width="28" Height="28" CornerRadius="14" BorderThickness="2" BorderBrush="{Binding Selected, Converter={StaticResource Ring}}" />
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <StackPanel Orientation="Horizontal" Spacing="6" Padding="10,6" CornerRadius="{StaticResource ChipRadius}" Background="{StaticResource SurfaceRaisedBrush}" HorizontalAlignment="Left">
+            <TextBlock Text="{Binding DisplayName}" Style="{StaticResource BodyStrongText}" Foreground="{Binding ChatColor, Converter={StaticResource Hex}}" />
+            <TextBlock Text="hey, just got here" Style="{StaticResource BodyText}" />
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Content="Save profile" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Save}" />
+          <Button Content="Change outfit" Style="{StaticResource SoftButtonStyle}" Command="{Binding ChangeOutfit}" />
+        </StackPanel>
+
+        <StackPanel Spacing="8">
+          <TextBlock Text="Your keepsakes" Style="{StaticResource BodyStrongText}" />
+          <ItemsControl ItemsSource="{Binding Keepsakes}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <VariableSizedWrapGrid Orientation="Horizontal" ItemHeight="36" ItemWidth="150" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Margin="0,0,6,6" Padding="10,4" CornerRadius="{StaticResource ChipRadius}" Background="{StaticResource SurfaceRaisedBrush}">
+                  <TextBlock Style="{StaticResource CaptionText}"><Run Text="{Binding Icon}" /><Run Text=" " /><Run Text="{Binding Name}" /></TextBlock>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <StackPanel Spacing="8">
+          <TextBlock Text="Keep your world" Style="{StaticResource BodyStrongText}" />
+          <TextBlock Text="Export a save to keep your rooms, songs, furniture, credits, and companion together." Style="{StaticResource BodyText}" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="Export save" Style="{StaticResource SoftButtonStyle}" Command="{Binding ExportSave}" />
+            <Button Content="Restore save" Style="{StaticResource SoftButtonStyle}" Command="{Binding RestoreFile}" />
+            <Button Content="Use last backup" Style="{StaticResource SoftButtonStyle}" Command="{Binding UseBackup}" />
+          </StackPanel>
+        </StackPanel>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Page>

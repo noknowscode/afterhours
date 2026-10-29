@@ -1,0 +1,104 @@
+<Page x:Class="Afterhours.Uno.Views.WardrobePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=360, Narrow=640, Normal=820}">
+  <!-- The wardrobe. Opened with !Wardrobe (rail "My look", profile "Change outfit"). The game draws the preview. -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+    <conv:DataUrlImageConverter x:Key="DataUrlImage" />
+    <conv:HexBrushConverter x:Key="Hex" Fallback="{StaticResource SurfaceRaisedBrush}" />
+    <conv:BoolToBrushConverter x:Key="ChosenFill" TrueBrush="{StaticResource SurfaceAccentTintBrush}" FalseBrush="{StaticResource SurfaceRaisedBrush}" />
+    <conv:BoolToBrushConverter x:Key="Ring" TrueBrush="{StaticResource InkBrush}" FalseBrush="{StaticResource SurfacePanelBrush}" />
+    <!-- Named parts are chips; colours are round swatches with a ring when chosen. -->
+    <DataTemplate x:Key="ChoiceTemplate">
+      <Grid Margin="0,0,6,6">
+        <Button Content="{Binding Name}" Padding="10,4" Style="{StaticResource SoftButtonStyle}"
+                Background="{Binding Selected, Converter={StaticResource ChosenFill}}" Visibility="{Binding IsLabel, Converter={StaticResource ShownWhen}}"
+                CommandParameter="{Binding}" Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Pick}" />
+        <Button Width="30" Height="30" Padding="0" CornerRadius="15" Style="{StaticResource StepButtonStyle}"
+                Background="{Binding Hex, Converter={StaticResource Hex}}" AutomationProperties.Name="{Binding Name}"
+                Visibility="{Binding IsSwatch, Converter={StaticResource ShownWhen}}"
+                CommandParameter="{Binding}" Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Pick}">
+          <Border Width="30" Height="30" CornerRadius="15" BorderThickness="2" BorderBrush="{Binding Selected, Converter={StaticResource Ring}}" />
+        </Button>
+      </Grid>
+    </DataTemplate>
+    <!-- WrapPanel is Uno's own (not in WinUI); the app targets the web only. -->
+    <ItemsPanelTemplate x:Key="Wrap">
+      <WrapPanel Orientation="Horizontal" />
+    </ItemsPanelTemplate>
+  </Page.Resources>
+  <Grid Padding="24" RowSpacing="12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+      <RowDefinition Height="Auto" />
+    </Grid.RowDefinitions>
+    <StackPanel Spacing="4">
+      <TextBlock Text="THE WARDROBE" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="Who’s showing up tonight?" Style="{StaticResource TitleText}" />
+    </StackPanel>
+    <InfoBar Grid.Row="1" IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+    <Grid Grid.Row="2" ColumnSpacing="20" RowSpacing="12">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="{utu:Responsive Narrowest=*, Normal=Auto}" />
+        <ColumnDefinition Width="{utu:Responsive Narrowest=0, Normal=*}" />
+      </Grid.ColumnDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="{utu:Responsive Narrowest=*, Normal=0}" />
+      </Grid.RowDefinitions>
+      <StackPanel Spacing="8" HorizontalAlignment="Center">
+        <Border Width="{utu:Responsive Narrowest=150, Normal=250}" Height="{utu:Responsive Narrowest=204, Normal=340}"
+                CornerRadius="{StaticResource CardRadius}" Background="{StaticResource SurfaceRaisedBrush}">
+          <Image Source="{Binding Preview, Converter={StaticResource DataUrlImage}}" Stretch="Uniform" AutomationProperties.Name="Outfit preview" />
+        </Border>
+        <ItemsControl ItemsSource="{Binding Poses}" HorizontalAlignment="Center">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="6" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Button Content="{Binding}" Style="{StaticResource SoftButtonStyle}" CommandParameter="{Binding}"
+                      Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.ShowPose}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <TextBlock Text="Everyone in the room sees this look." Style="{StaticResource CaptionText}" HorizontalAlignment="Center" />
+      </StackPanel>
+      <ScrollViewer Grid.Column="{utu:Responsive Narrowest=0, Normal=1}" Grid.Row="{utu:Responsive Narrowest=1, Normal=0}">
+        <StackPanel Spacing="12">
+          <TextBlock Text="Start from a look" Style="{StaticResource BodyStrongText}" />
+          <ItemsControl ItemsSource="{Binding Presets}" ItemsPanel="{StaticResource Wrap}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button Content="{Binding Name}" Margin="0,0,6,6" Padding="10,4" Style="{StaticResource SoftButtonStyle}" CommandParameter="{Binding}"
+                        Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.StartFrom}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Text="Hair" Style="{StaticResource BodyStrongText}" />
+          <ItemsControl ItemsSource="{Binding Hair}" ItemTemplate="{StaticResource ChoiceTemplate}" ItemsPanel="{StaticResource Wrap}" />
+          <ItemsControl ItemsSource="{Binding HairColors}" ItemTemplate="{StaticResource ChoiceTemplate}" ItemsPanel="{StaticResource Wrap}" AutomationProperties.Name="Hair colour" />
+          <TextBlock Text="Top" Style="{StaticResource BodyStrongText}" />
+          <ItemsControl ItemsSource="{Binding Tops}" ItemTemplate="{StaticResource ChoiceTemplate}" ItemsPanel="{StaticResource Wrap}" />
+          <ItemsControl ItemsSource="{Binding TopColors}" ItemTemplate="{StaticResource ChoiceTemplate}" ItemsPanel="{StaticResource Wrap}" AutomationProperties.Name="Top colour" />
+          <TextBlock Text="Bottoms" Style="{StaticResource BodyStrongText}" />
+          <ItemsControl ItemsSource="{Binding Bottoms}" ItemTemplate="{StaticResource ChoiceTemplate}" ItemsPanel="{StaticResource Wrap}" />
+          <ItemsControl ItemsSource="{Binding BottomColors}" ItemTemplate="{StaticResource ChoiceTemplate}" ItemsPanel="{StaticResource Wrap}" AutomationProperties.Name="Bottoms colour" />
+          <TextBlock Text="Skin" Style="{StaticResource BodyStrongText}" />
+          <ItemsControl ItemsSource="{Binding Skins}" ItemTemplate="{StaticResource ChoiceTemplate}" ItemsPanel="{StaticResource Wrap}" AutomationProperties.Name="Skin tone" />
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+      <Button Content="Use a classic sprite" Style="{StaticResource QuietButtonStyle}" Command="{Binding UseClassic}" />
+      <Button Content="Save look" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Save}" />
+    </StackPanel>
+  </Grid>
+</Page>

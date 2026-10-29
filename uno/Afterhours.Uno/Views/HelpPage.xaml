@@ -1,0 +1,47 @@
+<Page x:Class="Afterhours.Uno.Views.HelpPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=360, Narrow=640}">
+  <!-- How to play. Opened with !Help (the rail's "New around here?"). -->
+  <Page.Resources>
+    <Style x:Key="HelpCard" TargetType="StackPanel">
+      <Setter Property="Padding" Value="14" />
+      <Setter Property="Spacing" Value="6" />
+      <Setter Property="CornerRadius" Value="{StaticResource ChipRadius}" />
+      <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
+    </Style>
+  </Page.Resources>
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="10">
+      <TextBlock Text="HOW TO PLAY" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="The night is yours" Style="{StaticResource TitleText}" />
+      <StackPanel Style="{StaticResource HelpCard}">
+        <TextBlock Text="01 · Make yourself at home" Style="{StaticResource BodyStrongText}" />
+        <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap" Text="Click the floor to walk. Click seats to sit and other furniture to use it. Decorate moves and rotates your pieces." />
+      </StackPanel>
+      <StackPanel Style="{StaticResource HelpCard}">
+        <TextBlock Text="02 · Find your sound" Style="{StaticResource BodyStrongText}" />
+        <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap" Text="Make a track in Beat studio. Save it, perform on the stage, press a record, or export the audio." />
+      </StackPanel>
+      <StackPanel Style="{StaticResource HelpCard}">
+        <TextBlock Text="03 · Earn your next thing" Style="{StaticResource BodyStrongText}" />
+        <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap" Text="Check in daily, finish quests, play the arcade, and perform music. Collect your quest rewards in the Journal." />
+      </StackPanel>
+      <StackPanel Style="{StaticResource HelpCard}">
+        <TextBlock Text="04 · Build your world" Style="{StaticResource BodyStrongText}" />
+        <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap" Text="Create rooms, add usable objects, set up a playlist, leave notes, host events, and connect room logic." />
+      </StackPanel>
+      <StackPanel Style="{StaticResource HelpCard}">
+        <TextBlock Text="05 · A little company" Style="{StaticResource BodyStrongText}" />
+        <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap" Text="Adopt a cat, feed it, teach it tricks, and let it follow you. Click residents to open their profiles." />
+      </StackPanel>
+      <StackPanel Style="{StaticResource HelpCard}">
+        <TextBlock Text="06 · Keep your progress" Style="{StaticResource BodyStrongText}" />
+        <TextBlock Style="{StaticResource BodyText}" TextWrapping="Wrap" Text="Your world saves automatically on this device. Export a backup from your profile. Shared sessions add real guests when the local game service is running." />
+      </StackPanel>
+      <TextBlock Style="{StaticResource CaptionText}" TextWrapping="Wrap"
+                 Text="Camera: +/− zoom · Fit shows the whole room · ◎ follows you · Space + drag pans. Keyboard: arrows/WASD move · 1 wave · 2 dance · Esc stand · R rotate while decorating. Chat: :wave, :dance, :stand, :shout." />
+    </StackPanel>
+  </ScrollViewer>
+</Page>

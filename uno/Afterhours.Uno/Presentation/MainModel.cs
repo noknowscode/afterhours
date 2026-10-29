@@ -80,6 +80,9 @@ public partial record MainModel(IGameStore Store, IRoomView RoomView, INavigator
                 "Jukebox" => navigator.NavigateRouteAsync(navigator, "Jukebox", qualifier: Qualifiers.Dialog),
                 "Stage" => navigator.NavigateRouteAsync(navigator, "Stage", qualifier: Qualifiers.Dialog),
                 "Chart" => navigator.NavigateRouteAsync(navigator, "Chart", qualifier: Qualifiers.Dialog),
+                "Journal" => navigator.NavigateRouteAsync(navigator, "Journal", qualifier: Qualifiers.Dialog,
+                    data: new JournalRequest(request.Text("tab") ?? "quests")),
+                "Profile" or "Wardrobe" or "Help" => navigator.NavigateRouteAsync(navigator, request.Route, qualifier: Qualifiers.Dialog),
                 _ => Task.CompletedTask,
             };
         }
