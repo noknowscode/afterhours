@@ -125,4 +125,70 @@ internal static partial class GameHost
 
     [JSImport("classicLook", Module)]
     public static partial void ClassicLook();
+
+    [JSImport("roomList", Module)]
+    public static partial string Rooms();
+
+    [JSImport("goToRoom", Module)]
+    public static partial Task<string> GoToRoom(string key);
+
+    [JSImport("createRoom", Module)]
+    public static partial string CreateRoom(string name, string description, string tags);
+
+    [JSImport("currentRoom", Module)]
+    public static partial string Room();
+
+    [JSImport("roomPanel", Module)]
+    public static partial string RoomPanel(string name);
+
+    [JSImport("saveRoomSettings", Module)]
+    public static partial string SaveRoomSettings(string name, string description, string tags, string lighting, string door);
+
+    [JSImport("addNote", Module)]
+    public static partial string AddNote(string text);
+
+    [JSImport("deleteNote", Module)]
+    public static partial string DeleteNote(string noteId);
+
+    [JSImport("addRule", Module)]
+    public static partial string AddRule(string trigger, string effect, string phrase, string message);
+
+    [JSImport("deleteRule", Module)]
+    public static partial string DeleteRule(string ruleId);
+
+    [JSImport("hostEvent", Module)]
+    public static partial string HostEvent(string name, int delay);
+
+    [JSImport("endEvent", Module)]
+    public static partial string EndEvent();
+
+    [JSImport("linkPortal", Module)]
+    public static partial string LinkPortal(string itemId, string roomId);
+
+    [JSImport("roomObject", Module)]
+    public static partial string RoomObject();
+
+    [JSImport("objectAction", Module)]
+    public static partial string ObjectAction(int index);
+
+    [JSImport("objectMove", Module)]
+    public static partial string ObjectMove();
+
+    [JSImport("arcade", Module)]
+    public static partial string Arcade();
+
+    [JSImport("playArcade", Module)]
+    public static partial string PlayArcade(string kind);
+
+    [JSImport("pet", Module)]
+    public static partial string Pet();
+
+    [JSImport("adoptPet", Module)]
+    public static partial string AdoptPet(string name);
+
+    [JSImport("petAction", Module)]
+    public static partial string PetAction(string action);
+
+    [JSImport("petPortrait", Module)]
+    public static partial string PetPortrait();
 }

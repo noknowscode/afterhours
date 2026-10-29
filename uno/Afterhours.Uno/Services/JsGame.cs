@@ -6,7 +6,7 @@ namespace Afterhours.Uno.Services;
 
 // Phase A: both interfaces are backed by the JavaScript game running in the same page.
 [System.Runtime.Versioning.SupportedOSPlatform("browser")]
-public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, IStage, IResident
+public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, IStage, IResident, IRooms
 {
     private static readonly TimeSpan OpenTimeout = TimeSpan.FromSeconds(15);
     private bool _mounted;
@@ -117,6 +117,62 @@ public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, I
         if (_mounted)
             GameHost.ClassicLook();
     }
+
+    public RoomsState Rooms() => Host(GameHost.Rooms, Ctx.HostReplyRoomsState)?.Result ?? RoomsState.Empty;
+
+    public async Task<ActionReply> GoTo(string key) => _mounted ? Parse(await GameHost.GoToRoom(key)) : ActionReply.NotReady;
+
+    public ActionReply CreateRoom(string name, string description, string tags) => Reply(() => GameHost.CreateRoom(name, description, tags));
+
+    public RoomState Room() => Host(GameHost.Room, Ctx.HostReplyRoomState)?.Result ?? RoomState.Empty;
+
+    public void OpenRoomPanel(string name)
+    {
+        if (_mounted)
+            GameHost.RoomPanel(name);
+    }
+
+    public HostReply<RoomState> SaveSettings(string name, string description, string tags, string lighting, string door) =>
+        RoomReply(() => GameHost.SaveRoomSettings(name, description, tags, lighting, door));
+
+    public HostReply<RoomState> AddNote(string text) => RoomReply(() => GameHost.AddNote(text));
+
+    public HostReply<RoomState> DeleteNote(string noteId) => RoomReply(() => GameHost.DeleteNote(noteId));
+
+    public HostReply<RoomState> AddRule(string trigger, string effect, string phrase, string message) =>
+        RoomReply(() => GameHost.AddRule(trigger, effect, phrase, message));
+
+    public HostReply<RoomState> DeleteRule(string ruleId) => RoomReply(() => GameHost.DeleteRule(ruleId));
+
+    public HostReply<RoomState> HostEvent(string name, int delay) => RoomReply(() => GameHost.HostEvent(name, delay));
+
+    public HostReply<RoomState> EndEvent() => RoomReply(GameHost.EndEvent);
+
+    public ActionReply LinkPortal(string itemId, string roomId) => Reply(() => GameHost.LinkPortal(itemId, roomId));
+
+    public RoomObject? Object() => Host(GameHost.RoomObject, Ctx.HostReplyRoomObject)?.Result;
+
+    public ActionReply ObjectAction(int index) => Reply(() => GameHost.ObjectAction(index));
+
+    public ActionReply MoveObject() => Reply(GameHost.ObjectMove);
+
+    public ArcadeState Arcade() => Host(GameHost.Arcade, Ctx.HostReplyArcadeState)?.Result ?? new([]);
+
+    public void PlayArcade(string kind)
+    {
+        if (_mounted)
+            GameHost.PlayArcade(kind);
+    }
+
+    public PetState Companion() => Host(GameHost.Pet, Ctx.HostReplyPetState)?.Result ?? PetState.None;
+
+    public HostReply<PetState> AdoptPet(string name) => Host(() => GameHost.AdoptPet(name), Ctx.HostReplyPetState) ?? new(false, NotReady, null);
+
+    public HostReply<PetState> PetAction(string action) => Host(() => GameHost.PetAction(action), Ctx.HostReplyPetState) ?? new(false, NotReady, null);
+
+    public string PetPortrait() => _mounted ? GameHost.PetPortrait() : "";
+
+    private HostReply<RoomState> RoomReply(Func<string> call) => Host(call, Ctx.HostReplyRoomState) ?? new(false, NotReady, null);
 
     private const string NotReady = "Your world is still opening.";
 

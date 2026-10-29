@@ -1,0 +1,68 @@
+<Page x:Class="Afterhours.Uno.Views.CompanionPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=340, Narrow=460}">
+  <!-- The companion. Opened with !Companion (rail or a food bowl). -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+    <conv:DataUrlImageConverter x:Key="DataUrlImage" />
+  </Page.Resources>
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="12">
+      <TextBlock Text="{Binding Eyebrow}" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="{Binding Title}" Style="{StaticResource TitleText}" />
+      <Border Width="230" Height="160" HorizontalAlignment="Left" CornerRadius="{StaticResource CardRadius}" Background="{StaticResource SurfaceRaisedBrush}">
+        <Image Source="{Binding Portrait, Converter={StaticResource DataUrlImage}}" Stretch="None" AutomationProperties.Name="Your companion" />
+      </Border>
+      <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+
+      <!-- Adopt -->
+      <StackPanel Spacing="12" Visibility="{Binding NoPet, Converter={StaticResource ShownWhen}}">
+        <TextBlock Text="Meet the orange tabby who always stays up late. Your companion follows you, learns tricks, and needs a little food and attention."
+                   Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+        <TextBox Header="Name your companion" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="20"
+                 AutomationProperties.Name="Name your companion" />
+        <Button Content="Adopt · 50 ✦" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Adopt}" />
+      </StackPanel>
+
+      <!-- Care -->
+      <StackPanel Spacing="12" Visibility="{Binding HasPet, Converter={StaticResource ShownWhen}}">
+        <ItemsControl ItemsSource="{Binding Needs}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <StackPanel Margin="0,0,0,8" Spacing="4" AutomationProperties.Name="{Binding}">
+                <Grid>
+                  <TextBlock Text="{Binding Name}" Style="{StaticResource BodyText}" />
+                  <TextBlock Text="{Binding Value}" Style="{StaticResource BodyStrongText}" HorizontalAlignment="Right" />
+                </Grid>
+                <ProgressBar Value="{Binding Percent}" Maximum="100" Foreground="{StaticResource AcidBrush}" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <VariableSizedWrapGrid Orientation="Horizontal" ItemHeight="44" ItemWidth="130">
+          <Button Content="Feed · 3 ✦" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Care}" CommandParameter="feed" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+          <Button Content="Play" Style="{StaticResource SoftButtonStyle}" Command="{Binding Care}" CommandParameter="play" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+          <Button Content="Train" Style="{StaticResource SoftButtonStyle}" Command="{Binding Care}" CommandParameter="train" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+          <Button Content="{Binding FollowLabel}" Style="{StaticResource SoftButtonStyle}" Command="{Binding Care}" CommandParameter="follow" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+        </VariableSizedWrapGrid>
+        <TextBlock Text="{Binding Training}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+        <ItemsControl ItemsSource="{Binding Tricks}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" Spacing="8" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Button Content="{Binding Name}" Style="{StaticResource SoftButtonStyle}" CommandParameter="{Binding}"
+                      Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Perform}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Page>

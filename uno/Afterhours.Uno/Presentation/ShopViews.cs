@@ -16,6 +16,8 @@ public sealed partial record ArtFrame(string Url, double Left, double Top, doubl
     // A value type, so it reaches converters as is: MVUX wraps a record read through a state in a bindable proxy.
     public System.Drawing.RectangleF ClipRect => new((float)ClipX, (float)ClipY, (float)ClipWidth, (float)ClipHeight);
 
+    public static ArtFrame None { get; } = new("", 0, 0, 0, 0, 0, 0, 0, 0);
+
     public static ArtFrame Fit(ShopEntry entry, double boxWidth, double boxHeight)
     {
         var (x, y, w, h) = (entry.Crop[0], entry.Crop[1], entry.Crop[2], entry.Crop[3]);

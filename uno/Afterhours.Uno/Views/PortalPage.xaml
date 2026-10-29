@@ -1,0 +1,31 @@
+<Page x:Class="Afterhours.Uno.Views.PortalPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=340, Narrow=440}">
+  <!-- Link a portal. Opened with !Portal and an ItemRequest(itemId) from a portal in the room. -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+  </Page.Resources>
+  <StackPanel Padding="24" Spacing="12">
+    <TextBlock Text="LINK A PORTAL" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+    <TextBlock Text="Where does this lead?" Style="{StaticResource TitleText}" />
+    <TextBlock Text="Choose one of your rooms. Add another portal there to create a return route."
+               Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+    <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+    <TextBlock Text="Create another room in the navigator first." Style="{StaticResource CaptionText}"
+               Visibility="{Binding HasNone, Converter={StaticResource ShownWhen}}" />
+    <ItemsControl ItemsSource="{Binding Destinations}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Button Margin="0,0,0,6" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Style="{StaticResource SoftButtonStyle}"
+                  AutomationProperties.Name="{Binding Name}" CommandParameter="{Binding}"
+                  Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Link}">
+            <TextBlock Style="{StaticResource BodyStrongText}"><Run Text="{Binding Name}" /><Run Text=" ↗" /></TextBlock>
+          </Button>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </StackPanel>
+</Page>

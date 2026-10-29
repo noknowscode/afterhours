@@ -1,0 +1,104 @@
+<Page x:Class="Afterhours.Uno.Views.RoomsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=360, Narrow=560}">
+  <!-- The room navigator. Opened with !Rooms and a RoomsRequest(filter) (rail, travel bar, shared session). -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+    <conv:BoolToVisibilityConverter x:Key="HiddenWhen" Invert="True" />
+  </Page.Resources>
+  <Grid Padding="24" RowSpacing="12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <InfoBar Grid.Row="1" IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+
+    <!-- Create a room (in place of the list). -->
+    <StackPanel Grid.Row="2" Spacing="12" Visibility="{Binding Create.IsOpen, Converter={StaticResource ShownWhen}}">
+      <TextBlock Text="CREATE A ROOM" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="A room of your own" Style="{StaticResource TitleText}" />
+      <TextBlock Text="Make a studio, a café, a game room, or somewhere quiet. You can own up to twelve rooms."
+                 Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+      <TextBox Header="Room name" Text="{Binding NewName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="40"
+               PlaceholderText="e.g. Daydream’s listening room" AutomationProperties.Name="Room name" />
+      <TextBox Header="Description" Text="{Binding NewDescription, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="120"
+               PlaceholderText="What happens here?" AutomationProperties.Name="Description" />
+      <TextBox Header="Tags" Text="{Binding NewTags, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="60" AutomationProperties.Name="Tags" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button Content="Create room" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding CreateRoom}" />
+        <Button Content="Back to rooms" Style="{StaticResource SoftButtonStyle}" Command="{Binding CancelCreate}" />
+      </StackPanel>
+    </StackPanel>
+
+    <StackPanel Spacing="10" Visibility="{Binding Create.IsOpen, Converter={StaticResource HiddenWhen}}">
+      <TextBlock Text="{Binding Eyebrow}" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="{Binding Title}" Style="{StaticResource TitleText}" />
+      <StackPanel Orientation="Horizontal" Spacing="4" Visibility="{Binding IsSolo, Converter={StaticResource ShownWhen}}">
+        <Button Style="{StaticResource QuietButtonStyle}" Command="{Binding ShowTab}" CommandParameter="all" AutomationProperties.Name="All rooms">
+          <StackPanel Spacing="4">
+            <TextBlock Text="All rooms" Style="{StaticResource BodyStrongText}" />
+            <Rectangle Height="2" Fill="{StaticResource AcidBrush}" Visibility="{Binding Tabs.IsAll, Converter={StaticResource ShownWhen}}" />
+          </StackPanel>
+        </Button>
+        <Button Style="{StaticResource QuietButtonStyle}" Command="{Binding ShowTab}" CommandParameter="mine" AutomationProperties.Name="My rooms">
+          <StackPanel Spacing="4">
+            <TextBlock Text="My rooms" Style="{StaticResource BodyStrongText}" />
+            <Rectangle Height="2" Fill="{StaticResource AcidBrush}" Visibility="{Binding Tabs.IsMine, Converter={StaticResource ShownWhen}}" />
+          </StackPanel>
+        </Button>
+        <Button Style="{StaticResource QuietButtonStyle}" Command="{Binding ShowTab}" CommandParameter="favorites" AutomationProperties.Name="Favorites">
+          <StackPanel Spacing="4">
+            <TextBlock Text="Favorites" Style="{StaticResource BodyStrongText}" />
+            <Rectangle Height="2" Fill="{StaticResource AcidBrush}" Visibility="{Binding Tabs.IsFavorites, Converter={StaticResource ShownWhen}}" />
+          </StackPanel>
+        </Button>
+        <Button Style="{StaticResource QuietButtonStyle}" Command="{Binding ShowTab}" CommandParameter="recent" AutomationProperties.Name="Recent">
+          <StackPanel Spacing="4">
+            <TextBlock Text="Recent" Style="{StaticResource BodyStrongText}" />
+            <Rectangle Height="2" Fill="{StaticResource AcidBrush}" Visibility="{Binding Tabs.IsRecent, Converter={StaticResource ShownWhen}}" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
+      <TextBox Text="{Binding Query, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Search rooms…" AutomationProperties.Name="Search rooms" />
+    </StackPanel>
+
+    <Grid Grid.Row="2" RowSpacing="12" Visibility="{Binding Create.IsOpen, Converter={StaticResource HiddenWhen}}">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+      <ScrollViewer>
+        <StackPanel Spacing="8">
+          <TextBlock Text="No rooms match this search." Style="{StaticResource CaptionText}" Visibility="{Binding IsEmpty, Converter={StaticResource ShownWhen}}" />
+          <ItemsControl ItemsSource="{Binding Cards}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button Margin="0,0,0,8" Padding="14,12" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                        Style="{StaticResource SoftButtonStyle}" AutomationProperties.Name="{Binding}" CommandParameter="{Binding}"
+                        Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Enter}">
+                  <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="2">
+                      <TextBlock Text="{Binding Name}" Style="{StaticResource BodyStrongText}" />
+                      <TextBlock Text="{Binding Description}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="{Binding Badge}" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" VerticalAlignment="Center" />
+                  </Grid>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+      <Button Grid.Row="1" Content="+ Create a room" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding OpenCreate}"
+              Visibility="{Binding IsSolo, Converter={StaticResource ShownWhen}}" />
+    </Grid>
+  </Grid>
+</Page>

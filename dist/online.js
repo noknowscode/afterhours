@@ -165,14 +165,24 @@
     });
     W.button('kickPlayer',()=>send('kick',{user:id}).then(panel));W.button('banPlayer',()=>send('ban',{user:id}).then(panel));
   }
-  function roomDirectory(){
-    W.panel('Rooms with a heartbeat','SHARED NAVIGATOR',`<div class="directory-list destination-grid">${[0,1,2,3].map(i=>`<button class="directory-room" data-shared-room="public:${i}"><span class="destination-art public-${i}"></span><span><b>${['Side B','Midnight Diner','The Greenhouse','Cloud Nine'][i]}</b><small>Public hangout</small></span><em>Enter ↗</em></button>`).join('')}${state.rooms.map(r=>`<button class="directory-room" data-shared-room="${h(r.key)}"><span class="destination-art home"></span><span><b>${h(r.name)}</b><small>by ${h(r.owner)} · ${r.count} guests · ${h(r.door)}</small></span><em>${r.door==='doorbell'?'Ring':'Enter'} ↗</em></button>`).join('')}</div>`);
-    W.buttons('[data-shared-room]',b=>joinRoom(b.dataset.sharedRoom));
+  // The shared navigator is a XAML panel; it reads roomsState and joins through joinRoomKey.
+  function roomDirectory(){W.openPanel('Rooms',{filter:'all'});}
+  const publicNames=['Side B','Midnight Diner','The Greenhouse','Cloud Nine'];
+  function roomsState(){
+    return {shared:true,favorites:[],history:[],
+      entries:publicNames.map((name,i)=>({key:'public:'+i,name,description:'Public hangout',kind:'public',door:'open'}))
+        .concat(state.rooms.map(r=>({key:r.key,name:r.name,description:'by '+r.owner+' · '+r.count+' guests · '+r.door,kind:'shared',door:r.door})))};
   }
+  // Joined, or the doorbell rang (the toast says so): either way the navigator can close.
+  async function joinRoomKey(key){
+    rang=false;const joined=await joinRoom(key);
+    return joined||rang?{ok:true}:{ok:false,error:'That room could not be opened right now.'};
+  }
+  let rang=false;
   async function joinRoom(key){
     if(joining)return false;joining=true;try{
       const out=await send('joinRoom',{key});
-      if(out.result?.waiting){AfterhoursView.cue('ring');W.toast('Doorbell rung. The host will answer shortly.');return false;}
+      if(out.result?.waiting){rang=true;AfterhoursView.cue('ring');W.toast('Doorbell rung. The host will answer shortly.');return false;}
       renderRoom();W.close();return true;
     }catch{return false;}finally{joining=false;}
   }
@@ -300,7 +310,7 @@
     W.ctx.fillStyle='#b5e8b2';W.ctx.beginPath();W.ctx.arc(x+22,y+26,3,0,Math.PI*2);W.ctx.fill();
   }
   const api={
-    directory:roomDirectory,connected:()=>online,remoteRoom:()=>remote,peers:()=>state?.peers||[],panel,renderFriends,stagePanel,chartPanel,queueSong,stageState,toggleListen,
+    directory:roomDirectory,roomsState,joinRoomKey,connected:()=>online,remoteRoom:()=>remote,peers:()=>state?.peers||[],panel,renderFriends,stagePanel,chartPanel,queueSong,stageState,toggleListen,
     leaveStage:()=>send('leaveQueue').catch(()=>{}),applaud:()=>send('vote').catch(()=>{}),
     visitOwnRoom:id=>joinRoom('home:'+state.self.id+':'+id),
     rollDice:id=>send('command',{type:'itemAction',payload:{id,action:'roll'}}).then(out=>out.result),

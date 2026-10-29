@@ -1,0 +1,46 @@
+<Page x:Class="Afterhours.Uno.Views.ArcadePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=360, Narrow=640}">
+  <!-- The arcade picker. Opened with !Arcade (rail or an arcade cabinet). A round is a game panel. -->
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="12">
+      <TextBlock Text="AFTERHOURS ARCADE" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="Just one more round" Style="{StaticResource TitleText}" />
+      <TextBlock Text="Original games inspired by the social-game era. Play against a resident rival, set a personal best, and earn credits."
+                 Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+      <ItemsControl ItemsSource="{Binding Games}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="190" ItemHeight="250" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Grid Margin="0,0,8,8" Padding="14" RowSpacing="6" CornerRadius="{StaticResource CardRadius}" Background="{StaticResource SurfaceRaisedBrush}"
+                  AutomationProperties.Name="{Binding}">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+              <Grid>
+                <TextBlock Text="{Binding Icon}" FontSize="26" Foreground="{StaticResource AcidBrush}" />
+                <TextBlock Text="{Binding Best}" Style="{StaticResource EyebrowText}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+              </Grid>
+              <TextBlock Grid.Row="1" Text="{Binding Title}" Style="{StaticResource BodyStrongText}" FontSize="17" />
+              <TextBlock Grid.Row="2" Text="{Binding Description}" Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+              <TextBlock Grid.Row="3" Text="{Binding Instructions}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+              <Button Grid.Row="4" Content="{Binding Play}" HorizontalAlignment="Stretch" Style="{StaticResource PrimaryButtonStyle}" CommandParameter="{Binding}"
+                      Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Play}" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Text="Up to eight rewarded rounds each day. Wins earn 30 credits; completed rounds earn 15." Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+    </StackPanel>
+  </ScrollViewer>
+</Page>

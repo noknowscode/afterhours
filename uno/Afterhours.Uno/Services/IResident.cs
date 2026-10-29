@@ -32,4 +32,19 @@ public interface IResident
 
     // Opens the game's classic sprite picker.
     void ClassicLook();
+
+    ArcadeState Arcade();
+
+    // Starts a round; the round and its results are game panels.
+    void PlayArcade(string kind);
+
+    PetState Companion();
+
+    HostReply<PetState> AdoptPet(string name);
+
+    // feed, play, train, follow (toggle), sit or spin.
+    HostReply<PetState> PetAction(string action);
+
+    // A PNG data URL of the companion.
+    string PetPortrait();
 }

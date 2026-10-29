@@ -1,0 +1,41 @@
+<Page x:Class="Afterhours.Uno.Views.RoomObjectPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=340, Narrow=440}">
+  <!-- A piece in the room. Opened with !RoomObject and an ItemRequest(itemId) when you click one. -->
+  <Page.Resources>
+    <conv:UrlImageConverter x:Key="AtlasImage" />
+    <conv:ArtClipConverter x:Key="ArtClip" />
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+    <conv:BoolToVisibilityConverter x:Key="HiddenWhen" Invert="True" />
+  </Page.Resources>
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="12">
+      <TextBlock Text="ROOM INTERACTION" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="{Binding Name}" Style="{StaticResource TitleText}" />
+      <Canvas Width="240" Height="188" HorizontalAlignment="Left" Clip="{Binding Art.ClipRect, Converter={StaticResource ArtClip}}" AutomationProperties.AccessibilityView="Raw">
+        <Image Source="{Binding Art.Url, Converter={StaticResource AtlasImage}}" Stretch="Fill"
+               Width="{Binding Art.Width}" Height="{Binding Art.Height}" Canvas.Left="{Binding Art.Left}" Canvas.Top="{Binding Art.Top}" />
+      </Canvas>
+      <TextBlock Text="{Binding Text}" Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+      <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+      <ItemsControl ItemsSource="{Binding Actions}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Grid Margin="0,0,0,6">
+              <Button Content="{Binding Label}" HorizontalAlignment="Stretch" Style="{StaticResource PrimaryButtonStyle}"
+                      Visibility="{Binding Primary, Converter={StaticResource ShownWhen}}" CommandParameter="{Binding}"
+                      Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Run}" />
+              <Button Content="{Binding Label}" HorizontalAlignment="Stretch" Style="{StaticResource SoftButtonStyle}"
+                      Visibility="{Binding Primary, Converter={StaticResource HiddenWhen}}" CommandParameter="{Binding}"
+                      Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Run}" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Button Content="Move / rotate" HorizontalAlignment="Stretch" Style="{StaticResource SoftButtonStyle}" Command="{Binding Move}" />
+    </StackPanel>
+  </ScrollViewer>
+</Page>

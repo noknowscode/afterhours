@@ -27,4 +27,9 @@ namespace Afterhours.Uno.Services;
 [JsonSerializable(typeof(HostReply<RestorePrompt>))]
 [JsonSerializable(typeof(HostReply<WardrobeState>))]
 [JsonSerializable(typeof(Outfit))]
+[JsonSerializable(typeof(HostReply<RoomsState>))]
+[JsonSerializable(typeof(HostReply<RoomState>))]
+[JsonSerializable(typeof(HostReply<RoomObject>))]
+[JsonSerializable(typeof(HostReply<ArcadeState>))]
+[JsonSerializable(typeof(HostReply<PetState>))]
 internal sealed partial class BridgeJsonContext : JsonSerializerContext;

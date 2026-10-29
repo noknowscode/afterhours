@@ -82,7 +82,12 @@ public partial record MainModel(IGameStore Store, IRoomView RoomView, INavigator
                 "Chart" => navigator.NavigateRouteAsync(navigator, "Chart", qualifier: Qualifiers.Dialog),
                 "Journal" => navigator.NavigateRouteAsync(navigator, "Journal", qualifier: Qualifiers.Dialog,
                     data: new JournalRequest(request.Text("tab") ?? "quests")),
-                "Profile" or "Wardrobe" or "Help" => navigator.NavigateRouteAsync(navigator, request.Route, qualifier: Qualifiers.Dialog),
+                "Rooms" => navigator.NavigateRouteAsync(navigator, "Rooms", qualifier: Qualifiers.Dialog,
+                    data: new RoomsRequest(request.Text("filter") ?? "all")),
+                "Portal" or "RoomObject" when request.Text("itemId") is { } item =>
+                    navigator.NavigateRouteAsync(navigator, request.Route, qualifier: Qualifiers.Dialog, data: new ItemRequest(item)),
+                "Profile" or "Wardrobe" or "Help" or "RoomTools" or "RoomLogic" or "RoomEvent" or "MessageBoard" or "Companion" or "Arcade" =>
+                    navigator.NavigateRouteAsync(navigator, request.Route, qualifier: Qualifiers.Dialog),
                 _ => Task.CompletedTask,
             };
         }

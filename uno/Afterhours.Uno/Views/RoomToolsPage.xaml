@@ -1,0 +1,52 @@
+<Page x:Class="Afterhours.Uno.Views.RoomToolsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=360, Narrow=520}">
+  <!-- Room settings and the room's other tools. Opened with !RoomTools (the rail's room tools). -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+  </Page.Resources>
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="12">
+      <!-- In a public hangout. -->
+      <StackPanel Spacing="12" Visibility="{Binding IsAway, Converter={StaticResource ShownWhen}}">
+        <TextBlock Text="ROOM TOOLS" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+        <TextBlock Text="Your room, your rules" Style="{StaticResource TitleText}" />
+        <TextBlock Text="Visit one of your own rooms to edit its atmosphere, notes, playlists, and room rules."
+                   Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+        <Button Content="Go to my room" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Open}" CommandParameter="home" />
+      </StackPanel>
+
+      <StackPanel Spacing="12" Visibility="{Binding IsPersonal, Converter={StaticResource ShownWhen}}">
+        <TextBlock Text="ROOM SETTINGS" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+        <TextBlock Text="{Binding Title}" Style="{StaticResource TitleText}" />
+        <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+        <TextBox Header="Name" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="40" AutomationProperties.Name="Room name" />
+        <TextBox Header="Description" Text="{Binding Description, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="120" AutomationProperties.Name="Description" />
+        <TextBox Header="Tags" Text="{Binding Tags, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="60" AutomationProperties.Name="Tags" />
+        <Grid ColumnSpacing="12">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+          </Grid.ColumnDefinitions>
+          <ComboBox Header="Lighting" ItemsSource="{Binding LightingChoices}" SelectedItem="{Binding Lighting, Mode=TwoWay}"
+                    HorizontalAlignment="Stretch" AutomationProperties.Name="Lighting" />
+          <ComboBox Grid.Column="1" Header="Door" ItemsSource="{Binding DoorChoices}" SelectedItem="{Binding Door, Mode=TwoWay}"
+                    HorizontalAlignment="Stretch" AutomationProperties.Name="Door" />
+        </Grid>
+        <TextBlock Text="Door settings apply to connected guests when running a shared session." Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+        <Button Content="Save settings" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Save}" />
+        <Rectangle Height="1" Fill="{StaticResource LineBrush}" Margin="0,4" />
+        <VariableSizedWrapGrid Orientation="Horizontal" ItemHeight="44" ItemWidth="150">
+          <Button Content="Blueprints" Style="{StaticResource SoftButtonStyle}" Command="{Binding Open}" CommandParameter="blueprints" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+          <Button Content="Room logic" Style="{StaticResource SoftButtonStyle}" Command="{Binding Open}" CommandParameter="rules" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+          <Button Content="Message board" Style="{StaticResource SoftButtonStyle}" Command="{Binding Open}" CommandParameter="notes" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+          <Button Content="Playlist" Style="{StaticResource SoftButtonStyle}" Command="{Binding Open}" CommandParameter="playlist" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+          <Button Content="Host an event" Style="{StaticResource SoftButtonStyle}" Command="{Binding Open}" CommandParameter="event" Margin="0,0,6,6" HorizontalAlignment="Stretch" />
+        </VariableSizedWrapGrid>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Page>

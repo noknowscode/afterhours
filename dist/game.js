@@ -61,8 +61,6 @@
   get('modal').addEventListener('close',()=>{screen='';get('modal').classList.remove('wide');if(cleanupGame){cleanupGame();cleanupGame=null;}});
   function button(id,fn){const b=get(id);if(b)b.onclick=fn;}
   function buttons(selector,fn){get('modalBody').querySelectorAll(selector).forEach(b=>b.onclick=()=>fn(b));}
-  const field=(label,id,value='',placeholder='',kind='text')=>`<label class="form-field">${h(label)}<input type="${kind}" id="${id}" value="${h(value)}" placeholder="${h(placeholder)}"></label>`;
-  const topTabs=(items,active)=>`<div class="panel-tabs">${items.map(([id,name])=>`<button data-tab="${id}" class="${id===active?'selected':''}">${name}</button>`).join('')}</div>`;
   const credit=amount=>`${amount} <span class="credit-symbol">✦</span>`;
   function updateHUD(){
     if(!get('profileName'))return;
@@ -97,7 +95,7 @@
   button('profile',profile);button('allRooms',()=>openNavigator());button('saveRoom',()=>{
     act('favorite',{id:roomKey()});syncFavorite();
   });
-  function openNavigator(){if(window.AfterhoursOnline?.connected())window.AfterhoursOnline.directory();else directory('all');}
+  function openNavigator(){directory('all');}
   const journey=document.createElement('nav');journey.className='room-journey';journey.setAttribute('aria-label','Travel to another space');
   journey.innerHTML=rooms.map((r,i)=>`<button class="travel-stop" data-travel="${i}"><span>${r.icon}</span><b>${h(r.title)}</b><small>${i===0?'Listening lounge':i===1?'Cafe & conversation':i===2?'Quiet company':'Above the city'}</small></button>`).join('')+'<button class="travel-home" id="travelHome"><span>⌂</span><b>My room</b></button><button class="travel-more" id="travelMore" aria-label="Explore all rooms">All rooms ↗</button>';
   $('.scene-card').before(journey);
@@ -192,19 +190,20 @@
     if(out.ok){spriteIndex=preset;game.state.profile.avatar=preset;game.save();sync();}
     return {ok:out.ok,error:out.error};
   }
-  function directory(filter='all',query=''){
-    const s=game.state,entries=rooms.map((r,i)=>({key:'public:'+i,name:r.title,description:r.mood,id:i,kind:'public',icon:r.icon})).concat(s.rooms.map(r=>({key:'my:'+r.id,name:r.name,description:r.description,id:r.id,kind:'mine',icon:'⌂'})));
-    let list=entries.filter(e=>(filter==='all'||filter==='mine'&&e.kind==='mine'||filter==='favorites'&&s.favorites.includes(e.key)||filter==='recent'&&s.history.includes(e.key))&&(e.name+' '+e.description).toLowerCase().includes(query.toLowerCase()));
-    if(filter==='recent')list.sort((a,b)=>s.history.indexOf(a.key)-s.history.indexOf(b.key));
-    panel('Find your people','ROOM NAVIGATOR',topTabs([['all','All rooms'],['mine','My rooms'],['favorites','Favorites'],['recent','Recent']],filter)+`<input class="search-field" id="roomSearch" value="${h(query)}" placeholder="Search rooms…" aria-label="Search rooms"><div class="directory-list destination-grid">${list.map(e=>`<button class="directory-room" data-key="${h(e.key)}"><span class="destination-art ${e.kind==='mine'?'home':'public-'+e.id}"></span><span><b>${h(e.name)}</b><small>${h(e.description)}</small></span><em>${e.kind==='mine'?'YOURS':'PUBLIC'} ↗</em></button>`).join('')||'<p>No rooms match this search.</p>'}</div><button class="primary" id="newRoom">＋ Create a room</button>`);
-    buttons('[data-tab]',b=>directory(b.dataset.tab,query));
-    get('roomSearch').oninput=e=>{const value=e.target.value,position=e.target.selectionStart;directory(filter,value);get('roomSearch').focus();get('roomSearch').setSelectionRange(position,position);};
-    buttons('[data-key]',b=>{if(b.dataset.key.startsWith('my:'))visitRoom(b.dataset.key.slice(3));else{enterRoom(+b.dataset.key.slice(7));close();}});
-    button('newRoom',()=>{
-      panel('A room of your own','CREATE A ROOM',`<p>Make a studio, a café, a game room, or somewhere quiet. You can own up to twelve rooms.</p><form id="createRoomForm">${field('Room name','newRoomName','','e.g. Daydream’s listening room')}${field('Description','newRoomDescription','','What happens here?')}${field('Tags','newRoomTags','music, hangout')}<button class="primary">Create room</button></form>`);
-      get('createRoomForm').onsubmit=e=>{e.preventDefault();const out=act('room',{name:get('newRoomName').value,description:get('newRoomDescription').value,tags:get('newRoomTags').value});if(out.ok)visitRoom(out.result.id);};
-    });
+  function directory(filter='all'){openPanel('Rooms',{filter});}
+  // Rooms as data for the hosting app: public hangouts and your rooms, or the shared navigator when connected.
+  function roomsState(){
+    if(window.AfterhoursOnline?.connected())return window.AfterhoursOnline.roomsState();
+    const s=game.state;
+    return {shared:false,favorites:s.favorites,history:s.history,
+      entries:rooms.map((r,i)=>({key:'public:'+i,name:r.title,description:r.mood,kind:'public'})).concat(s.rooms.map(r=>({key:'my:'+r.id,name:r.name,description:r.description,kind:'mine'})))};
   }
+  async function goToRoom(key){
+    if(window.AfterhoursOnline?.connected())return window.AfterhoursOnline.joinRoomKey(key);
+    if(key.startsWith('my:'))visitRoom(key.slice(3));else enterRoom(+key.slice(7));
+    return {ok:true};
+  }
+  function createRoom(name,description,tags){const out=act('room',{name,description,tags});if(out.ok)visitRoom(out.result.id);return {ok:out.ok,error:out.error};}
   function artCard(type){
     const {crop,image:art}=furnitureArt(type),cv=document.createElement('canvas');cv.width=320;cv.height=250;cv.setAttribute('aria-hidden','true');
     const paint=()=>{const scale=Math.min(288/crop[2],222/crop[3]);cv.getContext('2d').drawImage(art,...crop,(320-crop[2]*scale)/2,238-crop[3]*scale,crop[2]*scale,crop[3]*scale);};
@@ -237,13 +236,20 @@
   showInventory=()=>catalog('owned');button('openInventory',showInventory);
   function roomTools(){
     if(window.AfterhoursOnline?.remoteRoom()){toast('Only the owner can change this room.');return;}
-    if(!personal){panel('Your room, your rules','ROOM TOOLS','<p>Visit one of your own rooms to edit its atmosphere, notes, playlists, and room rules.</p><button id="toolsGoHome" class="primary">Go to my room</button>');button('toolsGoHome',()=>visitRoom(activeRoomId));return;}
+    openPanel('RoomTools');
+  }
+  // The current room as data for its tools (settings, notes, rules, event) and portals.
+  function roomState(){
     const r=room();
-    panel(r.name,'ROOM SETTINGS',`<form id="roomSettings">${field('Name','settingsName',r.name)}${field('Description','settingsDescription',r.description)}${field('Tags','settingsTags',r.tags)}
-      <div class="form-columns"><label class="form-field">Lighting<select id="roomLighting">${['amber','moonlight','rose','daylight','club'].map(v=>`<option ${r.lighting===v?'selected':''}>${v}</option>`).join('')}</select></label><label class="form-field">Door<select id="roomDoor">${['open','doorbell','private'].map(v=>`<option ${r.door===v?'selected':''}>${v}</option>`).join('')}</select></label></div><p class="small-note">Door settings apply to connected guests when running a shared session.</p><button class="primary">Save settings</button></form>
-      <div class="panel-section"><div class="button-row"><button id="blueprints" class="soft-button">Blueprints</button><button id="roomRules" class="soft-button">Room logic</button><button id="roomNotes" class="soft-button">Message board</button><button id="roomPlaylist" class="soft-button">Playlist</button><button id="roomEvent" class="soft-button">Host an event</button></div></div>`);
-    get('roomSettings').onsubmit=e=>{e.preventDefault();const out=act('roomSettings',{id:r.id,name:get('settingsName').value,description:get('settingsDescription').value,tags:get('settingsTags').value,lighting:get('roomLighting').value,door:get('roomDoor').value},'Room settings saved.');if(out.ok){get('roomTitle').textContent=room().name;close();}};
-    button('blueprints',blueprints);button('roomRules',rulesPanel);button('roomNotes',notesPanel);button('roomPlaylist',playlistPanel);button('roomEvent',eventPanel);
+    return {personal,id:r.id,name:r.name,description:r.description||'',tags:r.tags||'',lighting:r.lighting||'amber',door:r.door||'open',
+      notes:(r.notes||[]).map(n=>({id:n.id,text:n.text,name:n.name})),rules:(r.rules||[]).map(x=>({id:x.id,trigger:x.trigger,effect:x.effect,phrase:x.phrase||'',message:x.message||''})),
+      event:r.event?{name:r.event.name,start:r.event.start}:null,
+      otherRooms:game.state.rooms.filter(x=>x.id!==activeRoomId).map(x=>({id:x.id,name:x.name}))};
+  }
+  const roomPanels={blueprints:()=>blueprints(),rules:()=>rulesPanel(),notes:()=>notesPanel(),playlist:()=>playlistPanel(),event:()=>eventPanel(),home:()=>visitRoom(activeRoomId)};
+  function saveRoomSettings(name,description,tags,lighting,door){
+    const out=act('roomSettings',{id:room().id,name,description,tags,lighting,door},'Room settings saved.');
+    if(out.ok)get('roomTitle').textContent=room().name;return {ok:out.ok,error:out.error};
   }
   function blueprints(){openPanel('Blueprints');}
   function saveBlueprint(){return act('blueprint',{room:activeRoomId,name:room().name},'Blueprint saved.');}
@@ -251,17 +257,17 @@
     const bp=game.state.blueprints.find(x=>x.id===id),out=act('restoreBlueprint',{id},'Layout restored.');
     if(out.ok&&bp)visitRoom(bp.room);return out;
   }
-  function notesPanel(){
-    panel('Leave a little something','MESSAGE BOARD',`<form id="noteForm"><label class="form-field">Your note<textarea id="noteText" maxlength="180" placeholder="A message for this room…"></textarea></label><button class="primary">Pin note</button></form><div class="notes-grid">${room().notes.map(n=>`<article><p>${h(n.text)}</p><small>${h(n.name)}</small><button data-remove-note="${n.id}" aria-label="Remove note">×</button></article>`).join('')}</div>`);
-    get('noteForm').onsubmit=e=>{e.preventDefault();if(act('note',{room:activeRoomId,text:get('noteText').value}).ok)notesPanel();};
-    buttons('[data-remove-note]',b=>{act('deleteNote',{room:activeRoomId,id:b.dataset.removeNote});notesPanel();});
-  }
-  function rulesPanel(){
+  function notesPanel(){openPanel('MessageBoard');}
+  function addNote(text){return act('note',{room:activeRoomId,text});}
+  function deleteNote(id){return act('deleteNote',{room:activeRoomId,id});}
+  function rulesPanel(){openPanel('RoomLogic');}
+  function addRule(trigger,effect,phrase,message){
     const r=room();r.rules||=[];
-    panel('Give your room a little magic','ROOM LOGIC',`<p>Connect an event to an effect. Rules run in this room while you are here.</p><form id="ruleForm"><div class="form-columns"><label class="form-field">When…<select id="ruleTrigger"><option value="enter">I enter the room</option><option value="say">I say a phrase</option><option value="sit">I take a seat</option><option value="dice">I roll the dice</option></select></label><label class="form-field">Then…<select id="ruleEffect"><option value="lights">Toggle the lights</option><option value="message">Show a message</option><option value="music">Play the room playlist</option></select></label></div>${field('Trigger phrase (for chat)','rulePhrase','','e.g. lights please')}${field('Message to show','ruleMessage','','Welcome to my studio')}<button class="primary">Add rule</button></form><div class="rule-list">${r.rules.map(rule=>`<div><span>When <b>${h(rule.trigger)}</b>${rule.phrase?' “'+h(rule.phrase)+'”':''} → <b>${h(rule.effect)}</b></span><button data-rule-delete="${rule.id}" aria-label="Remove rule">×</button></div>`).join('')}</div>`);
-    get('ruleForm').onsubmit=e=>{e.preventDefault();if(r.rules.length>=10){notifyError('This room can have ten rules.');return;}r.rules.push({id:G.uid(),trigger:get('ruleTrigger').value,effect:get('ruleEffect').value,phrase:get('rulePhrase').value.toLowerCase().trim(),message:get('ruleMessage').value.slice(0,120)});game.save();rulesPanel();};
-    buttons('[data-rule-delete]',b=>{r.rules=r.rules.filter(x=>x.id!==b.dataset.ruleDelete);game.save();rulesPanel();});
+    if(r.rules.length>=10)return {ok:false,error:'This room can have ten rules.'};
+    if(!['enter','say','sit','dice'].includes(trigger)||!['lights','message','music'].includes(effect))return {ok:false,error:'Choose a trigger and an effect.'};
+    r.rules.push({id:G.uid(),trigger,effect,phrase:String(phrase).toLowerCase().trim(),message:String(message).slice(0,120)});game.save();return {ok:true};
   }
+  function deleteRule(id){const r=room();r.rules=(r.rules||[]).filter(x=>x.id!==id);game.save();return {ok:true};}
   function runRules(trigger,value=''){
     if(!personal)return;
     for(const rule of room().rules||[]){
@@ -271,11 +277,12 @@
       if(rule.effect==='music')startPlaylist();
     }
   }
-  function eventPanel(){
-    const r=room();panel('Bring the room together','HOST AN EVENT',`<p>Give tonight a purpose. Your event appears above the room, with a countdown and a host announcement.</p><form id="eventForm">${field('Event name','eventName',r.event?.name||'Listening party')}<label class="form-field">Starts in<select id="eventDelay"><option value="0">Right now</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option></select></label><button class="primary">Host event</button>${r.event?'<button type="button" class="soft-button" id="endEvent">End event</button>':''}</form>`);
-    get('eventForm').onsubmit=e=>{e.preventDefault();r.event={name:get('eventName').value.trim().slice(0,60)||'Listening party',start:Date.now()+Number(get('eventDelay').value)*60000};game.save();message('system',player.name+' is hosting '+r.event.name);close();};
-    button('endEvent',()=>{r.event=null;game.save();close();});
+  function eventPanel(){openPanel('RoomEvent');}
+  function hostEvent(name,delay){
+    const r=room();r.event={name:String(name).trim().slice(0,60)||'Listening party',start:Date.now()+Number(delay)*60000};game.save();
+    message('system',player.name+' is hosting '+r.event.name);return {ok:true};
   }
+  function endEvent(){room().event=null;game.save();return {ok:true};}
   function playlistPanel(){openPanel('Jukebox');}
   function savePlaylist(ids){const r=room(),known=new Set(game.state.songs.map(t=>t.id));r.playlist=ids.filter(id=>known.has(id));game.save();return {ok:true};}
   let playlistTimer=null;
@@ -383,11 +390,10 @@
   }
   function cancelStage(){if(!stage)return;clearInterval(stageTimer);stage=null;stopMusic();toast('You left the stage. Your song is still saved.');}
   function stageAct(op,id){if(!stageOps[op])return {ok:false,error:'Unknown stage action.'};stageOps[op](id);return {ok:true};}
-  function arcade(){
-    const cards=[['tiles','Tile Rush','Claim the floor. Keep more tiles than your rival.','45 seconds · keyboard or tap','▦'],['snow','Snow Jam','Dodge, aim, and land five snowball hits.','45 seconds · move + click','✧'],['quiz','Pop Quiz','Eight music questions. How well do you know your sound?','60 seconds · choose an answer','?']];
-    panel('Just one more round','AFTERHOURS ARCADE',`<p>Original games inspired by the social-game era. Play against a resident rival, set a personal best, and earn credits.</p><div class="arcade-games">${cards.map(([id,title,description,instructions,icon])=>`<article class="arcade-card ${id}"><span>${icon}</span><small>BEST ${game.state.best[id]||0}</small><h3>${title}</h3><p>${description}</p><em>${instructions}</em><button class="primary" data-game="${id}">Play ${title}</button></article>`).join('')}</div><p class="small-note">Up to eight rewarded rounds each day. Wins earn 30 credits; completed rounds earn 15.</p>`,true);
-    buttons('[data-game]',b=>startArcade(b.dataset.game));
-  }
+  // The arcade picker is a XAML panel; a round and its results stay game panels (they draw into the page).
+  const arcadeCards=[['tiles','Tile Rush','Claim the floor. Keep more tiles than your rival.','45 seconds · keyboard or tap','▦'],['snow','Snow Jam','Dodge, aim, and land five snowball hits.','45 seconds · move + click','✧'],['quiz','Pop Quiz','Eight music questions. How well do you know your sound?','60 seconds · choose an answer','?']];
+  function arcade(){openPanel('Arcade');}
+  function arcadeState(){return {games:arcadeCards.map(([id,title,description,instructions,icon])=>({id,title,description,instructions,icon,best:game.state.best[id]||0}))};}
   function startArcade(kind){
     const titles={tiles:'Tile Rush',snow:'Snow Jam',quiz:'Pop Quiz'},id=G.uid();
     window.AfterhoursOnline?.arcadeStart(kind,id);
@@ -404,21 +410,25 @@
     const nav=navigationOptions(),spawn=AfterhoursMovement.route(player,{x:player.x+1,y:player.y},nav)?.goal||{x:player.x,y:player.y};
     petPosition={...spawn,name:game.state.pet.name};petWalker=new AfterhoursMovement.Walker(petPosition,navigationOptions);petWalker.maxSpeed=2.2;
   }
-  function petPanel(){
-    const p=game.state.pet;
-    if(!p){
-      panel('A little company','ADOPT A COMPANION','<div class="pet-portrait" id="petPortrait"></div><p>Meet the orange tabby who always stays up late. Your companion follows you, learns tricks, and needs a little food and attention.</p><form id="adoptForm">'+field('Name your companion','petName','Biscuit')+'<button class="primary">Adopt · 50 ✦</button></form>');
-      drawPetPortrait();get('adoptForm').onsubmit=e=>{e.preventDefault();if(act('adopt',{name:get('petName').value},'Your new companion is here.').ok){resetPet();petPanel();}};return;
-    }
+  function petPanel(){openPanel('Companion');}
+  // The companion as data: none yet (adopt), or its needs, training and tricks.
+  function petState(){
+    const p=game.state.pet;if(!p)return {pet:null};
     const n=G.needs(p);
-    panel(p.name,'YOUR COMPANION',`<div class="pet-portrait" id="petPortrait"></div><div class="pet-needs">${[['hunger','Full belly'],['happiness','Happiness'],['energy','Energy']].map(([key,name])=>`<div><label>${name}<b>${Math.round(n[key])}%</b></label><div class="mini-meter"><i style="width:${n[key]}%"></i></div></div>`).join('')}</div><div class="button-row"><button id="petFeed" class="primary">Feed · 3 ✦</button><button id="petPlay" class="soft-button">Play</button><button id="petTrain" class="soft-button">Train</button><button id="petFollow" class="soft-button">${p.following?'Stay here':'Follow me'}</button></div><p>Training XP: ${p.xp}. Learn Sit at 30 XP and Spin at 75 XP.</p><div class="button-row">${p.tricks.map(trick=>`<button class="soft-button" data-trick="${trick}">${trick==='sit'?'Sit':'Spin'} ↗</button>`).join('')}</div>`);
-    drawPetPortrait();
-    for(const [id,action]of[['petFeed','feed'],['petPlay','play'],['petTrain','train']])button(id,()=>{if(act('pet',{action},p.name+' enjoyed that.').ok){petPose=action==='play'?'spin':'sit';petPoseUntil=performance.now()+2200;petPanel();}});
-    button('petFollow',()=>{game.state.pet.following=!game.state.pet.following;game.save();petPanel();});
-    buttons('[data-trick]',b=>{petPose=b.dataset.trick;petPoseUntil=performance.now()+3500;close();toast(p.name+' does '+petPose+'.');});
+    return {pet:{name:p.name,hunger:Math.round(n.hunger),happiness:Math.round(n.happiness),energy:Math.round(n.energy),following:!!p.following,xp:p.xp,tricks:p.tricks.slice()}};
   }
-  function drawPetPortrait(){
-    const cv=document.createElement('canvas');cv.width=230;cv.height=160;if(newArt.complete&&newArt.naturalWidth){const c=newCrops[6],scale=Math.min(140/c[2],145/c[3]);cv.getContext('2d').drawImage(newArt,...c,(230-c[2]*scale)/2,150-c[3]*scale,c[2]*scale,c[3]*scale);}get('petPortrait').append(cv);
+  function adoptPet(name){const out=act('adopt',{name},'Your new companion is here.');if(out.ok)resetPet();return {ok:out.ok,error:out.error};}
+  function petAction(action){
+    const p=game.state.pet;if(!p)return {ok:false,error:'Adopt a companion first.'};
+    if(action==='follow'){p.following=!p.following;game.save();return {ok:true};}
+    if(action==='sit'||action==='spin'){if(!p.tricks.includes(action))return {ok:false,error:'Train a little more first.'};petPose=action;petPoseUntil=performance.now()+3500;toast(p.name+' does '+action+'.');return {ok:true};}
+    const out=act('pet',{action},p.name+' enjoyed that.');
+    if(out.ok){petPose=action==='play'?'spin':'sit';petPoseUntil=performance.now()+2200;}return {ok:out.ok,error:out.error};
+  }
+  function petPortrait(){
+    const cv=document.createElement('canvas');cv.width=230;cv.height=160;
+    if(newArt.complete&&newArt.naturalWidth){const c=newCrops[6],scale=Math.min(140/c[2],145/c[3]);cv.getContext('2d').drawImage(newArt,...c,(230-c[2]*scale)/2,150-c[3]*scale,c[2]*scale,c[3]*scale);}
+    return cv.toDataURL('image/png');
   }
   function approach(item,action){
     close();standUp();const {w,d}=Furniture.footprint(item),options=navigationOptions(),targets=[];
@@ -463,19 +473,27 @@
     if(item.type==='bowl')use('Care for companion',petPanel);
     if(item.type==='portal'){
       if(item.destination)use('Step through portal',()=>{const dest=game.state.rooms.find(r=>r.id===item.destination);if(!dest){toast('Choose a destination first.');return;}visitRoom(dest.id);const exit=decor.find(d=>d.type==='portal'&&d.placed!==false);if(exit){const p=AfterhoursMovement.route(player,{x:exit.x+.5,y:exit.y+1.5},navigationOptions())?.goal;if(p)walker.reset(p.x,p.y);}toast('Arrived in '+dest.name);});
-      actions.push({label:'Link to a room',direct:true,fn:()=>{
-        panel('Where does this lead?','LINK A PORTAL',`<p>Choose one of your rooms. Add another portal there to create a return route.</p><div class="directory-list">${game.state.rooms.filter(r=>r.id!==activeRoomId).map(r=>`<button class="outline" data-portal-room="${r.id}">${h(r.name)} ↗</button>`).join('')||'<p>Create another room in the navigator first.</p>'}</div>`);
-        buttons('[data-portal-room]',b=>{if(act('itemAction',{id:item.id,action:'link',destination:b.dataset.portalRoom},'Portal linked.').ok)close();});
-      }});
+      actions.push({label:'Link to a room',direct:true,fn:()=>openPanel('Portal',{itemId:item.id})});
     }
     if(item.type==='gift'){
       if(item.contents)use('Open your gift',()=>{act('itemAction',{id:item.id,action:'unwrap'},'Your gift is in the inventory.');});
-      else actions.push({label:'Wrap a piece',direct:true,fn:()=>{close();openPanel('WrapGift',{itemId:item.id});}});
+      else actions.push({label:'Wrap a piece',direct:true,fn:()=>openPanel('WrapGift',{itemId:item.id})});
     }
-    panel(c.name,'ROOM INTERACTION',`<div id="objectPreview" class="item-preview"></div><p>${h(item.contents?item.note:c.description||descriptions[item.type])}</p><div class="button-row">${actions.map((a,i)=>`<button class="${i===0?'primary':'soft-button'}" data-object-action="${i}">${h(a.label)}</button>`).join('')}<button class="soft-button" id="objectMove">Move / rotate</button></div>`);
-    get('objectPreview').append(artCard(item.type));buttons('[data-object-action]',b=>{const a=actions[+b.dataset.objectAction];if(a.direct)a.fn();else approach(item,a.fn);});
-    button('objectMove',()=>{close();startEditing();selectFurniture(item.id);});
+    objectPanel={item,actions,text:item.contents?item.note:c.description||descriptions[item.type]};
+    openPanel('RoomObject',{itemId:item.id});
   }
+  // The open room object as data; its actions run here (most walk you over to the piece first).
+  let objectPanel=null;
+  function objectState(){
+    if(!objectPanel)return null;const {item,actions,text}=objectPanel;
+    return {itemId:item.id,type:item.type,name:Furniture.catalog[item.type].name,text:text||'',actions:actions.map(a=>a.label)};
+  }
+  function objectAction(index){
+    const a=objectPanel?.actions[index];if(!a)return {ok:false,error:'That action is no longer available.'};
+    if(a.direct)a.fn();else approach(objectPanel.item,a.fn);return {ok:true};
+  }
+  function objectMove(){if(!objectPanel)return {ok:false};startEditing();selectFurniture(objectPanel.item.id);return {ok:true};}
+  function linkPortal(itemId,roomId){return act('itemAction',{id:itemId,action:'link',destination:roomId},'Portal linked.');}
   const drinkButton=document.createElement('button');drinkButton.id='drinkButton';drinkButton.hidden=true;drinkButton.textContent='Drink soda';$('.action-bar>div').append(drinkButton);
   drinkButton.onclick=()=>{if(carried){carried=null;drinkButton.hidden=true;player.bubble='cheers ♡';player.until=Date.now()+3500;toast('Refreshing.');}};
   const chatModes=document.createElement('div');chatModes.className='chat-modes';chatModes.innerHTML='<select id="chatMode" aria-label="Chat mode"><option value="say">Say</option><option value="shout">Shout</option><option value="whisper">Whisper</option></select><select id="whisperTarget" aria-label="Whisper to" hidden></select><button id="socialSettings" aria-label="Chat preferences">⚙</button>';
@@ -620,7 +638,8 @@
         collection:c.collection||'originals',category:category(type),featured:!!c.atlas,
         atlas:{url:new URL(image.getAttribute('src'),location.href).href,width:image.naturalWidth,height:image.naturalHeight},crop};})}),
     shopImages:()=>[...new Set(Object.keys(Furniture.catalog).map(type=>furnitureArt(type).image))],
-    updateHUD,showStudio:studio,journalState,claimQuest,profileState,saveProfile,exportSave,inspectSave,inspectBackup,confirmRestore,
+    updateHUD,showStudio:studio,roomsState,goToRoom,createRoom,roomState,roomPanels,saveRoomSettings,addNote,deleteNote,addRule,deleteRule,hostEvent,endEvent,
+    arcadeState,playArcade:kind=>startArcade(kind),petState,adoptPet,petAction,petPortrait,objectState,objectAction,objectMove,linkPortal,journalState,claimQuest,profileState,saveProfile,exportSave,inspectSave,inspectBackup,confirmRestore,
     wardrobeState,presetOutfit,outfitPreview,saveLook,classicLook:()=>classicLook(),studioEdit,playTrack,exportWav,savePlaylist,startPlaylist,
     pressDisc:id=>act('disc',{id},'Pressed onto a collectible disc.'),deleteSong:id=>act('deleteSong',{id}),perform:id=>queueSong(id),
     stageState,stageAct,openPanel,showJournal:()=>journal(),

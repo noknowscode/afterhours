@@ -254,3 +254,34 @@ export function presetOutfit(index) { return JSON.stringify(world.presetOutfit(i
 export async function outfitPreview(outfit, pose, portrait) { return world.outfitPreview(JSON.parse(outfit), pose, portrait); }
 export function saveLook(outfit, preset) { return reply(world.saveLook(JSON.parse(outfit), preset)); }
 export function classicLook() { world.classicLook(); }
+
+// Rooms: the navigator, room tools (settings, notes, rules, event), portals and room objects. Edits reply with the
+// room as it now stands, so the panel never waits for an event to catch up. (Not named rooms or room: the page's
+// global rooms is the public hangouts list.)
+const withRoom = out => reply({ ok: out.ok, error: out.error, result: world.roomState() });
+export function roomList() { return reply({ ok: true, result: world.roomsState() }); }
+export async function goToRoom(key) { return reply(await world.goToRoom(key)); }
+export function createRoom(name, description, tags) { return reply(world.createRoom(name, description, tags)); }
+export function currentRoom() { return reply({ ok: true, result: world.roomState() }); }
+// Opens one of room tools' panels (blueprints, rules, notes, playlist, event) or takes you home.
+export function roomPanel(name) { const open = world.roomPanels[name]; if (open) open(); return reply({ ok: !!open }); }
+export function saveRoomSettings(name, description, tags, lighting, door) { return withRoom(world.saveRoomSettings(name, description, tags, lighting, door)); }
+export function addNote(text) { return withRoom(world.addNote(text)); }
+export function deleteNote(id) { return withRoom(world.deleteNote(id)); }
+export function addRule(trigger, effect, phrase, message) { return withRoom(world.addRule(trigger, effect, phrase, message)); }
+export function deleteRule(id) { return withRoom(world.deleteRule(id)); }
+export function hostEvent(name, delay) { return withRoom(world.hostEvent(name, delay)); }
+export function endEvent() { return withRoom(world.endEvent()); }
+export function linkPortal(itemId, roomId) { return reply(world.linkPortal(itemId, roomId)); }
+export function roomObject() { return reply({ ok: !!world.objectState(), result: world.objectState() }); }
+export function objectAction(index) { return reply(world.objectAction(index)); }
+export function objectMove() { return reply(world.objectMove()); }
+
+// The arcade picker and the companion. A round itself stays a game panel.
+export function arcade() { return reply({ ok: true, result: world.arcadeState() }); }
+export function playArcade(kind) { world.playArcade(kind); return reply({ ok: true }); }
+const withPet = out => reply({ ok: out.ok, error: out.error, result: world.petState() });
+export function pet() { return withPet({ ok: true }); }
+export function adoptPet(name) { return withPet(world.adoptPet(name)); }
+export function petAction(action) { return withPet(world.petAction(action)); }
+export function petPortrait() { return world.petPortrait(); }

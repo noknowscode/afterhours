@@ -38,6 +38,7 @@ public partial class App : Application
                         services.AddSingleton<IMusic>(game);
                         services.AddSingleton<IStage>(game);
                         services.AddSingleton<IResident>(game);
+                        services.AddSingleton<IRooms>(game);
                     }
                 })
                 .UseNavigation(ReactiveViewModelMappings.ViewModelMappings, RegisterRoutes)
@@ -69,7 +70,16 @@ public partial class App : Application
             new ViewMap<ProfilePage, ProfileModel>(),
             new ViewMap<WardrobePage, WardrobeModel>(),
             new ViewMap<HelpPage>(),
-            new ViewMap<ChartPage, ChartModel>());
+            new ViewMap<ChartPage, ChartModel>(),
+            new DataViewMap<RoomsPage, RoomsModel, RoomsRequest>(),
+            new ViewMap<RoomToolsPage, RoomToolsModel>(),
+            new ViewMap<RoomLogicPage, RoomLogicModel>(),
+            new ViewMap<RoomEventPage, RoomEventModel>(),
+            new ViewMap<MessageBoardPage, MessageBoardModel>(),
+            new DataViewMap<PortalPage, PortalModel, ItemRequest>(),
+            new DataViewMap<RoomObjectPage, RoomObjectModel, ItemRequest>(),
+            new ViewMap<CompanionPage, CompanionModel>(),
+            new ViewMap<ArcadePage, ArcadeModel>());
         routes.Register(
             new RouteMap("", View: views.FindByViewModel<ShellModel>(), Nested:
             [
@@ -85,6 +95,15 @@ public partial class App : Application
                 new("Wardrobe", View: views.FindByViewModel<WardrobeModel>()),
                 new("Help", View: views.FindByView<HelpPage>()),
                 new("Chart", View: views.FindByViewModel<ChartModel>()),
+                new("Rooms", View: views.FindByViewModel<RoomsModel>()),
+                new("RoomTools", View: views.FindByViewModel<RoomToolsModel>()),
+                new("RoomLogic", View: views.FindByViewModel<RoomLogicModel>()),
+                new("RoomEvent", View: views.FindByViewModel<RoomEventModel>()),
+                new("MessageBoard", View: views.FindByViewModel<MessageBoardModel>()),
+                new("Portal", View: views.FindByViewModel<PortalModel>()),
+                new("RoomObject", View: views.FindByViewModel<RoomObjectModel>()),
+                new("Companion", View: views.FindByViewModel<CompanionModel>()),
+                new("Arcade", View: views.FindByViewModel<ArcadeModel>()),
             ]));
     }
 

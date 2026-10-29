@@ -1,0 +1,25 @@
+<Page x:Class="Afterhours.Uno.Views.RoomEventPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=340, Narrow=440}">
+  <!-- Host an event. Opened with !RoomEvent (room tools). -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+  </Page.Resources>
+  <StackPanel Padding="24" Spacing="12">
+    <TextBlock Text="HOST AN EVENT" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+    <TextBlock Text="Bring the room together" Style="{StaticResource TitleText}" />
+    <TextBlock Text="Give tonight a purpose. Your event appears above the room, with a countdown and a host announcement."
+               Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+    <TextBox Header="Event name" Text="{Binding Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="60" AutomationProperties.Name="Event name" />
+    <ComboBox Header="Starts in" ItemsSource="{Binding Delays}" DisplayMemberPath="Label" SelectedValuePath="Value"
+              SelectedValue="{Binding Delay, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="Starts in" />
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button Content="Host event" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Host}" />
+      <Button Content="End event" Style="{StaticResource SoftButtonStyle}" Command="{Binding End}"
+              Visibility="{Binding HasEvent, Converter={StaticResource ShownWhen}}" />
+    </StackPanel>
+  </StackPanel>
+</Page>

@@ -1,0 +1,46 @@
+<Page x:Class="Afterhours.Uno.Views.RoomLogicPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=360, Narrow=520}">
+  <!-- Room rules. Opened with !RoomLogic (room tools). -->
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="12">
+      <TextBlock Text="ROOM LOGIC" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="Give your room a little magic" Style="{StaticResource TitleText}" />
+      <TextBlock Text="Connect an event to an effect. Rules run in this room while you are here."
+                 Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+      <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+      <Grid ColumnSpacing="12">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <ComboBox Header="When…" ItemsSource="{Binding Triggers}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                  SelectedValue="{Binding Trigger, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="When" />
+        <ComboBox Grid.Column="1" Header="Then…" ItemsSource="{Binding Effects}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                  SelectedValue="{Binding Effect, Mode=TwoWay}" HorizontalAlignment="Stretch" AutomationProperties.Name="Then" />
+      </Grid>
+      <TextBox Header="Trigger phrase (for chat)" Text="{Binding Phrase, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="60"
+               PlaceholderText="e.g. lights please" AutomationProperties.Name="Trigger phrase" />
+      <TextBox Header="Message to show" Text="{Binding Message, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="120"
+               PlaceholderText="Welcome to my studio" AutomationProperties.Name="Message to show" />
+      <Button Content="Add rule" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Add}" />
+      <ItemsControl ItemsSource="{Binding Rules}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Grid Padding="12,6" Margin="0,0,0,6" ColumnSpacing="12" CornerRadius="{StaticResource ChipRadius}" Background="{StaticResource SurfaceRaisedBrush}">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Text="{Binding Text}" Style="{StaticResource BodyText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+              <Button Grid.Column="1" Content="×" Style="{StaticResource QuietButtonStyle}" AutomationProperties.Name="Remove rule"
+                      CommandParameter="{Binding}" Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Remove}" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</Page>
