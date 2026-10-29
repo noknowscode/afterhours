@@ -145,8 +145,11 @@ export async function mount(elementId, onEvent) {
   root.classList.add('ah-root', 'ah-hosted');
   // Game scripts load art by relative path; resolve it against game/ instead of the Uno page.
   window.AfterhoursBase = base.href;
-  // Game code asks for the XAML panels (shop, blueprints, gift wrap…) through this hook.
-  window.AfterhoursHost = { open: (route, data = {}) => emit({ type: 'open', route, data }) };
+  // Game code asks for the XAML panels (shop, blueprints, gift wrap…) and reports live state (playback) here.
+  window.AfterhoursHost = {
+    open: (route, data = {}) => emit({ type: 'open', route, data }),
+    notify: (type, data) => emit({ type, [type]: data }),
+  };
 
   const styled = Promise.all([loadStyle('scoped.css'), loadStyle('hosted.css')]);
   const page = new DOMParser().parseFromString(await (await fetch(new URL('index.html', base))).text(), 'text/html');
@@ -207,3 +210,13 @@ export function wrap(id, content, note) { return reply(world.wrapGift(id, conten
 export function saveBlueprint() { return reply(world.saveBlueprint()); }
 export function restoreBlueprint(id) { return reply(world.restoreBlueprint(id)); }
 export function playDisc(id) { return reply({ ok: world.playDisc(id) }); }
+
+// Studio and library. A studio edit replies with the whole draft and whether Undo is available.
+export function studio(op, a, b) { return reply(world.studioEdit(op, a, b)); }
+export function playTrack(id) { return reply({ ok: world.playTrack(id) }); }
+export async function exportWav() { return reply(await world.exportWav()); }
+export function pressDisc(id) { return reply(world.pressDisc(id)); }
+export function deleteSong(id) { return reply(world.deleteSong(id)); }
+export function perform(id) { world.perform(id); return reply({ ok: true }); }
+export function savePlaylist(ids) { return reply(world.savePlaylist(JSON.parse(ids))); }
+export function playPlaylist(ids) { world.savePlaylist(JSON.parse(ids)); world.startPlaylist(); return reply({ ok: true }); }

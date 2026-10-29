@@ -71,6 +71,10 @@ test('the shared event fixture matches what host.mjs produces', async () => {
   assert.deepEqual(shape(inventory.items), shape(g.state.items));
   assert.deepEqual(shape(inventory.rooms), shape(g.state.rooms));
   assert.deepEqual(shape(inventory.blueprints), shape(g.state.blueprints));
+  // Songs as the studio saves them.
+  g.dispatch('song', G.song({pattern: G.starterPattern, title: 'Side B sketch'}), t);
+  const songs = fixture.find(e => e.type === 'slices' && 'songs' in e.slices).slices.songs;
+  assert.deepEqual(shape(songs), shape(g.state.songs));
 });
 
 test('panels that moved to XAML are requests to the host, not game markup', async () => {
@@ -80,4 +84,17 @@ test('panels that moved to XAML are requests to the host, not game markup', asyn
   assert.match(game, /function catalog\(tab='shop'\)\{openPanel\('Catalog',\{tab\}\);\}/);
   assert.match(game, /function blueprints\(\)\{openPanel\('Blueprints'\);\}/);
   assert.match(game, /openPanel\('WrapGift',\{itemId:item\.id\}\)/);
+  for (const title of ['THE AFTERHOURS STUDIO', 'ROOM JUKEBOX'])
+    assert.ok(!game.includes(`'${title}'`), title + ' is still built by the game');
+  assert.match(game, /studio=function\(tab='editor'\)\{openPanel\('Studio',\{tab\}\);\};/);
+  assert.match(game, /function playlistPanel\(\)\{openPanel\('Jukebox'\);\}/);
+});
+
+test('every studio edit the app sends exists in the game', async () => {
+  const game = await readFile(new URL('../dist/game.js', import.meta.url), 'utf8');
+  const model = await readFile(new URL('../uno/Afterhours.Uno/Presentation/StudioModel.cs', import.meta.url), 'utf8');
+  const sent = new Set([...model.matchAll(/Store\.Studio(?:Text)?\("(\w+)"/g)].map(m => m[1]));
+  const ops = game.slice(game.indexOf('const studioOps={'), game.indexOf('function studioEdit('));
+  assert.ok(sent.size >= 12, 'expected the studio model to send its edits');
+  for (const op of sent) assert.match(ops, new RegExp(`\\b${op}:`), op + ' is not a studio edit in game.js');
 });

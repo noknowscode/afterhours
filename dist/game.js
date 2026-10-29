@@ -290,11 +290,8 @@
     get('eventForm').onsubmit=e=>{e.preventDefault();r.event={name:get('eventName').value.trim().slice(0,60)||'Listening party',start:Date.now()+Number(get('eventDelay').value)*60000};game.save();message('system',player.name+' is hosting '+r.event.name);close();};
     button('endEvent',()=>{r.event=null;game.save();close();});
   }
-  function playlistPanel(){
-    const r=room();panel('The room has a soundtrack','ROOM JUKEBOX',`<p>Select songs for this room. The jukebox plays them in order.</p><div class="playlist">${game.state.songs.length?game.state.songs.map(s=>`<label><input type="checkbox" value="${s.id}" ${r.playlist.includes(s.id)?'checked':''}><span>${h(s.title)}<small>${s.bpm} BPM · ${h(s.pack)}</small></span></label>`).join(''):'<p>Save your first track in the studio to build a playlist.</p>'}</div><button id="savePlaylist" class="primary">Save playlist</button> <button id="playPlaylist" class="soft-button">▶ Play playlist</button>`);
-    const save=()=>{r.playlist=Array.from(get('modalBody').querySelectorAll('.playlist input:checked')).map(i=>i.value);game.save();};
-    button('savePlaylist',()=>{save();toast('Playlist saved.');close();});button('playPlaylist',()=>{save();startPlaylist();});
-  }
+  function playlistPanel(){openPanel('Jukebox');}
+  function savePlaylist(ids){const r=room(),known=new Set(game.state.songs.map(t=>t.id));r.playlist=ids.filter(id=>known.has(id));game.save();return {ok:true};}
   let playlistTimer=null;
   function startPlaylist(){
     const list=room().playlist.map(id=>game.state.songs.find(s=>s.id===id)).filter(Boolean);
@@ -304,65 +301,52 @@
   }
   function rememberStudio(){studioHistory.push(copy(draft));if(studioHistory.length>40)studioHistory.shift();}
   function saveDraft(){game.state.draft=copy(draft);game.save();if(music.running&&!stage)music.update(draft);}
-  studio=function(tab='editor'){
-    const s=game.state;
-    let body=topTabs([['editor','Studio'],['library','Song library']],tab);
-    if(tab==='editor'){
-      body+=`<div class="studio-header"><label class="form-field">Track name<input id="songName" maxlength="48" value="${h(draft.title)}" aria-label="Track name"></label><label class="form-field">Sound pack<select id="soundPack"><option value="velvet" ${draft.pack==='velvet'?'selected':''}>Velvet · warm & mellow</option><option value="club" ${draft.pack==='club'?'selected':''}>Club · bass & movement</option><option value="arcade" ${draft.pack==='arcade'?'selected':''}>Arcade · chiptune</option></select></label></div>
-        <div class="sequencer-scroll"><div class="sequencer-board"><div class="beat-ruler"><span>INSTRUMENT</span><div>${Array.from({length:draft.length},(_,i)=>`<span>${i%4===0?i/4+1:'·'}</span>`).join('')}</div></div>
-        ${['KICK','SNARE','HI-HAT','MELODY'].map((name,r)=>`<div class="seq-row"><div class="lane-label"><b>${name}</b><div><button data-mute="${r}" aria-label="Mute ${name}" aria-pressed="${draft.muted[r]}" class="${draft.muted[r]?'selected':''}">M</button><button data-solo="${r}" aria-label="Solo ${name}">S</button><input type="range" min="0" max="100" value="${Math.round(draft.volumes[r]*100)}" data-volume="${r}" aria-label="${name} volume"></div></div><div class="seq-steps" style="--steps:${draft.length}">${draft.pattern[r].map((v,c)=>`<button class="seq-step ${v?'on':''} ${c%4===0?'bar-start':''}" data-row="${r}" data-step="${c}" aria-label="${name} step ${c+1}" aria-pressed="${!!v}"></button>`).join('')}</div></div>`).join('')}</div></div>
-        <div class="studio-controls"><label>Tempo <input id="gameTempo" type="range" min="60" max="160" value="${draft.bpm}"><b id="tempoReadout">${draft.bpm}</b> BPM</label><select id="songLength" aria-label="Pattern length"><option value="16" ${draft.length===16?'selected':''}>1 bar · 16 steps</option><option value="32" ${draft.length===32?'selected':''}>2 bars · 32 steps</option></select><button id="studioUndo" class="soft-button" ${studioHistory.length?'':'disabled'}>↶ Undo</button><button id="clearSong" class="soft-button">Clear</button></div>
-        <div class="button-row studio-transport"><button id="gameStudioPlay" class="primary">${music.running?'Ⅱ Pause':'▶ Play'}</button><button id="gameSaveSong" class="primary">Save track</button><button id="newSong" class="soft-button">New track</button><button id="downloadSong" class="soft-button">Export WAV</button></div><p class="small-note">Four instruments, sixteen or thirty-two steps. M mutes a lane; S solos it. Every sound is synthesized here.</p>`;
-    }else{
-      body+=`<div class="library-header"><p>${s.songs.length} original tracks in your collection.</p><button id="libraryNew" class="soft-button">＋ New track</button></div><div class="record-grid">${s.songs.map(track=>`<article class="song-card"><div class="sleeve ${track.pack}"><span>AFTER<br>HOURS</span><i>◉</i></div><h3>${h(track.title)}</h3><p>${track.bpm} BPM · ${h(track.pack)} · ${track.length} steps</p><div class="button-row"><button class="soft-button" data-song-play="${track.id}">▶ Play</button><button class="soft-button" data-song-edit="${track.id}">Edit</button><button class="soft-button" data-song-stage="${track.id}">Perform</button><button class="soft-button" data-song-disc="${track.id}">Press disc · 10 ✦</button><button class="text-button" data-song-delete="${track.id}">Delete</button></div></article>`).join('')||'<div class="empty-state"><span>♫</span><h3>Your first record starts here.</h3><p>Make a loop in the studio, give it a name, and save it.</p></div>'}</div>`;
-    }
-    panel(tab==='editor'?'Find your sound':'Your discography','THE AFTERHOURS STUDIO',body,true);
-    buttons('[data-tab]',b=>studio(b.dataset.tab));
-    if(tab==='library'){
-      button('libraryNew',()=>{draft=G.song({pattern:G.starterPattern});studio();});
-      buttons('[data-song-play]',b=>playSong(s.songs.find(t=>t.id===b.dataset.songPlay)));
-      buttons('[data-song-edit]',b=>{draft=copy(s.songs.find(t=>t.id===b.dataset.songEdit));studioHistory=[];studio();});
-      buttons('[data-song-stage]',b=>queueSong(b.dataset.songStage));
-      buttons('[data-song-disc]',b=>{if(act('disc',{id:b.dataset.songDisc},'Pressed onto a collectible disc.').ok)studio('library');});
-      buttons('[data-song-delete]',b=>{
-        const track=s.songs.find(t=>t.id===b.dataset.songDelete);
-        panel('Delete this track?','SONG LIBRARY',`<p>Remove “${h(track.title)}” from your song library and playlists? Discs you already pressed keep their own copy.</p><button class="primary" id="confirmDeleteSong">Delete track</button> <button class="soft-button" id="cancelDeleteSong">Keep it</button>`);
-        button('confirmDeleteSong',()=>{act('deleteSong',{id:track.id});studio('library');});button('cancelDeleteSong',()=>studio('library'));
-      });return;
-    }
-    get('songName').oninput=e=>{draft.title=e.target.value;saveDraft();};
-    get('soundPack').onchange=e=>{rememberStudio();draft.pack=e.target.value;saveDraft();};
-    buttons('[data-step]',b=>{rememberStudio();const r=+b.dataset.row,c=+b.dataset.step;draft.pattern[r][c]=1-draft.pattern[r][c];b.classList.toggle('on',!!draft.pattern[r][c]);b.setAttribute('aria-pressed',!!draft.pattern[r][c]);get('studioUndo').disabled=false;saveDraft();});
-    buttons('[data-mute]',b=>{rememberStudio();const r=+b.dataset.mute;draft.muted[r]=!draft.muted[r];b.classList.toggle('selected',draft.muted[r]);b.setAttribute('aria-pressed',draft.muted[r]);saveDraft();});
-    buttons('[data-solo]',b=>{rememberStudio();const r=+b.dataset.solo,solo=draft.muted.every((v,i)=>v===(i!==r));draft.muted=draft.muted.map((_,i)=>solo?false:i!==r);saveDraft();studio();});
-    get('modalBody').querySelectorAll('[data-volume]').forEach(input=>input.oninput=()=>{draft.volumes[+input.dataset.volume]=+input.value/100;saveDraft();});
-    get('gameTempo').oninput=e=>{draft.bpm=+e.target.value;get('tempoReadout').textContent=draft.bpm;saveDraft();};
-    get('songLength').onchange=e=>{rememberStudio();draft.length=+e.target.value;draft.pattern=G.pattern(draft.pattern,draft.length);saveDraft();studio();};
-    button('studioUndo',()=>{if(studioHistory.length){draft=studioHistory.pop();saveDraft();studio();}});
-    button('clearSong',()=>{rememberStudio();draft.pattern=Array.from({length:4},()=>Array(draft.length).fill(0));saveDraft();studio();});
-    button('newSong',()=>{rememberStudio();draft=G.song({pattern:G.starterPattern,title:'Untitled afterhours'});saveDraft();studio();});
-    button('gameStudioPlay',()=>{if(stage){notifyError('Finish or leave your stage performance first.');return;}if(music.running)stopMusic();else playSong(draft);});
-    button('gameSaveSong',()=>{draft.title=get('songName').value;const out=act('song',draft,'Track saved to your library.');if(out.ok){draft=copy(out.result);studio('library');}});
-    button('downloadSong',async()=>{
-      const b=get('downloadSong');b.disabled=true;b.textContent='Rendering…';
-      try{const blob=await music.wav(draft);download(blob,(draft.title||'afterhours').replace(/[^a-z0-9 -]/gi,'').slice(0,48)+'.wav');toast('Your original track is ready.');}catch{notifyError('Audio export is unavailable in this browser.');}
-      if(b.isConnected){b.disabled=false;b.textContent='Export WAV';}
-    });
+  studio=function(tab='editor'){openPanel('Studio',{tab});};
+  // The studio as edits for the hosting app's studio: each changes the draft the way the old buttons did and
+  // replies with the whole draft, so the app never waits on a save echo.
+  const lane=r=>{if(!(r>=0&&r<4))throw Error('Unknown lane.');return r;};
+  const studioOps={
+    get:()=>{},
+    step:(r,c)=>{lane(r);if(!(c>=0&&c<draft.length))throw Error('Unknown step.');rememberStudio();draft.pattern[r][c]=1-draft.pattern[r][c];},
+    mute:r=>{lane(r);rememberStudio();draft.muted[r]=!draft.muted[r];},
+    solo:r=>{lane(r);rememberStudio();const solo=draft.muted.every((v,i)=>v===(i!==r));draft.muted=draft.muted.map((_,i)=>solo?false:i!==r);},
+    volume:(r,v)=>{draft.volumes[lane(r)]=Math.max(0,Math.min(1,+v||0));},
+    tempo:bpm=>{draft.bpm=Math.max(60,Math.min(160,Math.round(+bpm)||draft.bpm));},
+    length:n=>{if(n!==16&&n!==32)throw Error('Choose 16 or 32 steps.');rememberStudio();draft.length=n;draft.pattern=G.pattern(draft.pattern,n);},
+    pack:p=>{if(!['velvet','club','arcade'].includes(p))throw Error('Unknown sound pack.');rememberStudio();draft.pack=p;},
+    title:t=>{draft.title=String(t).slice(0,48);},
+    undo:()=>{if(studioHistory.length)draft=studioHistory.pop();},
+    clear:()=>{rememberStudio();draft.pattern=Array.from({length:4},()=>Array(draft.length).fill(0));},
+    new:()=>{rememberStudio();draft=G.song({pattern:G.starterPattern,title:'Untitled afterhours'});},
+    edit:id=>{const track=game.state.songs.find(t=>t.id===id);if(!track)throw Error('This track is no longer in your library.');draft=copy(track);studioHistory=[];},
+    save:title=>{if(title!=null)draft.title=String(title).slice(0,48);const out=act('song',draft,'Track saved to your library.');if(!out.ok)throw Error(out.error);draft=copy(out.result);}
   };
+  function studioEdit(op,a,b){
+    const reply=(ok,error)=>({ok,error,result:{draft:copy(draft),canUndo:studioHistory.length>0}});
+    try{if(!studioOps[op])throw Error('Unknown studio edit.');studioOps[op](a,b);if(op!=='get')saveDraft();return reply(true,null);}
+    catch(e){return reply(false,e.message);}
+  }
+  function playTrack(id){const track=id?game.state.songs.find(t=>t.id===id):draft;if(!track)return false;if(music.running&&!id)stopMusic();else playSong(track);return true;}
+  async function exportWav(){
+    try{const blob=await music.wav(draft);download(blob,(draft.title||'afterhours').replace(/[^a-z0-9 -]/gi,'').slice(0,48)+'.wav');toast('Your original track is ready.');return {ok:true};}
+    catch{notifyError('Audio export is unavailable in this browser.');return {ok:false,error:'Audio export is unavailable in this browser.'};}
+  }
   async function playSong(track){
     if(stage&&stage.song.id!==track.id){toast('Leave the stage before changing the track.');return;}
     try{
       clearInterval(timer);audio=false;
       await music.play(track,index=>{
-        document.querySelectorAll('.seq-step').forEach(b=>b.classList.toggle('current',+b.dataset.step===index));
+        playback(track,index);
         $('.progress i').style.width=((index+1)/track.length*100)+'%';
         const elapsed=Math.floor((Date.now()-music.started)/1000);get('playTime').textContent=Math.floor(elapsed/60)+':'+String(elapsed%60).padStart(2,'0');
       });
       get('trackTitle').textContent=track.title;$('.track p').textContent=game.state.profile.name+' · '+track.pack;document.body.classList.add('is-playing');syncAudioControls();
     }catch{toast('Your browser could not start audio. Try the Play button again.');}
   }
-  function stopMusic(){music.stop();clearTimeout(playlistTimer);document.body.classList.remove('is-playing');document.querySelectorAll('.seq-step.current').forEach(b=>b.classList.remove('current'));syncAudioControls();}
-  function syncAudioControls(){get('sound').textContent=music.running?'♫ Sound on':'♫ Sound off';get('play').textContent=music.running?'Ⅱ':'▶';if(get('gameStudioPlay'))get('gameStudioPlay').textContent=music.running?'Ⅱ Pause':'▶ Play';}
+  function stopMusic(){music.stop();clearTimeout(playlistTimer);document.body.classList.remove('is-playing');syncAudioControls();}
+  // Tells the hosting app what is playing and which step sounds (it draws the studio playhead).
+  function playback(track,step){window.AfterhoursHost?.notify?.('playback',{running:music.running,title:track?.title||'',step});}
+  function syncAudioControls(){get('sound').textContent=music.running?'♫ Sound on':'♫ Sound off';get('play').textContent=music.running?'Ⅱ':'▶';playback(music.song,-1);}
   toggleSound=()=>music.running?stopMusic():playSong(draft);
   button('sound',toggleSound);button('play',toggleSound);button('studioOpen',()=>studio());
   function stagePanel(){
@@ -649,7 +633,8 @@
         collection:c.collection||'originals',category:category(type),featured:!!c.atlas,
         atlas:{url:new URL(image.getAttribute('src'),location.href).href,width:image.naturalWidth,height:image.naturalHeight},crop};})}),
     shopImages:()=>[...new Set(Object.keys(Furniture.catalog).map(type=>furnitureArt(type).image))],
-    updateHUD,showStudio:studio,
+    updateHUD,showStudio:studio,studioEdit,playTrack,exportWav,savePlaylist,startPlaylist,
+    pressDisc:id=>act('disc',{id},'Pressed onto a collectible disc.'),deleteSong:id=>act('deleteSong',{id}),perform:id=>queueSong(id),
     setActiveRoom:id=>{activeRoomId=id;game.state.activeRoom=id;},
     applyState:state=>{game.state=state;activeRoomId=state.activeRoom||state.rooms[0].id;spriteIndex=state.profile.avatar||0;sync();draft=copy(state.draft);$('.profile-art').style.backgroundPosition=(-spriteIndex*35)+'px -4px';resetPet();}
   };

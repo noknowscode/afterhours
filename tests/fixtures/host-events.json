@@ -307,6 +307,116 @@
   }
  },
  {
+  "type": "slices",
+  "slices": {
+   "songs": [
+    {
+     "id": "song-1",
+     "title": "Side B sketch",
+     "bpm": 96,
+     "pack": "club",
+     "length": 16,
+     "pattern": [
+      [
+       1,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0
+      ],
+      [
+       1,
+       0,
+       1,
+       0,
+       1,
+       0,
+       1,
+       1,
+       1,
+       0,
+       1,
+       0,
+       1,
+       0,
+       1,
+       0
+      ],
+      [
+       1,
+       0,
+       0,
+       1,
+       0,
+       0,
+       1,
+       0,
+       0,
+       1,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0
+      ]
+     ],
+     "volumes": [
+      0.7,
+      0.7,
+      0.7,
+      0.7
+     ],
+     "muted": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "created": 1792454400000,
+     "updated": 1793236500366
+    }
+   ]
+  }
+ },
+ {
+  "type": "playback",
+  "playback": {
+   "running": true,
+   "title": "Side B sketch",
+   "step": 5
+  }
+ },
+ {
   "type": "unknown-future-event",
   "value": 1
  }
