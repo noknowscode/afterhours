@@ -1,6 +1,6 @@
 # Spec: Afterhours UI in Uno XAML around a JavaScript room
 
-Status: **draft v2; waves 0–3 done, Skia spiked (switch pending), wave 4 next.** Rewritten 2026-10-23 after the migration-scope review.
+Status: **draft v2; waves 0–3 done on the Skia renderer, wave 4 next.** Rewritten 2026-10-23 after the migration-scope review.
 No app code changed yet.
 
 ## Settled inputs
@@ -346,7 +346,7 @@ Toggle (mute, solo, favourite): acid **plus** glyph swap. No state rides on colo
 
 ### Motion
 
-- Flyouts: Toolkit drawer default. Reduced motion: plain presenter with no transition (R5).
+- Panels: a right-hand sheet with no transition (`PanelFlyout`, since the Skia switch); nothing to reduce (R5).
 - Preview and portrait swap: 120 ms fade (`Motion.Fast`, EaseOut). Reduced: instant.
 - Playhead: snaps per step with no tween. Coin change: no animation (numerals are tabular, so the width holds).
 
@@ -584,6 +584,33 @@ the app package. (2) Make the drawer scrim transparent (or opaque) so the room n
 real mouse (the semantic elements sit under the Skia canvas). The +4.35 MB and +1.3 s are the price; the app
 assembly size on Skia is worth a look first.
 
+## Skia switch (2026-10-29)
+
+**Done: the WASM head runs on the Skia renderer.** Approved 2026-10-29 ("switch to skia"). 56/56 runtime checks
+on Skia (`docs/screenshots/xaml/skia/`), including screen-reader names for the chrome and the studio; 74 Node and
+26 xUnit tests pass; the publish passes the warning gate. Framework download 10.87 MB brotli (native: 6.51 MB);
+room ready about 5.7 s on localhost (native about 4.3 s); JS heap 11–14 MB.
+
+Decisions made while switching:
+
+- **Fonts.** `SymbolFonts` sets DM Sans as the default text font (`UnoDefaultFont=None` drops the Open Sans
+  package, which loaded 38 files at boot) and a `CoverageTableFontFallbackService` with two bundled fonts:
+  Afterhours Symbols (300 KB: Noto Sans Symbols 2, Noto Sans Symbols and the block's emoji, merged; U+2100–2BFF)
+  and Noto Emoji (719 KB, U+1F000 and up, fetched only when an emoji is drawn). The default fallback fetched a
+  16 MB CJK font from GitHub. `ContentControlThemeFontFamily` is DM Sans too (TextBox fell back to monospace).
+  OFL licences for all six fonts are in `Assets/Fonts/licenses/` (the four wave 1 fonts had none in the repo).
+- **Panels are a plain right sheet** (`PanelFlyout` with its own presenter template, scrim tap closes it). The
+  Toolkit drawer slid in with a render transform, and Uno's accessibility mirror kept the mid-slide positions
+  (off by up to 900 px), which would misplace a screen reader's focus.
+- **The room hides behind an open panel.** A full-window popup covers the hosted element by layout, whatever
+  its colour (a transparent scrim also blanked it), so the dark scrim stays and an open panel reads as modal.
+  Keeping the room visible would need panels docked inside `MainPage` (a region instead of a flyout).
+- **The runtime check reads the XAML tree** through `Interop/UiProbe.cs` (`[JSExport] Snapshot()`: visible
+  elements with name or text, window bounds, enabled, value) and clicks real coordinates. Uno's accessibility
+  mirror is checked separately: it names controls correctly, but its positions are unreliable in panels and it
+  can lag a bound title, so it is a check, not the driver.
+- **List items have accessible names** (`ToString()` on the records lists show).
+
 ## Wave 3 results (2026-10-29)
 
 **Done: studio, song library, jukebox, solo and shared stage, weekly chart in XAML.** 54/54 runtime checks
@@ -722,7 +749,7 @@ Each wave is one or more conventional commits on its own branch, merged only wit
 - **R3 CSS scope:** resolved in wave 0. Wave 1 adds `tests/test-scope-css.mjs` to keep it that way.
 - **R4 Keys and focus:** resolved for `TextBox` in wave 0. Still to check in wave 1: a focused XAML button or
   list must not swallow or leak room keys.
-- **R5 Motion:** the Toolkit drawer has no reduced-motion switch. Fallback: plain presenter.
+- **R5 Motion:** resolved by the Skia switch: panels open without a transition.
 - **R6 Fonts/text:** resolved in wave 0 for DM Sans; repeat the check for the other three files in wave 1.
 - **R7 Size/build:** measured (+0.96 MB brotli, build time flat). Open: 20 trim warnings from Uno.Extensions/MVUX
   (see Unresolved Questions) and the Windows `--in-process` path.
@@ -731,8 +758,8 @@ Each wave is one or more conventional commits on its own branch, merged only wit
 - **R9 Accounts:** the Turnstile widget inside a XAML dialog's `BrowserHtmlElement`, and Supabase
   session/redirect flows driven from C#. Wave 7 is gated on a 15-min spike; if it fails, the account panels
   stay JS dialogs.
-- **R11 Screen readers on WASM native: spiked on Skia 2026-10-29, switch needs a decision** (see Skia spike
-  results). Wave 2 spike: `AutomationProperties.Name`
+- **R11 Screen readers: resolved by the Skia switch** (2026-10-29). Open: Uno's mirror reports wrong positions
+  for some panel elements and can miss a bound title; report upstream with a repro. Wave 2 spike: `AutomationProperties.Name`
   produces no `aria-label` in the native (DOM) renderer of Uno 6.7.135, and setting
   `AutomationConfiguration.IsAccessibilityEnabled` changes nothing (0 aria labels outside the room, logged by
   `verify-xaml.mjs`). The documented screen-reader support (semantic DOM overlay, "Enable accessibility") is
@@ -742,9 +769,7 @@ Each wave is one or more conventional commits on its own branch, merged only wit
 
 ## Unresolved Questions
 
-- **R11 renderer:** the Skia spike works with three costs (download, boot, fallback font; see Skia spike
-  results). Switch now (port the runtime check to the semantic DOM, ship a symbol font, transparent scrim), or
-  stay native through Phase A and switch before wave 8?
+- ~~R11 renderer~~ **Switched to Skia 2026-10-29.** Open: dock panels in `MainPage` so the room stays visible?
 
 - ~~Server path, new dependencies, trim warnings, standalone build~~ **Approved 2026-10-23:** staged server
   order; `Hosting; MVUX; Navigation; Toolkit` + four OFL fonts + xUnit project; gate on no warnings beyond
