@@ -82,4 +82,44 @@ internal static partial class GameHost
 
     [JSImport("stageWatch", Module)]
     public static partial void StageWatch(bool on);
+
+    [JSImport("journal", Module)]
+    public static partial string Journal();
+
+    [JSImport("claimQuest", Module)]
+    public static partial string ClaimQuest(string questId);
+
+    [JSImport("profile", Module)]
+    public static partial string Profile();
+
+    [JSImport("saveProfile", Module)]
+    public static partial string SaveProfile(string name, string motto, string chatColor);
+
+    [JSImport("exportSave", Module)]
+    public static partial string ExportSave();
+
+    [JSImport("inspectSave", Module)]
+    public static partial string InspectSave(string text);
+
+    [JSImport("inspectBackup", Module)]
+    public static partial string InspectBackup();
+
+    [JSImport("confirmRestore", Module)]
+    public static partial string ConfirmRestore();
+
+    [JSImport("wardrobe", Module)]
+    public static partial string Wardrobe();
+
+    // Outfits travel as JSON.
+    [JSImport("presetOutfit", Module)]
+    public static partial string PresetOutfit(int index);
+
+    [JSImport("outfitPreview", Module)]
+    public static partial Task<string> OutfitPreview(string outfit, string pose, bool portrait);
+
+    [JSImport("saveLook", Module)]
+    public static partial string SaveLook(string outfit, int preset);
+
+    [JSImport("classicLook", Module)]
+    public static partial void ClassicLook();
 }

@@ -16,6 +16,8 @@ internal static class SymbolFonts
     // Must run before any text renders: the font cache reads both once.
     public static void Configure()
     {
+        // Restoring a save uses a plain file input (testable, and works in every browser).
+        global::Uno.WinRTFeatureConfiguration.Storage.Pickers.WasmConfiguration = global::Uno.WasmPickerConfiguration.DownloadUpload;
         global::Uno.UI.FeatureConfiguration.Font.DefaultTextFontFamily = "ms-appx:///Assets/Fonts/DMSans_Regular.ttf#DM Sans";
         global::Uno.UI.FeatureConfiguration.Font.FallbackService = new CoverageTableFontFallbackService(
             [

@@ -236,3 +236,18 @@ export function stageWatch(on) {
     stageTimer = setInterval(push, 250);
   }
 }
+
+// Journal, profile and wardrobe. State comes from the game's own rules; previews are drawn by its renderer.
+export function journal() { return reply({ ok: true, result: world.journalState() }); }
+export function claimQuest(id) { return reply(world.claimQuest(id)); }
+export function profile() { return reply({ ok: true, result: world.profileState() }); }
+export function saveProfile(name, motto, chatColor) { return reply(world.saveProfile(name, motto, chatColor)); }
+export function exportSave() { return reply(world.exportSave()); }
+export function inspectSave(text) { return reply(world.inspectSave(text)); }
+export function inspectBackup() { return reply(world.inspectBackup()); }
+export function confirmRestore() { return reply(world.confirmRestore()); }
+export function wardrobe() { return reply({ ok: true, result: world.wardrobeState() }); }
+export function presetOutfit(index) { return JSON.stringify(world.presetOutfit(index)); }
+export async function outfitPreview(outfit, pose, portrait) { return world.outfitPreview(JSON.parse(outfit), pose, portrait); }
+export function saveLook(outfit, preset) { return reply(world.saveLook(JSON.parse(outfit), preset)); }
+export function classicLook() { world.classicLook(); }

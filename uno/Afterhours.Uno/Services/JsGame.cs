@@ -6,7 +6,7 @@ namespace Afterhours.Uno.Services;
 
 // Phase A: both interfaces are backed by the JavaScript game running in the same page.
 [System.Runtime.Versioning.SupportedOSPlatform("browser")]
-public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, IStage
+public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, IStage, IResident
 {
     private static readonly TimeSpan OpenTimeout = TimeSpan.FromSeconds(15);
     private bool _mounted;
@@ -85,6 +85,45 @@ public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, I
     }
 
     public ActionReply Act(string op, string songId = "") => Reply(() => GameHost.Stage(op, songId));
+
+    public JournalState Journal() => Host(GameHost.Journal, Ctx.HostReplyJournalState)?.Result ?? JournalState.Empty;
+
+    public HostReply<JournalState> ClaimQuest(string questId) => Host(() => GameHost.ClaimQuest(questId), Ctx.HostReplyJournalState) ?? new(false, NotReady, null);
+
+    public ProfileState Profile() => Host(GameHost.Profile, Ctx.HostReplyProfileState)?.Result ?? ProfileState.Empty;
+
+    public HostReply<ProfileState> SaveProfile(string name, string motto, string chatColor) =>
+        Host(() => GameHost.SaveProfile(name, motto, chatColor), Ctx.HostReplyProfileState) ?? new(false, NotReady, null);
+
+    public ActionReply ExportSave() => Reply(GameHost.ExportSave);
+
+    public HostReply<RestorePrompt> InspectSave(string text) => Host(() => GameHost.InspectSave(text), Ctx.HostReplyRestorePrompt) ?? new(false, NotReady, null);
+
+    public HostReply<RestorePrompt> InspectBackup() => Host(GameHost.InspectBackup, Ctx.HostReplyRestorePrompt) ?? new(false, NotReady, null);
+
+    public ActionReply ConfirmRestore() => Reply(GameHost.ConfirmRestore);
+
+    public WardrobeState? Wardrobe() => Host(GameHost.Wardrobe, Ctx.HostReplyWardrobeState)?.Result;
+
+    public Outfit PresetOutfit(int index) => JsonSerializer.Deserialize(GameHost.PresetOutfit(index), Ctx.Outfit)!;
+
+    public async Task<string> RenderOutfit(Outfit outfit, string pose, bool portrait = false) =>
+        _mounted ? await GameHost.OutfitPreview(JsonSerializer.Serialize(outfit, Ctx.Outfit), pose, portrait) : "";
+
+    public ActionReply SaveLook(Outfit outfit, int preset) => Reply(() => GameHost.SaveLook(JsonSerializer.Serialize(outfit, Ctx.Outfit), preset));
+
+    public void ClassicLook()
+    {
+        if (_mounted)
+            GameHost.ClassicLook();
+    }
+
+    private const string NotReady = "Your world is still opening.";
+
+    private static BridgeJsonContext Ctx => BridgeJsonContext.Default;
+
+    private HostReply<T>? Host<T>(Func<string> call, System.Text.Json.Serialization.Metadata.JsonTypeInfo<HostReply<T>> type) =>
+        _mounted ? JsonSerializer.Deserialize(call(), type) : null;
 
     private static string Ids(IEnumerable<string> ids) => JsonSerializer.Serialize(ids.ToImmutableList(), BridgeJsonContext.Default.ImmutableListString);
 

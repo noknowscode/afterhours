@@ -94,6 +94,19 @@ test('panels that moved to XAML are requests to the host, not game markup', asyn
   assert.ok(!online.includes("'SHARED MUSIC STAGE'"), 'the shared stage is still built by the online client');
   assert.match(game, /function stagePanel\(\)\{openPanel\('Stage'\);\}/);
   assert.match(online, /function chartPanel\(\)\{W\.openPanel\('Chart'\);\}/);
+  for (const title of ['RESIDENT JOURNAL', 'RESIDENT PROFILE', 'THE WARDROBE', 'HOW TO PLAY'])
+    assert.ok(!game.includes(`'${title}'`), title + ' is still built by the game');
+  assert.match(game, /function journal\(tab='quests'\)\{openPanel\('Journal',\{tab\}\);\}/);
+  assert.match(game, /function profile\(\)\{openPanel\('Profile'\);\}/);
+  assert.match(game, /look=function\(\)\{openPanel\('Wardrobe'\);\};/);
+  assert.match(game, /button\('help',\(\)=>openPanel\('Help'\)\);/);
+});
+
+test('every outfit part the wardrobe offers is one the game knows', () => {
+  const W = require('../dist/wardrobe.js');
+  const outfit = W.normalize({version: 1, hair: 'bob', top: 'tee', bottom: 'jeans', hairColor: 'silver', topColor: 'teal', bottomColor: 'ink', skin: 'deep'});
+  assert.deepEqual(Object.keys(outfit).sort(), ['bottom', 'bottomColor', 'hair', 'hairColor', 'skin', 'top', 'topColor', 'version']);
+  assert.equal(outfit.hairColor, 'silver');
 });
 
 test('every studio edit the app sends exists in the game', async () => {

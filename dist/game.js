@@ -130,45 +130,43 @@
   standUp=function(animate=true){return legacyStand(animate);};
   const legacyPlace=placeGhost;
   placeGhost=function(){const success=legacyPlace();if(success)game.event('builds');return success;};
-  function journal(tab='quests'){
+  function journal(tab='quests'){openPanel('Journal',{tab});}
+  // The journal as data for the hosting app, from the game's own progress rules.
+  function journalState(){
     const s=game.state;
-    let body=topTabs([['quests','Quests'],['badges','Badges'],['wallet','Wallet']],tab);
-    if(tab==='quests'){
-      body+='<p>A little direction for your night. Finish a quest, then collect its reward.</p><div class="quest-list">';
-      body+=G.quests.map(q=>{const value=Math.min(q.target,G.progress(s,q)),claimed=s.claimed.includes(q.id);return `<article class="quest-row ${claimed?'completed':''}"><div class="quest-mark">${claimed?'✓':value===q.target?'✦':'○'}</div><div><b>${h(q.name)}</b><p>${h(q.description)}</p><div class="mini-meter"><i style="width:${value/q.target*100}%"></i></div><small>${value} / ${q.target} · ${q.xp} XP</small></div><button class="${value===q.target&&!claimed?'primary':'soft-button'}" data-claim="${q.id}" ${value<q.target||claimed?'disabled':''}>${claimed?'Collected':credit(q.reward)}</button></article>`;}).join('')+'</div>';
-    }else if(tab==='badges'){
-      body+='<p>Small keepsakes from nights well spent.</p><div class="badge-grid">'+G.achievements.map(a=>`<article class="badge-card ${s.profile.badges.includes(a.id)?'unlocked':''}"><span>${a.icon}</span><b>${h(a.name)}</b><p>${h(a.description)}</p><small>${Math.min(a.target,G.progress(s,a))} / ${a.target}</small></article>`).join('')+'</div>';
-    }else{
-      body+=`<div class="wallet-total">${credit(s.coins)}<small>Your credits · earned through play</small></div><p>Daily check-in: 35 credits. Stage: 40 credits for the first five performances each day. Arcade: up to 30 credits for the first eight rounds.</p><div class="ledger">`;
-      body+=s.ledger.length?s.ledger.map(e=>`<div><span>${h(e.reason)}<small>${new Date(e.date).toLocaleDateString()}</small></span><b class="${e.amount>0?'positive':''}">${e.amount>0?'+':''}${e.amount} ✦</b></div>`).join(''):'<p>Your first reward starts the story.</p>';body+='</div>';
-    }
-    panel('Your night, your story','RESIDENT JOURNAL',body,true);
-    buttons('[data-tab]',b=>journal(b.dataset.tab));buttons('[data-claim]',b=>{if(act('quest',{id:b.dataset.claim},'Reward collected.').ok)journal();});
+    return {
+      quests:G.quests.map(q=>{const value=Math.min(q.target,G.progress(s,q));return {id:q.id,name:q.name,description:q.description,value,target:q.target,xp:q.xp,reward:q.reward,claimed:s.claimed.includes(q.id)};}),
+      badges:G.achievements.map(a=>({id:a.id,name:a.name,description:a.description,icon:a.icon,value:Math.min(a.target,G.progress(s,a)),target:a.target,unlocked:s.profile.badges.includes(a.id)})),
+      coins:s.coins,ledger:s.ledger.map(e=>({reason:e.reason,date:new Date(e.date).toLocaleDateString(),amount:e.amount}))};
   }
-  function profile(){
+  function claimQuest(id){const out=act('quest',{id},'Reward collected.');return {ok:out.ok,error:out.error,result:journalState()};}
+  function profile(){openPanel('Profile');}
+  // The profile as data for the hosting app; restoring a save is inspected first and confirmed after.
+  let pendingRestore=null;
+  const colourNames=['Cherry','Rose','Violet','Cobalt','Teal','Moss','Ember','Ink'];
+  function profileState(){
     const s=game.state;
-    panel('This is you','RESIDENT PROFILE',`<div class="profile-summary"><div class="profile-art large-avatar" style="background-position:${-spriteIndex*70}px 0"></div><div><h3>${h(s.profile.name)}</h3><p>Level ${G.level(s)} · ${s.profile.xp} XP<br>Here since ${new Date(s.profile.joined).toLocaleDateString()}</p></div></div>
-      <form id="profileForm">${field('Display name','displayName',s.profile.name)}${field('Motto','motto',s.profile.motto)}<fieldset class="chat-colors"><legend>Chat name colour</legend><div class="speech-bubble chat-preview" id="chatPreview" style="--name:${s.profile.chatColor}" aria-hidden="true"><b>${h(s.profile.name)}</b><span>hey, just got here</span></div><div class="chat-swatches">${G.chatColors.map((c,i)=>`<label title="${['Cherry','Rose','Violet','Cobalt','Teal','Moss','Ember','Ink'][i]}"><input type="radio" name="chatColor" value="${c}" ${c===s.profile.chatColor?'checked':''} aria-label="${['Cherry','Rose','Violet','Cobalt','Teal','Moss','Ember','Ink'][i]}"><span style="background:${c}"></span></label>`).join('')}</div></fieldset><button class="primary">Save profile</button> <button type="button" class="soft-button" id="profileLook">Change outfit</button></form>
-      <div class="panel-section"><h3>Your keepsakes</h3><div class="badge-chips">${s.profile.badges.length?s.profile.badges.map(id=>{const a=G.achievements.find(x=>x.id===id);return `<span>${a?.icon||'★'} ${h(a?.name||id)}</span>`;}).join(''):'<p>Your first badge is waiting in the Journal.</p>'}</div></div>
-      <div class="panel-section"><h3>Keep your world</h3><p>Export a save to keep your rooms, songs, furniture, credits, and companion together.</p><div class="button-row"><button id="exportSave" class="soft-button">Export save</button><label class="soft-button file-button">Restore save<input type="file" id="importSave" accept=".json,application/json"></label><button id="backupSave" class="soft-button">Use last backup</button></div></div>`);
-    get('profileForm').onchange=e=>{if(e.target.name==='chatColor')get('chatPreview').style.setProperty('--name',e.target.value);};
-    get('profileForm').onsubmit=e=>{e.preventDefault();if(act('profile',{name:get('displayName').value,motto:get('motto').value,chatColor:get('profileForm').querySelector('[name=chatColor]:checked')?.value},'Profile saved.').ok){player.name=game.state.profile.name;player.chatColor=game.state.profile.chatColor;profile();}};
-    button('profileLook',()=>look());
-    paintPortrait(get('modalBody').querySelector('.large-avatar'));
-    button('exportSave',()=>{saveWorld();download(new Blob([JSON.stringify(game.state,null,2)],{type:'application/json'}),'afterhours-save.json');});
-    get('importSave').onchange=async e=>{
-      const file=e.target.files[0];if(!file)return;
-      try{if(file.size>5000000)throw Error('Choose an Afterhours save smaller than 5 MB.');const next=G.validate(JSON.parse(await file.text()));
-        panel('Restore this world?','SAVE RECOVERY',`<p>This save belongs to <b>${h(next.profile.name)}</b> and contains ${next.rooms.length} rooms, ${next.items.length} furniture pieces, and ${next.songs.length} songs. Your current world will be kept as a backup.</p><button id="confirmRestore" class="primary">Restore saved world</button>`);
-        button('confirmRestore',()=>restoreSave(next));
-      }catch(e){notifyError(e.message);}
-    };
-    button('backupSave',()=>{
-      try{const backup=localStorage.getItem('afterhours-v5-backup');if(!backup)throw Error('No previous backup is available yet.');
-        const next=G.validate(JSON.parse(backup));panel('Recover your last backup','SAVE RECOVERY',`<p>Restore ${h(next.profile.name)}’s previous world with ${next.coins} credits and ${next.songs.length} songs?</p><button id="confirmBackup" class="primary">Restore backup</button>`);button('confirmBackup',()=>restoreSave(next));
-      }catch(e){notifyError(e.message);}
-    });
+    return {name:s.profile.name,motto:s.profile.motto,chatColor:s.profile.chatColor,level:G.level(s),xp:s.profile.xp,joined:new Date(s.profile.joined).toLocaleDateString(),
+      badges:s.profile.badges.map(id=>{const a=G.achievements.find(x=>x.id===id);return {icon:a?.icon||'★',name:a?.name||id};}),
+      colors:G.chatColors.map((hex,i)=>({hex,name:colourNames[i]}))};
   }
+  function saveProfile(name,motto,chatColor){
+    const out=act('profile',{name,motto,chatColor},'Profile saved.');
+    if(out.ok){player.name=game.state.profile.name;player.chatColor=game.state.profile.chatColor;}
+    return {ok:out.ok,error:out.error,result:profileState()};
+  }
+  function exportSave(){saveWorld();download(new Blob([JSON.stringify(game.state,null,2)],{type:'application/json'}),'afterhours-save.json');return {ok:true};}
+  function inspectSave(text){
+    try{if(text.length>5000000)throw Error('Choose an Afterhours save smaller than 5 MB.');pendingRestore=G.validate(JSON.parse(text));
+      return {ok:true,result:{title:'Restore this world?',message:`This save belongs to ${pendingRestore.profile.name} and contains ${pendingRestore.rooms.length} rooms, ${pendingRestore.items.length} furniture pieces, and ${pendingRestore.songs.length} songs. Your current world will be kept as a backup.`,action:'Restore saved world'}};}
+    catch(e){pendingRestore=null;return {ok:false,error:e instanceof SyntaxError?'This is not a valid Afterhours save.':e.message};}
+  }
+  function inspectBackup(){
+    try{const backup=localStorage.getItem('afterhours-v5-backup');if(!backup)throw Error('No previous backup is available yet.');pendingRestore=G.validate(JSON.parse(backup));
+      return {ok:true,result:{title:'Recover your last backup',message:`Restore ${pendingRestore.profile.name}’s previous world with ${pendingRestore.coins} credits and ${pendingRestore.songs.length} songs?`,action:'Restore backup'}};}
+    catch(e){pendingRestore=null;return {ok:false,error:e.message};}
+  }
+  function confirmRestore(){if(!pendingRestore)return {ok:false,error:'Choose a save first.'};const next=pendingRestore;pendingRestore=null;restoreSave(next);return {ok:true};}
   function restoreSave(next){localStorage.setItem('afterhours-v5-backup',JSON.stringify(game.state));game.state=next;activeRoomId=next.activeRoom;spriteIndex=next.profile.avatar||0;game.save();sync();draft=copy(next.draft);resetPet();visitRoom(activeRoomId);toast('Your world is restored.');}
   function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),5000);}
     function classicLook(){
@@ -176,36 +174,24 @@
     get('lookDone').onclick=()=>{if(game.state.profile.outfit)act('outfit',{outfit:null});game.state.profile.avatar=spriteIndex;game.save();sync();close();toast('Look saved.');};
   }
   // The wardrobe: start from one of the six classic looks, then change hair, top, bottoms, colours and skin.
-  look=function(){
-    const W=AfterhoursWardrobe,presets=['Daydream','Soul','Violet','Static','Peach','Echo'];
-    let draft=W.normalize(game.state.profile.outfit)||W.fromLegacy(spriteIndex),pose='front',preset=spriteIndex;
-    const choices=(field,options)=>'<div class="wardrobe-choices">'+options.map(([id,name])=>`<button type="button" data-field="${field}" data-value="${id}" aria-pressed="${draft[field]===id}">${h(name)}</button>`).join('')+'</div>';
-    const swatches=(field,options,label)=>`<div class="wardrobe-colours" role="group" aria-label="${label}">`+options.map(([id,name,hex])=>`<button type="button" data-field="${field}" data-value="${id}" style="--swatch:${hex}" aria-label="${h(name)}" title="${h(name)}" aria-pressed="${draft[field]===id}"></button>`).join('')+'</div>';
-    panel('Who’s showing up tonight?','THE WARDROBE',
-      `<div class="wardrobe-layout"><div class="wardrobe-preview"><canvas id="wardrobeCanvas" width="250" height="340" role="img" aria-label="Outfit preview"></canvas>`+
-      '<div class="wardrobe-poses">'+[['front','Front'],['back','Back'],['seated','Seated']].map(([id,name])=>`<button type="button" class="soft-button" data-pose="${id}" aria-pressed="${pose===id}">${name}</button>`).join('')+'</div><p>Everyone in the room sees this look.</p></div>'+
-      '<div class="wardrobe-options"><fieldset><legend>Start from a look</legend><div class="wardrobe-choices">'+presets.map((name,i)=>`<button type="button" data-preset="${i}">${name}</button>`).join('')+'</div></fieldset>'+
-      '<fieldset><legend>Hair</legend>'+choices('hair',W.hair)+swatches('hairColor',W.hairColors,'Hair colour')+'</fieldset>'+
-      '<fieldset><legend>Top</legend>'+choices('top',W.tops)+swatches('topColor',W.colors,'Top colour')+'</fieldset>'+
-      '<fieldset><legend>Bottoms</legend>'+choices('bottom',W.bottoms)+swatches('bottomColor',W.colors,'Bottoms colour')+'</fieldset>'+
-      '<fieldset><legend>Skin</legend>'+swatches('skin',W.skinColors,'Skin tone')+'</fieldset></div></div>'+
-      '<div class="wardrobe-footer"><button type="button" class="text-button" id="wardrobeClassic">Use a classic sprite</button><button type="button" class="primary" id="wardrobeSave">Save look</button></div>',true);
-    const body=get('modalBody'),render=()=>{
-      AfterhoursAvatar.preview(get('wardrobeCanvas'),draft,pose);
-      body.querySelectorAll('[data-field]').forEach(b=>b.setAttribute('aria-pressed',String(draft[b.dataset.field]===b.dataset.value)));
-      body.querySelectorAll('[data-pose]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.pose===pose)));
-    };
-    body.querySelector('.wardrobe-layout').onclick=e=>{
-      const b=e.target.closest('button');if(!b)return;
-      if(b.dataset.field)draft={...draft,[b.dataset.field]:b.dataset.value};
-      else if(b.dataset.pose)pose=b.dataset.pose;
-      else if(b.dataset.preset){preset=+b.dataset.preset;draft=W.fromLegacy(preset);}
-      render();
-    };
-    button('wardrobeSave',()=>{if(act('outfit',{outfit:draft},'Look saved.').ok){spriteIndex=preset;game.state.profile.avatar=preset;game.save();sync();close();}});
-    button('wardrobeClassic',classicLook);
-    AfterhoursAvatar.load().then(render);
-  };
+  look=function(){openPanel('Wardrobe');};
+  // The wardrobe as data for the hosting app: the options, the current outfit and a rendered preview.
+  function wardrobeState(){
+    const W=AfterhoursWardrobe,pairs=list=>list.map(([id,name,hex])=>({id,name,hex:hex||''}));
+    return {presets:['Daydream','Soul','Violet','Static','Peach','Echo'],hair:pairs(W.hair),tops:pairs(W.tops),bottoms:pairs(W.bottoms),
+      colors:pairs(W.colors),hairColors:pairs(W.hairColors),skinColors:pairs(W.skinColors),
+      outfit:W.normalize(game.state.profile.outfit)||W.fromLegacy(spriteIndex),preset:spriteIndex};
+  }
+  const presetOutfit=i=>AfterhoursWardrobe.fromLegacy(i);
+  async function outfitPreview(outfit,pose,portrait=false){
+    await AfterhoursAvatar.load();const canvas=document.createElement('canvas');canvas.width=portrait?140:250;canvas.height=portrait?160:340;
+    AfterhoursAvatar.preview(canvas,AfterhoursWardrobe.normalize(outfit)||AfterhoursWardrobe.fromLegacy(spriteIndex),pose,portrait);return canvas.toDataURL('image/png');
+  }
+  function saveLook(outfit,preset){
+    const out=act('outfit',{outfit},'Look saved.');
+    if(out.ok){spriteIndex=preset;game.state.profile.avatar=preset;game.save();sync();}
+    return {ok:out.ok,error:out.error};
+  }
   function directory(filter='all',query=''){
     const s=game.state,entries=rooms.map((r,i)=>({key:'public:'+i,name:r.title,description:r.mood,id:i,kind:'public',icon:r.icon})).concat(s.rooms.map(r=>({key:'my:'+r.id,name:r.name,description:r.description,id:r.id,kind:'mine',icon:'⌂'})));
     let list=entries.filter(e=>(filter==='all'||filter==='mine'&&e.kind==='mine'||filter==='favorites'&&s.favorites.includes(e.key)||filter==='recent'&&s.history.includes(e.key))&&(e.name+' '+e.description).toLowerCase().includes(query.toLowerCase()));
@@ -613,7 +599,7 @@
       if(carried){const [x,y]=seating.mode==='sitting'?seating.target.offer.point:iso(player.x,player.y-0.0);ctx.save();ctx.translate(x+18,y-(seating.mode==='sitting'?22:65));ctx.fillStyle='#b8d4d0';ctx.fillRect(-4,-7,8,14);ctx.fillStyle='#e5e1bd';ctx.fillRect(-4,-8,8,3);ctx.restore();}
     }
   };
-  button('help',()=>panel('The night is yours','HOW TO PLAY',`<div class="help-grid"><article><b>01 · Make yourself at home</b><p>Click the floor to walk. Click seats to sit and other furniture to use it. Decorate moves and rotates your pieces.</p></article><article><b>02 · Find your sound</b><p>Make a track in Beat studio. Save it, perform on the stage, press a record, or export the audio.</p></article><article><b>03 · Earn your next thing</b><p>Check in daily, finish quests, play the arcade, and perform music. Collect your quest rewards in the Journal.</p></article><article><b>04 · Build your world</b><p>Create rooms, add usable objects, set up a playlist, leave notes, host events, and connect room logic.</p></article><article><b>05 · A little company</b><p>Adopt a cat, feed it, teach it tricks, and let it follow you. Click residents to open their profiles.</p></article><article><b>06 · Keep your progress</b><p>Your world saves automatically on this device. Export a backup from your profile. Shared sessions add real guests when the local game service is running.</p></article></div><p class="small-note">Camera: +/− zoom · Fit shows the whole room · ◎ follows you · Space + drag pans. Keyboard: arrows/WASD move · 1 wave · 2 dance · Esc stand · R rotate while decorating. Chat: :wave, :dance, :stand, :shout.</p>`,true));
+  button('help',()=>openPanel('Help'));
   sync();resetPet();populateChat();syncFavorite();updateHUD();game.save();showRoomIntro();
   if(loadError)toast(loadError);
   // A narrow bridge for the optional multiplayer client, never for UI automation.
@@ -634,7 +620,8 @@
         collection:c.collection||'originals',category:category(type),featured:!!c.atlas,
         atlas:{url:new URL(image.getAttribute('src'),location.href).href,width:image.naturalWidth,height:image.naturalHeight},crop};})}),
     shopImages:()=>[...new Set(Object.keys(Furniture.catalog).map(type=>furnitureArt(type).image))],
-    updateHUD,showStudio:studio,studioEdit,playTrack,exportWav,savePlaylist,startPlaylist,
+    updateHUD,showStudio:studio,journalState,claimQuest,profileState,saveProfile,exportSave,inspectSave,inspectBackup,confirmRestore,
+    wardrobeState,presetOutfit,outfitPreview,saveLook,classicLook:()=>classicLook(),studioEdit,playTrack,exportWav,savePlaylist,startPlaylist,
     pressDisc:id=>act('disc',{id},'Pressed onto a collectible disc.'),deleteSong:id=>act('deleteSong',{id}),perform:id=>queueSong(id),
     stageState,stageAct,openPanel,showJournal:()=>journal(),
     setActiveRoom:id=>{activeRoomId=id;game.state.activeRoom=id;},

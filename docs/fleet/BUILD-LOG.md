@@ -5,9 +5,9 @@ Append only. Milestones, not edits. Decisions live in `docs/specs/xaml-outer-ui-
 | Stat | Value |
 |---|---|
 | Sessions | 1 (single coordinator, no fleet threads) |
-| Milestones logged | 6 |
+| Milestones logged | 7 |
 | Brief → first recognizable XAML chrome | 2 h 35 min (14:35 first spec → 17:10 wave 1 runnable) |
-| Runtime checks | wave 0: 13/13 · wave 1: 30/30 · wave 2: 40/40 · wave 3: 54/54 · Skia: 56/56 |
+| Runtime checks | wave 0: 13/13 · wave 1: 30/30 · wave 2: 40/40 · wave 3: 54/54 · Skia: 56/56 · wave 4: 65/65 |
 | WASM framework download (brotli) | 5.53 MB baseline → 6.49 MB wave 0 → 6.63 MB wave 1 → 6.41 MB wave 2 → 6.51 MB wave 3 → 10.87 MB on Skia (sum of `_framework/*.br`) |
 
 ## 2026-10-23 15:35 — Wave 0: same-page hosting proven (go)
@@ -98,4 +98,18 @@ Shots: docs/screenshots/xaml/skia/
 Surprises: the Toolkit drawer's slide left Uno's accessibility mirror with stale positions (off by up to
 900 px); a transparent scrim still blanks the hosted room; Uno's default font is a 38-file family; an
 `ItemsControl` reported zero size while its cells drew, so the probe walks into zero-size containers.
+Threads: 0 (single session)
+
+## 2026-10-29 03:18 — Wave 4: journal, profile, wardrobe and help in XAML
+
+Brief (verbatim):
+> "switch to skia, and conttinue with whats next. is there more that can be changed to c# or xaml?"
+
+Came back: 1 session, 2 publishes, 5 runtime-check rounds to 65/65 (three of them flakiness in the check).
+Numbers: 65/65 checks · 75 Node + 30 xUnit tests · four routes (Journal, Profile, Wardrobe, Help) · 4 game panels
+and the JS help removed · save restore through a real file chooser
+Shots: docs/screenshots/xaml/wave4/
+Surprises: claiming the daily gift now opens a XAML sheet, so a wave 1 check clicked its scrim; Uno's Skia input
+dropped instant clicks under load (fixed by a press-and-hold click in the check); the first keystroke after
+focusing a TextBox could arrive before focus.
 Threads: 0 (single session)
