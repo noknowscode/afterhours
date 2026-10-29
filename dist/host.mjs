@@ -149,6 +149,8 @@ export async function mount(elementId, onEvent) {
   window.AfterhoursHost = {
     open: (route, data = {}) => emit({ type: 'open', route, data }),
     notify: (type, data) => emit({ type, [type]: data }),
+    // Set while a XAML control holds keyboard focus (app.js then leaves room shortcuts alone).
+    xamlFocus: false,
   };
 
   const styled = Promise.all([loadStyle('scoped.css'), loadStyle('hosted.css')]);
@@ -200,6 +202,7 @@ export function say(text, mode, target) {
 }
 
 export function focusRoom() { world.canvas.focus(); }
+export function xamlFocus(on) { window.AfterhoursHost.xamlFocus = on; }
 
 // Writes. Each runs the game's own action and replies with {ok, error, result} as JSON.
 const reply = out => JSON.stringify({ ok: !!out?.ok, error: out?.error ?? null, result: out?.result ?? null });

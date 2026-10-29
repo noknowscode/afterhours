@@ -25,6 +25,9 @@ internal static partial class GameHost
     [JSImport("focusRoom", Module)]
     public static partial void FocusRoom();
 
+    [JSImport("xamlFocus", Module)]
+    public static partial void XamlFocus(bool focused);
+
     // Writes reply with {ok, error, result} as JSON.
     [JSImport("buy", Module)]
     public static partial string Buy(string type);

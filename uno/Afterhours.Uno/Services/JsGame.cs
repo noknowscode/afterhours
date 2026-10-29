@@ -166,5 +166,11 @@ public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, I
             GameHost.FocusRoom();
     }
 
+    public void XamlFocus(bool focused)
+    {
+        if (_mounted)
+            GameHost.XamlFocus(focused);
+    }
+
     public void Reload() => global::Uno.Foundation.WebAssemblyRuntime.InvokeJS("location.reload()");
 }

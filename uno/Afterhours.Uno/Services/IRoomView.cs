@@ -27,5 +27,9 @@ public interface IRoomView
 
     void Focus();
 
+    // Whether a XAML control holds keyboard focus. The room's shortcuts (1, 2, Space, R…) wait while one does:
+    // on Skia the browser's focus stays on the page body, so the game cannot tell by itself.
+    void XamlFocus(bool focused);
+
     void Reload();
 }
