@@ -16,7 +16,7 @@ public partial record ChartModel(IStage Stage, INavigator Navigator)
 
     public async ValueTask Back(CancellationToken ct)
     {
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        Stage.Act("open");
+        if (await Navigator.CloseSheetAsync(this, ct))
+            Stage.Act("open");
     }
 }

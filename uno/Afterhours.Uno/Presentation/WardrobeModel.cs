@@ -55,13 +55,13 @@ public partial record WardrobeModel(IResident Resident, INavigator Navigator)
         var reply = Resident.SaveLook(await Outfit ?? _opened!.Outfit, await Preset);
         await Error.UpdateAsync(_ => reply.Ok ? "" : reply.Error ?? "", ct);
         if (reply.Ok)
-            await Navigator.NavigateBackAsync(this, cancellation: ct);
+            await Navigator.CloseSheetAsync(this, ct);
     }
 
     public async ValueTask UseClassic(CancellationToken ct)
     {
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        Resident.ClassicLook();
+        if (await Navigator.CloseSheetAsync(this, ct))
+            Resident.ClassicLook();
     }
 
     private IListFeed<ChoiceView> Choices(string field, Func<WardrobeState, ImmutableList<OutfitOption>> options, bool swatch) =>

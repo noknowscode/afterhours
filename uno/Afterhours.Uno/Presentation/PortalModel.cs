@@ -21,6 +21,6 @@ public partial record PortalModel(IRooms Rooms, INavigator Navigator, ItemReques
         var reply = Rooms.LinkPortal(Request.ItemId, room.Id);
         await Error.UpdateAsync(_ => reply.Ok ? "" : reply.Error ?? "", ct);
         if (reply.Ok)
-            await Navigator.NavigateBackAsync(this, cancellation: ct);
+            await Navigator.CloseSheetAsync(this, ct);
     }
 }

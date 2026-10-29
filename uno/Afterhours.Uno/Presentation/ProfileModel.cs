@@ -44,8 +44,8 @@ public partial record ProfileModel(IResident Resident, IGameStore Store, IRoomVi
 
     public async ValueTask ChangeOutfit(CancellationToken ct)
     {
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        RoomView.Run("look");
+        if (await Navigator.CloseSheetAsync(this, ct))
+            RoomView.Run("look");
     }
 
     public async ValueTask ExportSave(CancellationToken ct) => await Error.UpdateAsync(_ => Resident.ExportSave().Error ?? "", ct);
@@ -67,7 +67,7 @@ public partial record ProfileModel(IResident Resident, IGameStore Store, IRoomVi
         await Restore.UpdateAsync(_ => RestoreView.None, ct);
         await Error.UpdateAsync(_ => reply.Ok ? "" : reply.Error ?? "", ct);
         if (reply.Ok)
-            await Navigator.NavigateBackAsync(this, cancellation: ct);
+            await Navigator.CloseSheetAsync(this, ct);
     }
 
     public async ValueTask KeepWorld(CancellationToken ct) => await Restore.UpdateAsync(_ => RestoreView.None, ct);

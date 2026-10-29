@@ -47,7 +47,7 @@ public partial record RoomsModel(IRooms Rooms, INavigator Navigator, RoomsReques
         var reply = await Rooms.GoTo(card.Key);
         await Error.UpdateAsync(_ => reply.Ok ? "" : reply.Error ?? "", ct);
         if (reply.Ok)
-            await Navigator.NavigateBackAsync(this, cancellation: ct);
+            await Navigator.CloseSheetAsync(this, ct);
     }
 
     public async ValueTask OpenCreate(CancellationToken ct) => await Create.UpdateAsync(_ => new CreateRoomView(true), ct);
@@ -63,6 +63,6 @@ public partial record RoomsModel(IRooms Rooms, INavigator Navigator, RoomsReques
         var reply = Rooms.CreateRoom(await NewName ?? "", await NewDescription ?? "", await NewTags ?? "");
         await Error.UpdateAsync(_ => reply.Ok ? "" : reply.Error ?? "", ct);
         if (reply.Ok)
-            await Navigator.NavigateBackAsync(this, cancellation: ct);
+            await Navigator.CloseSheetAsync(this, ct);
     }
 }

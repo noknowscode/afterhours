@@ -29,6 +29,6 @@ public partial record WrapGiftModel(IGameStore Store, INavigator Navigator, Wrap
         var reply = Store.Wrap(Request.ItemId, contents, note);
         await Error.UpdateAsync(_ => reply.Ok ? "" : reply.Error ?? "", ct);
         if (reply.Ok)
-            await Navigator.NavigateBackAsync(this, cancellation: ct);
+            await Navigator.CloseSheetAsync(this, ct);
     }
 }

@@ -26,13 +26,13 @@ public partial record RoomObjectModel(IRooms Rooms, IGameStore Store, INavigator
     // The sheet closes first: most actions walk you to the piece, and the rest open the next sheet.
     public async ValueTask Run(ObjectActionView action, CancellationToken ct)
     {
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        Rooms.ObjectAction(action.Index);
+        if (await Navigator.CloseSheetAsync(this, ct))
+            Rooms.ObjectAction(action.Index);
     }
 
     public async ValueTask Move(CancellationToken ct)
     {
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        Rooms.MoveObject();
+        if (await Navigator.CloseSheetAsync(this, ct))
+            Rooms.MoveObject();
     }
 }

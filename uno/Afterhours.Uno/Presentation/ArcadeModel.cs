@@ -10,7 +10,7 @@ public partial record ArcadeModel(IResident Resident, INavigator Navigator)
 
     public async ValueTask Play(ArcadeCard game, CancellationToken ct)
     {
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        Resident.PlayArcade(game.Id);
+        if (await Navigator.CloseSheetAsync(this, ct))
+            Resident.PlayArcade(game.Id);
     }
 }

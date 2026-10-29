@@ -104,8 +104,8 @@ public partial record StudioModel(IGameStore Store, IMusic Music, INavigator Nav
 
     public async ValueTask Perform(SongCard song, CancellationToken ct)
     {
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        Store.Perform(song.Id);
+        if (await Navigator.CloseSheetAsync(this, ct))
+            Store.Perform(song.Id);
     }
 
     public async ValueTask PressDisc(SongCard song, CancellationToken ct) => await Report(Store.PressDisc(song.Id).Error, ct);

@@ -37,13 +37,13 @@ public partial record RoomToolsModel(IRooms Rooms, INavigator Navigator)
         var reply = Rooms.SaveSettings(await Name ?? "", await Description ?? "", await Tags ?? "", await Lighting ?? "amber", await Door ?? "open");
         await Error.UpdateAsync(_ => reply.Ok ? "" : reply.Error ?? "", ct);
         if (reply.Ok)
-            await Navigator.NavigateBackAsync(this, cancellation: ct);
+            await Navigator.CloseSheetAsync(this, ct);
     }
 
     // blueprints, rules, notes, playlist, event or home: this sheet closes and the game opens the next one.
     public async ValueTask Open(string panel, CancellationToken ct)
     {
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        Rooms.OpenRoomPanel(panel);
+        if (await Navigator.CloseSheetAsync(this, ct))
+            Rooms.OpenRoomPanel(panel);
     }
 }

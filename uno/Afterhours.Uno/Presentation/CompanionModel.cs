@@ -40,8 +40,8 @@ public partial record CompanionModel(IResident Resident, INavigator Navigator)
     // A trick plays out in the room, so the sheet closes.
     public async ValueTask Perform(TrickView trick, CancellationToken ct)
     {
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        Resident.PetAction(trick.Id);
+        if (await Navigator.CloseSheetAsync(this, ct))
+            Resident.PetAction(trick.Id);
     }
 
     private async ValueTask Apply(HostReply<PetState> reply, CancellationToken ct)

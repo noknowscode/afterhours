@@ -18,12 +18,12 @@ public partial record RoomEventModel(IRooms Rooms, INavigator Navigator)
     public async ValueTask Host(CancellationToken ct)
     {
         Rooms.HostEvent(await Name ?? "", int.TryParse(await Delay, out var minutes) ? minutes : 0);
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
+        await Navigator.CloseSheetAsync(this, ct);
     }
 
     public async ValueTask End(CancellationToken ct)
     {
         Rooms.EndEvent();
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
+        await Navigator.CloseSheetAsync(this, ct);
     }
 }

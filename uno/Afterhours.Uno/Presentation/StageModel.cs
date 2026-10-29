@@ -31,21 +31,21 @@ public partial record StageModel(IStage Stage, IRoomView RoomView, INavigator Na
     public async ValueTask CollectRewards(CancellationToken ct)
     {
         Stage.Act("dismiss");
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        RoomView.Run("journal");
+        if (await Navigator.CloseSheetAsync(this, ct))
+            RoomView.Run("journal");
     }
 
     public async ValueTask MakeTrack(CancellationToken ct)
     {
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        RoomView.Run("studio");
+        if (await Navigator.CloseSheetAsync(this, ct))
+            RoomView.Run("studio");
     }
 
     // The chart replaces the stage panel (as in the game), so drawers never stack.
     public async ValueTask OpenChart(CancellationToken ct)
     {
-        await Navigator.NavigateBackAsync(this, cancellation: ct);
-        Stage.Act("chart");
+        if (await Navigator.CloseSheetAsync(this, ct))
+            Stage.Act("chart");
     }
 
     private async ValueTask Report(ActionReply reply, CancellationToken ct) => await Error.UpdateAsync(_ => reply.Ok ? "" : reply.Error ?? "", ct);

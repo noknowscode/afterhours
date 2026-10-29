@@ -31,7 +31,7 @@ public partial record JukeboxModel(IGameStore Store, IMusic Music, INavigator Na
         var reply = Store.SavePlaylist(await Playlist());
         await Error.UpdateAsync(_ => reply.Ok ? "" : reply.Error ?? "", ct);
         if (reply.Ok)
-            await Navigator.NavigateBackAsync(this, cancellation: ct);
+            await Navigator.CloseSheetAsync(this, ct);
     }
 
     public async ValueTask PlayAll(CancellationToken ct)

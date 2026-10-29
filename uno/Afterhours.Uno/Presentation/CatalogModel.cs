@@ -81,13 +81,13 @@ public partial record CatalogModel(IGameStore Store, INavigator Navigator, Catal
             id = bought.Result?.Id;
         }
         if (id is not null && await Report(await Store.Place(id), ct))
-            await Navigator.NavigateBackAsync(this, cancellation: ct);
+            await Navigator.CloseSheetAsync(this, ct);
     }
 
     public async ValueTask Interact(CatalogSelection selection, CancellationToken ct)
     {
         if (selection.Card?.ItemId is { } id && await Report(Store.Use(id), ct))
-            await Navigator.NavigateBackAsync(this, cancellation: ct);
+            await Navigator.CloseSheetAsync(this, ct);
     }
 
     public async ValueTask PlayDisc(DiscView disc, CancellationToken ct) => await Report(Store.PlayDisc(disc.Id), ct);
