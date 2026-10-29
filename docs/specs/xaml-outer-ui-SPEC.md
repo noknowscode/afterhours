@@ -158,16 +158,16 @@ names the JS function it replaces; that JS is deleted when the row ships.
 | 4 ✓ | (inline in `Profile`) | — | — | "Restore this world?" / "Recover your last backup" |
 | 4 ✓ | `Journal` | F | `JournalRequest(Tab)` | `journal` (quests, badges, wallet) |
 | 4 ✓ | `Help` | F | — | "HOW TO PLAY" |
-| 5 | `Rooms` | F | `RoomFilter` | `directory` + shared `roomDirectory` |
-| 5 | `CreateRoom` | D | — | "CREATE A ROOM" |
-| 5 | `RoomTools` | F | `RoomId` | `roomTools` + "ROOM SETTINGS" |
-| 5 | `RoomLogic` | F | `RoomId` | `rulesPanel` |
-| 5 | `RoomEvent` | D | `RoomId` | `eventPanel` |
-| 5 | `MessageBoard` | F | `RoomId` | `notesPanel` |
-| 5 | `Portal` | D | `ItemId` | "LINK A PORTAL" |
-| 5 | `RoomObject` | D | `ItemId` | `openObject` / `itemDetails` "ROOM INTERACTION" |
-| 5 | `Companion` | F | — | `petPanel` + "ADOPT A COMPANION" |
-| 5 | `Arcade` | F | `ArcadeKind?` | `arcade` (picker in XAML; round in `ArcadeHost` island) |
+| 5 ✓ | `Rooms` | F | `RoomsRequest(Filter)` | `directory` + shared `roomDirectory` |
+| 5 ✓ | (inline in `Rooms`) | — | — | "CREATE A ROOM" |
+| 5 ✓ | `RoomTools` | F | — (the current room) | `roomTools` + "ROOM SETTINGS" |
+| 5 ✓ | `RoomLogic` | F | — | `rulesPanel` |
+| 5 ✓ | `RoomEvent` | D | — | `eventPanel` |
+| 5 ✓ | `MessageBoard` | F | — | `notesPanel` |
+| 5 ✓ | `Portal` | D | `ItemRequest(ItemId)` | "LINK A PORTAL" |
+| 5 ✓ | `RoomObject` | D | `ItemRequest(ItemId)` | `openObject` "ROOM INTERACTION" |
+| 5 ✓ | `Companion` | F | — | `petPanel` + "ADOPT A COMPANION" |
+| 5 ✓ | `Arcade` | F | — | `arcade` (picker in XAML; a round and its results stay game panels) |
 | 6 | `Friends` | F | — | "YOUR CIRCLE" + shared `friendsPanel` |
 | 6 | `Resident` | D | `ResidentId` | `residentProfile` |
 | 6 | `Player` | D | `PlayerId` | `playerPanel` "CONNECTED PLAYER" |
@@ -632,6 +632,65 @@ Decisions made while switching:
   can lag a bound title, so it is a check, not the driver.
 - **List items have accessible names** (`ToString()` on the records lists show).
 
+## Wave 5 (2026-10-29): rooms, room tools, companion, arcade
+
+**Done.** 76/76 runtime checks on Skia (`docs/screenshots/xaml/wave5/`), 77 Node and 37 xUnit tests.
+
+### Architecture Brief (wave 5)
+
+- **Services.** A new `IRooms` (navigator, current room, room tools edits, portals, room objects; `JsGame`
+  implements it). `IResident` gains the companion and the arcade picker. Room edits reply with the room as it now
+  stands (`HostReply<RoomState>`), so a sheet never waits on an event; the companion replies the same way.
+- **Game side.** `game.js` keeps every rule: `roomsState`, `roomState`, `addRule` (ten at most, validated),
+  `hostEvent`, `petState` / `petAction`, `objectState` / `objectAction` and `linkPortal`. A clicked piece stores
+  its action list in the game (`objectPanel`); the sheet shows the labels and runs one by index, so actions that
+  walk you over first (`approach`) stay in the game. Connected, `online.js` answers the navigator
+  (`roomsState`, `joinRoomKey`; a doorbell counts as done).
+- **Routes.** `Rooms` (data `RoomsRequest`), `RoomTools`, `RoomLogic`, `RoomEvent`, `MessageBoard`, `Portal` and
+  `RoomObject` (data `ItemRequest`), `Companion`, `Arcade`. Room tools' buttons close the sheet and ask the game
+  for the next panel (`roomPanel(name)`), so sheets replace each other.
+- **Host names.** The navigator exports are `roomList` and `currentRoom`: a module export named `rooms` hid the
+  page's global `rooms` (the public hangouts) that `mount` reads, and the world failed to open.
+- **MVUX.** A record member named `Event` breaks the generated bindable proxy (CS0065 in
+  `RoomState.Bindings.g.cs`); the room's event is `Hosting` with `[JsonPropertyName("event")]`.
+- **Testing.** `RoomRules` (tabs, search, recent order, door badges, rule text, object actions, companion
+  needs) in xUnit; Node checks that every `[JSImport]` name is a `host.mjs` export and that every room-tools panel
+  exists in `roomPanels`.
+
+### Design Brief (wave 5)
+
+- Navigator: four quiet tabs with the acid underline (solo only), a search box, room cards as full-width soft
+  buttons with the game's right-hand badge (YOURS, PUBLIC, Enter, Ring), "+ Create a room" pinned below the
+  list; the create form replaces the list in place.
+- Room tools: the settings form (name, description, tags, lighting and door side by side), then the other tools as
+  a wrap of soft buttons. In a public hangout it offers "Go to my room" instead.
+- Room logic: When… / Then… side by side, phrase and message fields, rules as raised rows with a × button.
+  Message board: notes as accent-tinted cards in a wrap grid. Event: name and "Starts in", End when one is set.
+- Room object: the piece's atlas art (the shop's `ArtFrame`), its note or description, the first action primary.
+  Companion: the game's portrait, needs as labelled bars, care buttons, tricks. Arcade: three cards with icon, best
+  score and a Play button.
+
+### Interaction Brief (wave 5)
+
+- Rail "Explore rooms", the travel bar and "My rooms" open `!Rooms`; the shared session's rooms button opens it
+  connected. Choosing a room enters it and closes the sheet; a doorbell shows the game's toast.
+- "Room tools" opens `!RoomTools`; Save closes the sheet. Blueprints, Room logic, Message board, Playlist and Host
+  an event close it and open their own sheet.
+- Clicking a piece opens `!RoomObject`; an action closes the sheet (most walk you over first); "Link to a room"
+  and "Wrap a piece" open `!Portal` and `!WrapGift`. Tricks and arcade rounds close the sheet because they play out
+  in the room.
+- Errors from the game (an empty note, the rule limit, not enough credits, a tired companion) show in the sheet's
+  `InfoBar`.
+- **Keys and focus (R4, found in this wave).** On Skia the browser's focus stays on the page body after a XAML
+  click, so room shortcuts (1 wave, 2 dance, Space, R) fired while a XAML button had focus; the old check passed by
+  a race. `MainPage` now reports XAML focus (`FocusManager.GotFocus`) and `app.js` leaves body-targeted keys alone
+  while a XAML control holds it. The check now also proves the key still works after a click on the room.
+- **Closing a sheet once.** A second click on a sheet button while the sheet closed ran `NavigateBackAsync` again:
+  it closed the sheet that had just opened, and further backs walked the browser history out of the app (the
+  runtime check saw the page reload). Every model now closes through `Sheets.CloseSheetAsync`, which navigates
+  back once per model and tells the caller whether to run its follow-up. Open: a double-click about 150 ms apart
+  on a room-tools button can still leave room tools showing instead of the next sheet (harmless; Escape closes it).
+
 ## Wave 4 (2026-10-29): journal, profile, wardrobe, help
 
 **Done.** 65/65 runtime checks on Skia (`docs/screenshots/xaml/wave4/`), 75 Node and 30 xUnit tests.
@@ -791,8 +850,8 @@ Each wave is one or more conventional commits on its own branch, merged only wit
 - **R2 Overlay:** resolved in wave 0. Open item: a JS `<dialog>` uses the browser top layer, so while one is
   open it covers the XAML too. Acceptable while panels migrate.
 - **R3 CSS scope:** resolved in wave 0. Wave 1 adds `tests/test-scope-css.mjs` to keep it that way.
-- **R4 Keys and focus:** resolved for `TextBox` in wave 0. Still to check in wave 1: a focused XAML button or
-  list must not swallow or leak room keys.
+- **R4 Keys and focus:** resolved for `TextBox` in wave 0, and for buttons and lists on Skia in wave 5 (the app
+  reports XAML focus to the game; see Wave 5).
 - **R5 Motion:** resolved by the Skia switch: panels open without a transition.
 - **R6 Fonts/text:** resolved in wave 0 for DM Sans; repeat the check for the other three files in wave 1.
 - **R7 Size/build:** measured (+0.96 MB brotli, build time flat). Open: 20 trim warnings from Uno.Extensions/MVUX

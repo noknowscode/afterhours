@@ -5,10 +5,10 @@ Append only. Milestones, not edits. Decisions live in `docs/specs/xaml-outer-ui-
 | Stat | Value |
 |---|---|
 | Sessions | 1 (single coordinator, no fleet threads) |
-| Milestones logged | 7 |
+| Milestones logged | 8 |
 | Brief → first recognizable XAML chrome | 2 h 35 min (14:35 first spec → 17:10 wave 1 runnable) |
-| Runtime checks | wave 0: 13/13 · wave 1: 30/30 · wave 2: 40/40 · wave 3: 54/54 · Skia: 56/56 · wave 4: 65/65 |
-| WASM framework download (brotli) | 5.53 MB baseline → 6.49 MB wave 0 → 6.63 MB wave 1 → 6.41 MB wave 2 → 6.51 MB wave 3 → 10.87 MB on Skia (sum of `_framework/*.br`) |
+| Runtime checks | wave 0: 13/13 · wave 1: 30/30 · wave 2: 40/40 · wave 3: 54/54 · Skia: 56/56 · wave 4: 65/65 · wave 5: 76/76 |
+| WASM framework download (brotli) | 5.53 MB baseline → 6.49 MB wave 0 → 6.63 MB wave 1 → 6.41 MB wave 2 → 6.51 MB wave 3 → 10.87 MB on Skia → 11.01 MB wave 5 (sum of `_framework/*.br`) |
 
 ## 2026-10-23 15:35 — Wave 0: same-page hosting proven (go)
 
@@ -113,3 +113,20 @@ Surprises: claiming the daily gift now opens a XAML sheet, so a wave 1 check cli
 dropped instant clicks under load (fixed by a press-and-hold click in the check); the first keystroke after
 focusing a TextBox could arrive before focus.
 Threads: 0 (single session)
+
+## 2026-10-29 04:59 — Wave 5: rooms, room tools, companion and arcade in XAML
+
+Brief (verbatim):
+> "continue through all waves"
+
+Came back: 1 session, 3 publishes, 8 runtime-check rounds to 76/76 (one real bug, one shadowed global, the rest
+timing in the check).
+Numbers: 76/76 checks · 77 Node + 37 xUnit tests · nine routes (Rooms, RoomTools, RoomLogic, RoomEvent,
+MessageBoard, Portal, RoomObject, Companion, Arcade) · 11 game panel titles and the shared navigator removed
+Shots: docs/screenshots/xaml/wave5/
+Runs: 76/76 on 3 of 4 full runs after the fixes; the other stopped on a dropped click in a wave 4 journal tab.
+Surprises: a second click on a closing sheet navigated back twice and could leave the page; on Skia the browser's focus stays on the page body after a XAML click, so room shortcuts fired while a
+XAML button had focus (the wave 1 check had passed by a race); a host export named `rooms` hid the page's global
+list of public rooms and the world failed to open; a record member named `Event` breaks MVUX's generated proxy.
+Threads: 0 (single session)
+

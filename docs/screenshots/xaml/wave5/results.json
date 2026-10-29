@@ -1,6 +1,6 @@
 {
   "base": "http://127.0.0.1:4177/",
-  "date": "2026-10-29T04:58:20.291Z",
+  "date": "2026-10-29T05:15:35.825Z",
   "results": [
     {
       "key": "wide 1440px: boot panel gone, coins shown",
@@ -126,8 +126,8 @@
       "key": "wide 1440px: gift wrap opens from the game and wraps the chosen piece",
       "pass": true,
       "wrapOpen": true,
-      "wrapped": "e3f46af1-15db-440e-bca7-0740b02c687c",
-      "expected": "e3f46af1-15db-440e-bca7-0740b02c687c"
+      "wrapped": "36c84dd8-e402-41cd-9100-5d15c878c39e",
+      "expected": "36c84dd8-e402-41cd-9100-5d15c878c39e"
     },
     {
       "key": "wide 1440px: studio opens from the rail; a step toggles and Undo restores it",
@@ -276,7 +276,7 @@
       "key": "wide 1440px: a room object opens its sheet with art, and an action closes it",
       "pass": true,
       "objectOpen": true,
-      "artColours": 254
+      "artColours": 255
     },
     {
       "key": "wide 1440px: a portal links to another of your rooms",
