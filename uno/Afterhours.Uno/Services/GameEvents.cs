@@ -19,6 +19,9 @@ public sealed class GameEvents
     public Latest<ImmutableList<Song>> Songs { get; } = new();
     // Nothing plays until the game says so.
     public Latest<Playback> Playback { get; } = Seeded(Services.Playback.Stopped);
+
+    // Sent only while a stage panel watches.
+    public Latest<StageView> Stage { get; } = new();
     public EventStream<OpenRequest> OpenRequests { get; } = new();
 
     // Save keys the Inventory projection is built from.
@@ -61,6 +64,9 @@ public sealed class GameEvents
                 break;
             case "shop":
                 Shop.Set(root.GetProperty("shop").Deserialize(ctx.ShopData)!);
+                break;
+            case "stage":
+                Stage.Set(root.GetProperty("stage").Deserialize(ctx.StageView) ?? StageView.Closed);
                 break;
             case "playback":
                 Playback.Set(root.GetProperty("playback").Deserialize(ctx.Playback)!);

@@ -76,4 +76,10 @@ internal static partial class GameHost
 
     [JSImport("playPlaylist", Module)]
     public static partial string PlayPlaylist(string songIds);
+
+    [JSImport("stage", Module)]
+    public static partial string Stage(string op, string songId);
+
+    [JSImport("stageWatch", Module)]
+    public static partial void StageWatch(bool on);
 }

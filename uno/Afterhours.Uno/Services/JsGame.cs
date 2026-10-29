@@ -6,10 +6,11 @@ namespace Afterhours.Uno.Services;
 
 // Phase A: both interfaces are backed by the JavaScript game running in the same page.
 [System.Runtime.Versioning.SupportedOSPlatform("browser")]
-public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic
+public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic, IStage
 {
     private static readonly TimeSpan OpenTimeout = TimeSpan.FromSeconds(15);
     private bool _mounted;
+    private int _stageWatchers;
 
     public IAsyncEnumerable<Hud> WatchHud(CancellationToken ct) => events.Hud.Watch(ct);
 
@@ -66,6 +67,24 @@ public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic
     public async Task<ActionReply> ExportWav() => _mounted ? Parse(await GameHost.ExportWav()) : ActionReply.NotReady;
 
     public ActionReply PlayPlaylist(IEnumerable<string> songIds) => Reply(() => GameHost.PlayPlaylist(Ids(songIds)));
+
+    public async IAsyncEnumerable<StageView> WatchStage([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct)
+    {
+        if (_mounted && ++_stageWatchers == 1)
+            GameHost.StageWatch(true);
+        try
+        {
+            await foreach (var stage in events.Stage.Watch(ct))
+                yield return stage;
+        }
+        finally
+        {
+            if (_mounted && --_stageWatchers == 0)
+                GameHost.StageWatch(false);
+        }
+    }
+
+    public ActionReply Act(string op, string songId = "") => Reply(() => GameHost.Stage(op, songId));
 
     private static string Ids(IEnumerable<string> ids) => JsonSerializer.Serialize(ids.ToImmutableList(), BridgeJsonContext.Default.ImmutableListString);
 

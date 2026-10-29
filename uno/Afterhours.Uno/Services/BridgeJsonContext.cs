@@ -21,4 +21,5 @@ namespace Afterhours.Uno.Services;
 [JsonSerializable(typeof(StudioReply))]
 [JsonSerializable(typeof(Playback))]
 [JsonSerializable(typeof(ImmutableList<string>))]
+[JsonSerializable(typeof(StageView))]
 internal sealed partial class BridgeJsonContext : JsonSerializerContext;

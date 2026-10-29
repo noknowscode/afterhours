@@ -1,0 +1,124 @@
+<Page x:Class="Afterhours.Uno.Views.StagePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=360, Narrow=520}">
+  <!-- The listening stage, solo or shared. Opened with !Stage (dock, stage furniture, Perform, shared world). -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+  </Page.Resources>
+  <ScrollViewer>
+    <StackPanel Padding="24" Spacing="14">
+      <TextBlock Text="{Binding Screen.Eyebrow}" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="{Binding Screen.Title}" Style="{StaticResource TitleText}" />
+      <TextBlock Text="Play an original track for the room. Resident characters react to your performance. Finish a set to earn 40 credits and artist XP, up to five rewarded sets each day."
+                 Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None"
+                 Visibility="{Binding Screen.ShowIntro, Converter={StaticResource ShownWhen}}" />
+      <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+
+      <!-- Now playing or up next -->
+      <Grid ColumnSpacing="14" Padding="14" CornerRadius="{StaticResource CardRadius}" Background="{StaticResource SurfaceRaisedBrush}"
+            Visibility="{Binding Screen.HasCurrent, Converter={StaticResource ShownWhen}}">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="56" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="◉" FontSize="44" Foreground="{StaticResource AcidBrush}" VerticalAlignment="Top" HorizontalAlignment="Center" />
+        <StackPanel Grid.Column="1" Spacing="6">
+          <TextBlock Text="{Binding Screen.Phase}" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+          <TextBlock Text="{Binding Screen.SongTitle}" Style="{StaticResource BodyStrongText}" FontSize="18" />
+          <TextBlock Text="{Binding Screen.Countdown}" Style="{StaticResource CaptionText}" />
+          <ProgressBar Value="{Binding Screen.Progress}" Maximum="100" Foreground="{StaticResource AcidBrush}" AutomationProperties.Name="Set progress" />
+          <TextBlock Text="{Binding Screen.Applause}" Style="{StaticResource CaptionText}"
+                     Visibility="{Binding Screen.ShowSharedNow, Converter={StaticResource ShownWhen}}" />
+          <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{Binding Screen.ShowSharedNow, Converter={StaticResource ShownWhen}}">
+            <Button Content="{Binding Screen.ListenLabel}" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Listen}" />
+            <Button Content="{Binding Screen.ApplaudLabel}" Style="{StaticResource SoftButtonStyle}" Background="{StaticResource SurfaceHoverBrush}"
+                    Command="{Binding Applaud}" IsEnabled="{Binding Screen.Stage.CanApplaud}" />
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+      <TextBlock Text="The stage is open. Be the first to play tonight." Style="{StaticResource BodyText}"
+                 Visibility="{Binding Screen.ShowOpenStage, Converter={StaticResource ShownWhen}}" />
+      <Button Content="Leave queue / stage" Style="{StaticResource SoftButtonStyle}" Command="{Binding Leave}"
+              Visibility="{Binding Screen.ShowLeave, Converter={StaticResource ShownWhen}}" />
+
+      <!-- Set complete (solo), in place of the picker as the game did -->
+      <StackPanel Spacing="10" Visibility="{Binding Screen.IsComplete, Converter={StaticResource ShownWhen}}">
+        <StackPanel Spacing="4" Padding="18" CornerRadius="{StaticResource CardRadius}" Background="{StaticResource SurfaceAccentTintBrush}">
+          <TextBlock Text="✦" FontSize="28" Foreground="{StaticResource AcidBrush}" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding Screen.Reward}" Style="{StaticResource TitleText}" HorizontalAlignment="Center" />
+          <TextBlock Text="{Binding Screen.RewardDetail}" Style="{StaticResource CaptionText}" HorizontalAlignment="Center" TextWrapping="Wrap" />
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Content="Collect quest rewards" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding CollectRewards}" />
+          <Button Content="Back to the stage" Style="{StaticResource SoftButtonStyle}" Command="{Binding BackToStage}" />
+        </StackPanel>
+      </StackPanel>
+
+      <!-- Shared queue -->
+      <StackPanel Spacing="6" Visibility="{Binding Screen.ShowQueue, Converter={StaticResource ShownWhen}}">
+        <TextBlock Text="Up next" Style="{StaticResource BodyStrongText}" />
+        <ItemsControl ItemsSource="{Binding Queue}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <StackPanel Margin="0,0,0,6">
+                <TextBlock Text="{Binding Title}" Style="{StaticResource BodyStrongText}" />
+                <TextBlock Text="{Binding Artist}" Style="{StaticResource CaptionText}" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+
+      <!-- Song picker -->
+      <Grid ColumnSpacing="12" Padding="12" CornerRadius="{StaticResource ChipRadius}" Background="{StaticResource SurfaceRaisedBrush}"
+            Visibility="{Binding Screen.ShowLineup, Converter={StaticResource ShownWhen}}">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="01" Style="{StaticResource NumeralText}" VerticalAlignment="Center" />
+        <StackPanel Grid.Column="1">
+          <TextBlock Text="Open mic · your slot is ready" Style="{StaticResource BodyStrongText}" />
+          <TextBlock Text="One original track. Twenty seconds in the spotlight." Style="{StaticResource CaptionText}" />
+        </StackPanel>
+      </Grid>
+      <ItemsControl ItemsSource="{Binding Songs}" Visibility="{Binding Screen.ShowPicker, Converter={StaticResource ShownWhen}}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Margin="0,0,0,6" Padding="12,8"
+                    Style="{StaticResource SoftButtonStyle}" Background="{StaticResource SurfaceRaisedBrush}" AutomationProperties.Name="{Binding Title}"
+                    CommandParameter="{Binding}" Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Join}">
+              <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="◉" Foreground="{StaticResource AcidBrush}" VerticalAlignment="Center" />
+                <StackPanel Grid.Column="1">
+                  <TextBlock Text="{Binding Title}" Style="{StaticResource BodyStrongText}" />
+                  <TextBlock Text="{Binding Detail}" Style="{StaticResource CaptionText}" />
+                </StackPanel>
+                <TextBlock Grid.Column="2" Text="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Screen.PickLabel}"
+                           Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
+              </Grid>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <StackPanel Spacing="6" Visibility="{Binding Screen.ShowNoSongs, Converter={StaticResource ShownWhen}}">
+        <TextBlock Text="♫" Style="{StaticResource TitleText}" />
+        <TextBlock Text="Something only you could make." Style="{StaticResource BodyStrongText}" />
+        <TextBlock Text="Save a track in the studio, then come back for your debut." Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+        <Button Content="Make my first track" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding MakeTrack}" />
+      </StackPanel>
+
+      <Button Content="Weekly chart ↗" Style="{StaticResource SoftButtonStyle}" Command="{Binding OpenChart}"
+              Visibility="{Binding Screen.IsShared, Converter={StaticResource ShownWhen}}" />
+      <TextBlock Text="{Binding Screen.Stage.Note}" Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+    </StackPanel>
+  </ScrollViewer>
+</Page>

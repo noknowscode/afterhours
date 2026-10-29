@@ -72,6 +72,8 @@ public partial record MainModel(IGameStore Store, IRoomView RoomView, INavigator
                 "Studio" => navigator.NavigateRouteAsync(navigator, "Studio", qualifier: Qualifiers.Dialog,
                     data: new StudioRequest(request.Text("tab") ?? "editor")),
                 "Jukebox" => navigator.NavigateRouteAsync(navigator, "Jukebox", qualifier: Qualifiers.Dialog),
+                "Stage" => navigator.NavigateRouteAsync(navigator, "Stage", qualifier: Qualifiers.Dialog),
+                "Chart" => navigator.NavigateRouteAsync(navigator, "Chart", qualifier: Qualifiers.Dialog),
                 _ => Task.CompletedTask,
             };
         }
