@@ -12,7 +12,8 @@ await mkdir(out, {recursive: true});
 const results = [];
 const record = (key, pass, detail = {}) => { results.push({key, pass, ...detail}); console.log(pass ? 'PASS' : 'FAIL', key, JSON.stringify(detail)); };
 
-const browser = await chromium.launch({args: ['--autoplay-policy=user-gesture-required']});
+// Software GL keeps the Skia renderer drawing in headless Chromium.
+const browser = await chromium.launch({args: ['--autoplay-policy=user-gesture-required', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']});
 
 async function open(width, height) {
   const context = await browser.newContext({viewport: {width, height}});
@@ -27,44 +28,80 @@ async function open(width, height) {
   page.on('response', r => { if (r.status() >= 400 && r.url().startsWith(base)) failed.push(r.url() + ' ' + r.status()); });
   await page.goto(base);
   await page.waitForFunction(() => window.AfterhoursWorld && document.querySelector('.ah-root canvas#room'), null, {timeout: 120000});
-  await page.getByText('Opening your world…').waitFor({state: 'detached', timeout: 30000}).catch(() => {});
-  await page.waitForTimeout(1200);
+  await page.waitForFunction(() => globalThis.getDotnetRuntime, null, {timeout: 30000});
+  for (const start = Date.now(); Date.now() - start < 30000; await page.waitForTimeout(300))
+    if (!(await visible(page, 'Opening your world…')) && await visible(page, 'Furniture shop')) break;
+  await page.waitForTimeout(1500);
   return {context, page, errors, failed};
 }
 
-// Text of a XAML element outside the hosted room (Uno renders text as leaf elements).
-const xamlText = (page, pattern) => page.evaluate(source => {
-  const re = new RegExp(source);
-  return [...document.querySelectorAll('*')].filter(e => !e.closest('.ah-root') && e.childElementCount === 0 && re.test(e.textContent.trim()))
-    // Uno keeps a collapsed element's box and hides it with CSS, so check real visibility.
-    .filter(e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.bottom > 0 && r.right > 0 && r.top < innerHeight && r.left < innerWidth; })
-    .filter(e => e.checkVisibility({visibilityProperty: true, opacityProperty: true}))
-    .map(e => e.textContent.trim());
-}, pattern.source);
-const visible = async (page, text) => (await xamlText(page, new RegExp('^' + text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'))).length > 0;
-// Clicks the visible XAML element whose own text is exactly `text` (labels, or icon glyphs). Waits up to
-// 5 s for it to appear and scrolls it into view first (panels load and virtualized lists scroll).
-const xamlClick = async (page, text) => {
-  let box = null;
-  for (const start = Date.now(); !box && Date.now() - start < 5000; await page.waitForTimeout(150)) {
-    box = await page.evaluate(t => {
-      const el = [...document.querySelectorAll('*')].find(e => !e.closest('.ah-root') && e.childElementCount === 0 && e.textContent.trim() === t
-        && e.getBoundingClientRect().width > 0 && e.checkVisibility({visibilityProperty: true, opacityProperty: true}));
-      if (!el) return null;
-      el.scrollIntoView({block: 'center', inline: 'center'});
-      const r = el.getBoundingClientRect();
-      return {x: r.x + r.width / 2, y: r.y + r.height / 2};
-    }, text);
+// Skia draws the XAML on one canvas, so there is no DOM to inspect. The app's UiProbe (Interop/UiProbe.cs) lists
+// every visible XAML element with a name or text, its window bounds, enabled state and value; clicks go to those
+// coordinates with the real mouse. Popups come last, so the last match is the topmost.
+const snapshot = page => page.evaluate(async () => {
+  const runtime = await globalThis.getDotnetRuntime(0);
+  const exports = await runtime.getAssemblyExports('Afterhours.Uno.dll');
+  return JSON.parse(exports.Afterhours.Uno.Interop.UiProbe.Snapshot());
+});
+const matches = pattern => typeof pattern === 'string' ? text => text === pattern : text => pattern.test(text);
+const nodes = async (page, pattern) => (await snapshot(page)).filter(n => n.w > 0 && n.h > 0 && matches(pattern)(n.text));
+const xamlText = async (page, pattern) => [...new Set((await nodes(page, pattern)).map(n => n.text))];
+const visible = async (page, text) => (await nodes(page, text)).length > 0;
+// Waits up to 5 s for an enabled element (panels load) and returns the topmost match.
+const find = async (page, text, ms = 5000) => {
+  for (const start = Date.now(); Date.now() - start < ms; await page.waitForTimeout(150)) {
+    const found = (await nodes(page, text)).filter(n => n.enabled);
+    if (found.length) return found.at(-1);
   }
-  if (!box) throw Error('No visible XAML element with text ' + JSON.stringify(text));
-  await page.mouse.click(box.x, box.y);
+  const shown = (await snapshot(page)).slice(-25).map(n => `${n.type}:${n.text}`).join(' | ');
+  throw Error('No visible XAML element with text ' + JSON.stringify(String(text)) + '. Last shown: ' + shown);
+};
+const xamlClick = async (page, text) => { const n = await find(page, text); await page.mouse.click(n.x + n.w / 2, n.y + n.h / 2); };
+// Real keystrokes into a TextBox found by its accessible name (Uno's TextBox ignores fill()).
+const typeInto = async (page, name, text, {end = false} = {}) => {
+  const n = (await nodes(page, name)).filter(n => n.type === 'TextBox').at(-1) ?? await find(page, name);
+  await page.mouse.click(n.x + n.w - 12, n.y + n.h / 2);
+  if (end) await page.keyboard.press('End');
+  await page.keyboard.type(text, {delay: 15});
+};
+// Drags a slider's thumb (placed from its value) by dx pixels.
+const dragSlider = async (page, name, min, max, dx) => {
+  const n = (await nodes(page, name)).filter(n => n.type === 'Slider').at(-1);
+  const x = n.x + 10 + (n.w - 20) * (Number(n.value) - min) / (max - min), y = n.y + n.h / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  for (let i = 1; i <= 8; i++) await page.mouse.move(x + dx * i / 8, y);
+  await page.mouse.up();
+  await page.waitForTimeout(500);
 };
 // Waits up to `ms` for XAML text matching `pattern` (a string means an exact match).
 const waitText = async (page, pattern, ms = 5000) => {
-  const re = typeof pattern === 'string' ? new RegExp('^' + pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$') : pattern;
   for (const start = Date.now(); Date.now() - start < ms; await page.waitForTimeout(150))
-    if ((await xamlText(page, re)).length) return true;
+    if ((await nodes(page, pattern)).length) return true;
   return false;
+};
+// How many distinct colours (4 bits a channel) a region of the screen shows: art against a flat fill.
+const colours = async (page, r) => {
+  const png = await page.screenshot({clip: {x: r.x, y: r.y, width: r.w, height: r.h}});
+  return page.evaluate(async b64 => {
+    const image = await createImageBitmap(await (await fetch('data:image/png;base64,' + b64)).blob());
+    const canvas = new OffscreenCanvas(image.width, image.height), g = canvas.getContext('2d');
+    g.drawImage(image, 0, 0);
+    const d = g.getImageData(0, 0, image.width, image.height).data, seen = new Set();
+    for (let i = 0; i < d.length; i += 4) seen.add(((d[i] >> 4) << 8) | ((d[i + 1] >> 4) << 4) | (d[i + 2] >> 4));
+    return seen.size;
+  }, png.toString('base64'));
+};
+// Uno builds the screen-reader mirror (#uno-semantics-root) once accessibility is switched on.
+const enableScreenReader = page => page.evaluate(() => document.getElementById('uno-enable-accessibility')?.click());
+const unspokenNames = (page, names) => page.evaluate(names => {
+  const all = new Set([...document.querySelectorAll('#uno-semantics-root [aria-label]')].map(e => e.getAttribute('aria-label')));
+  return names.filter(n => !all.has(n));
+}, names);
+const waitSpoken = async (page, names, ms = 10000) => {
+  let missing = names;
+  for (const start = Date.now(); missing.length && Date.now() - start < ms; await page.waitForTimeout(300)) missing = await unspokenNames(page, names);
+  return missing;
 };
 const closeGameDialog = page => page.evaluate(() => { const d = document.querySelector('.ah-root #modal'); if (d?.open) d.close(); });
 const game = (page, fn) => page.evaluate(fn);
@@ -81,7 +118,8 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
   record(`${tag}: room heading mirrors the game`, await visible(page, title), {title});
 
   const rail = await visible(page, 'Explore'), railIcons = await visible(page, '\uE774');
-  const chatColumn = await visible(page, 'Room chat');
+  // The chat column's header (the phone bar's chat button carries the same name).
+  const chatColumn = (await nodes(page, 'Room chat')).some(n => n.type === 'TextBlock');
   const expected = {wide: {rail: true, chat: true}, normal: {rail: false, chat: false}, narrow: {rail: false, chat: false}, phone: {rail: false, chat: false}}[band];
   record(`${tag}: rail labels and chat column follow the breakpoints`, rail === expected.rail && chatColumn === expected.chat, {rail, railIcons, chatColumn});
 
@@ -101,8 +139,7 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
 
     // Dance toggles and its label follows the game.
     await xamlClick(page, 'Dance');
-    await page.waitForTimeout(400);
-    record(`${tag}: dance runs and relabels`, await visible(page, 'Stop dancing'));
+    record(`${tag}: dance runs and relabels`, await waitText(page, 'Stop dancing', 3000));
     await xamlClick(page, 'Stop dancing');
 
     // Room keys stay with the room: '1'/'2' typed while a XAML button has focus must not act.
@@ -113,17 +150,11 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     record(`${tag}: room shortcuts ignore XAML focus`, unchanged);
 
     // Chat from the XAML composer reaches the game's chat and comes back as a line.
-    // Uno draws the placeholder as its own text, so find the XAML text input outside the room.
-    const inputs = page.locator('input, textarea');
-    const index = await inputs.evaluateAll(all => all.findIndex(e => !e.closest('.ah-root') && e.getBoundingClientRect().width > 0));
-    const box = inputs.nth(index);
-    await box.click();
-    // Real keystrokes: Uno's TextBox listens for input events that fill() does not raise.
-    await page.keyboard.type('hello from xaml', {delay: 15});
+    await typeInto(page, 'Room message', 'hello from xaml');
     await page.keyboard.press('Enter');
     await page.waitForTimeout(800);
     const inGame = await game(page, () => [...document.querySelectorAll('.ah-root #messages .message p')].some(p => p.textContent === 'hello from xaml'));
-    record(`${tag}: chat sends through the game and lists the line`, inGame && await visible(page, 'hello from xaml'), {inGame});
+    record(`${tag}: chat sends through the game and lists the line`, inGame && await waitText(page, /hello from xaml/), {inGame});
 
     // My room, decorate, editor bar, done.
     await xamlClick(page, 'My room');
@@ -136,7 +167,7 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     await page.waitForTimeout(700);
     const closed = await game(page, () => document.querySelector('.ah-root #roomEditor').hidden);
     await page.screenshot({path: path.join(out, `${band}-after-done.png`)});
-    record(`${tag}: decorate shows the XAML editor bar and Done closes it`, editing && closed && !(await visible(page, 'Done')), {editing, closed, doneStillShown: await xamlText(page, /^Done$/)});
+    record(`${tag}: decorate shows the XAML editor bar and Done closes it`, editing && closed && !(await visible(page, 'Done')), {editing, closed});
 
     // Music from the XAML now-playing bar starts the game's audio.
     await xamlClick(page, '▶');
@@ -152,12 +183,14 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     await page.screenshot({path: path.join(out, `${band}-game-panel.png`)});
     await closeGameDialog(page);
 
-    const portrait = await page.evaluate(() => [...document.images].filter(i => !i.closest('.ah-root')).map(i => i.naturalWidth));
-    record(`${tag}: portrait renders`, portrait.some(w => w > 0), {portrait});
+    const profile = await find(page, 'Your profile');
+    const portrait = await colours(page, {x: profile.x, y: profile.y, w: 40, h: profile.h});
+    record(`${tag}: portrait renders`, portrait > 20, {portrait});
 
-    // Accessibility gap R11: Uno 6.7.135's native WASM renderer writes no aria attributes. Logged, not gated.
-    const labels = await page.evaluate(() => document.querySelectorAll('[aria-label]:not(.ah-root *)').length);
-    console.log(`INFO ${tag}: aria-labels outside the room: ${labels} (R11)`);
+    // Screen readers (R11): with accessibility on, Uno mirrors the XAML as labelled DOM elements.
+    await enableScreenReader(page);
+    const unspoken = await waitSpoken(page, ['Furniture shop', 'Explore rooms', 'Room message', 'How to play', 'Public rooms']);
+    record(`${tag}: screen readers get the chrome's names`, !unspoken.length, {unspoken});
 
     // Wave 2: the furniture shop.
     const coinsBefore = await game(page, () => AfterhoursWorld.game.state.coins);
@@ -165,28 +198,27 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     const shopOpen = await waitText(page, 'Room for imagination');
     await waitText(page, /^\d+ ✦( · \d+ seats?)?$/, 8000);
     await page.waitForTimeout(500);
-    const cardsShown = (await xamlText(page, /^\d+ ✦( · \d+ seats?)?$/)).length;
-    const atlases = await page.evaluate(() => [...document.images].filter(i => !i.closest('.ah-root') && i.src.includes('/game/assets/') && i.naturalWidth > 0).length);
+    await page.waitForTimeout(1500);
+    const cardsShown = (await nodes(page, /^\d+ ✦( · \d+ seats?)?$/)).length;
+    const firstCard = (await nodes(page, 'Mint daybed sofa')).at(-1);
+    const art = firstCard ? await colours(page, {x: firstCard.x, y: firstCard.y + 8, w: firstCard.w, h: 118}) : 0;
     await page.screenshot({path: path.join(out, `${band}-shop.png`)});
     // The grid virtualizes, so only the cards in view exist.
-    record(`${tag}: shop opens with cards and furniture art`, shopOpen && cardsShown >= 9 && atlases >= 9, {cardsShown, atlases});
+    record(`${tag}: shop opens with cards and furniture art`, shopOpen && cardsShown >= 9 && art > 40, {cardsShown, art});
 
-    const search = page.locator('input, textarea');
-    const searchIndex = await search.evaluateAll(all => all.findIndex(e => !e.closest('.ah-root') && e.getBoundingClientRect().width > 0 && e.getBoundingClientRect().y < 400));
-    await search.nth(searchIndex).click();
-    await page.keyboard.type('velvet', {delay: 15});
+    await typeInto(page, 'Search furniture', 'velvet');
     await page.waitForTimeout(800);
-    const filtered = (await xamlText(page, /^\d+ ✦( · \d+ seats?)?$/)).length;
+    const filtered = (await nodes(page, /^\d+ ✦( · \d+ seats?)?$/)).length;
     record(`${tag}: search filters the cards`, filtered > 0 && filtered < 9 && await waitText(page, 'Blue velvet sofa'), {filtered});
 
     await xamlClick(page, 'Blue velvet sofa');
     await page.waitForTimeout(600);
     const detail = await visible(page, 'Buy for 80 ✦');
     await page.screenshot({path: path.join(out, `${band}-shop-detail.png`)});
-    // Every atlas image sits in a clipped canvas, so only its own sprite shows (the detail preview included).
-    const unclipped = await page.evaluate(() => [...document.images].filter(i => !i.closest('.ah-root') && i.src.includes('/game/assets/')
-      && i.checkVisibility() && getComputedStyle(i.parentElement.parentElement).clip === 'auto').length); // img > Image > Canvas
-    record(`${tag}: shop art is clipped to its sprite in cards and detail`, unclipped === 0, {unclipped});
+    // The preview clips the atlas to its sprite: beside the 320 × 250 preview (above the title) the panel stays flat.
+    const detailTitle = (await nodes(page, 'Blue velvet sofa')).filter(n => n.type === 'TextBlock').at(-1);
+    const beside = await colours(page, {x: detailTitle.x + 340, y: detailTitle.y - 262, w: 200, h: 240});
+    record(`${tag}: shop art is clipped to its sprite in the detail`, beside <= 4, {beside});
     await xamlClick(page, 'Buy for 80 ✦');
     await page.waitForTimeout(1500);
     const coinsAfter = await game(page, () => AfterhoursWorld.game.state.coins);
@@ -209,9 +241,7 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     await xamlClick(page, 'Shop furniture');
     await page.waitForTimeout(800);
     // A reopened shop starts unfiltered and the grid only creates cards in view, so search again.
-    const again = page.locator('input, textarea');
-    await again.nth(await again.evaluateAll(all => all.findIndex(e => !e.closest('.ah-root') && e.getBoundingClientRect().width > 0 && e.getBoundingClientRect().y < 400))).click();
-    await page.keyboard.type('velvet', {delay: 15});
+    await typeInto(page, 'Search furniture', 'velvet');
     await xamlClick(page, 'Blue velvet sofa');
     await page.waitForTimeout(500);
     await xamlClick(page, 'Buy for 80 ✦');
@@ -251,10 +281,12 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     });
     await page.waitForTimeout(1200);
     const wrapOpen = await waitText(page, 'A small surprise');
-    await xamlClick(page, 'Choose a piece');
-    await page.waitForTimeout(500);
+    await xamlClick(page, 'Piece to wrap');
+    await page.waitForTimeout(800);
     const plantName = await game(page, () => AfterhoursFurniture.catalog.plant.name);
-    await xamlClick(page, plantName);
+    // The plant is the only piece the box can hold; pick it from the list, or with the keyboard.
+    if (await waitText(page, plantName, 1500)) await xamlClick(page, plantName);
+    else { console.log('DEBUG combo', (await snapshot(page)).slice(-12).map(n => `${n.type}:${n.text}@${n.x},${n.y}`).join(' | ')); await page.keyboard.press('ArrowDown'); await page.keyboard.press('Enter'); }
     await page.waitForTimeout(400);
     await xamlClick(page, 'Wrap gift');
     await page.waitForTimeout(1000);
@@ -268,37 +300,25 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     await xamlClick(page, 'Beat studio');
     const studioOpen = await waitText(page, 'Find your sound', 8000);
     await page.waitForTimeout(800);
-    // Cells sit on a 32 px pitch below the ruler's "1" (StudioRules.CellPitch); the lane column is 232 px plus a 12 px gap.
-    const origin = await page.evaluate(() => {
-      const leaves = text => [...document.querySelectorAll('*')].filter(e => !e.closest('.ah-root') && e.childElementCount === 0 && e.textContent.trim() === text)
-        .map(e => e.getBoundingClientRect()).filter(r => r.width > 0);
-      const lanes = leaves('INSTRUMENT')[0];
-      const r = leaves('1').find(r => r.x > lanes.x && Math.abs(r.y + r.height / 2 - (lanes.y + lanes.height / 2)) < 12);
-      return r && {x: r.x + r.width / 2, y: r.y + r.height / 2};
-    });
-    const cell = (row, col) => page.mouse.click(origin.x + col * 32, origin.y + (row + 1) * 32);
-    const laneX = origin.x - 14 - 12 - 232;
-    await cell(0, 1);
+    // Steps, lanes and sliders are found by their accessible names ("KICK step 2, off", "Mute KICK").
+    await xamlClick(page, /^KICK step 2, /);
     await page.waitForTimeout(500);
     const toggled = (await draft()).kick;
-    await xamlClick(page, '↶ Undo');
+    await xamlClick(page, 'Undo');
     await page.waitForTimeout(500);
     const undone = (await draft()).kick;
     record(`${tag}: studio opens from the rail; a step toggles and Undo restores it`, studioOpen && toggled[1] !== before.kick[1] && undone === before.kick, {toggled, undone});
 
-    await page.mouse.click(laneX + 62 + 4 + 14, origin.y + 32); // KICK lane: M
+    await xamlClick(page, 'Mute KICK');
     await page.waitForTimeout(400);
     const muted = (await draft()).muted;
-    await page.mouse.click(laneX + 62 + 4 + 32 + 14, origin.y + 64); // SNARE lane: S
+    await xamlClick(page, 'Solo SNARE');
     await page.waitForTimeout(400);
     const soloed = (await draft()).muted;
     record(`${tag}: M mutes a lane and S solos one`, muted === 'true,false,false,false' && soloed === 'true,false,true,true', {muted, soloed});
 
-    const drag = async (x, y, dx) => { await page.mouse.move(x, y); await page.mouse.down(); for (let i = 1; i <= 8; i++) await page.mouse.move(x + dx * i / 8, y); await page.mouse.up(); await page.waitForTimeout(500); };
-    const tempoAt = await page.evaluate(() => { const r = [...document.querySelectorAll('*')].find(e => !e.closest('.ah-root') && e.childElementCount === 0 && e.textContent.trim() === 'Tempo').getBoundingClientRect(); return {x: r.right + 8, y: r.y + r.height / 2}; });
-    await drag(tempoAt.x + 61, tempoAt.y, 80);
-    const volumeKnob = laneX + 62 + 4 + 32 + 32 + Math.round(0.7 * (232 - 62 - 4 - 64 - 4));
-    await drag(volumeKnob, origin.y + 32, -40);
+    await dragSlider(page, 'Tempo', 60, 160, 80);
+    await dragSlider(page, 'KICK volume', 0, 100, -40);
     const slid = await draft();
     record(`${tag}: tempo and volume apply while their sliders move`, slid.bpm > 100 && slid.volume < before.volume, {bpm: slid.bpm, volume: slid.volume});
 
@@ -311,13 +331,11 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     await page.waitForTimeout(500);
     record(`${tag}: Play runs the draft and the button follows playback`, audio.includes('running') && pausing && await visible(page, '▶ Play'), {audio, pausing});
 
-    const titleBox = await page.evaluate(() => { const r = [...document.querySelectorAll('input, textarea')].find(i => !i.closest('.ah-root') && i.value === 'Untitled afterhours').getBoundingClientRect(); return {x: r.right - 12, y: r.y + r.height / 2}; });
-    await page.mouse.click(titleBox.x, titleBox.y);
-    await page.keyboard.press('End');
-    await page.keyboard.type(' B-side', {delay: 15});
+    await typeInto(page, 'Track name', ' B-side', {end: true});
     await page.waitForTimeout(400);
     await xamlClick(page, 'Save track');
-    const listed = await waitText(page, 'Untitled afterhours B-side', 5000) && await visible(page, 'Your discography');
+    // Wait for the library first: the TextBox's own text element also shows the title.
+    const listed = await waitText(page, 'Your discography', 5000) && await waitText(page, 'Untitled afterhours B-side', 3000);
     const songs = await game(page, () => AfterhoursWorld.game.state.songs.map(s => s.title));
     await page.screenshot({path: path.join(out, `${band}-library.png`)});
     record(`${tag}: Save track adds it to the XAML library`, listed && songs.join() === 'Untitled afterhours B-side', {songs});
@@ -355,6 +373,10 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     const left = await game(page, () => ({songs: AfterhoursWorld.game.state.songs.length, playlist: AfterhoursWorld.game.state.rooms.every(r => !r.playlist.length)}));
     const empty = await waitText(page, 'Your first record starts here.', 4000);
     record(`${tag}: Delete asks first, then removes the track from the library and playlists`, asked && left.songs === 0 && left.playlist && empty, {asked, left, empty});
+    // The studio as a screen reader hears it.
+    await xamlClick(page, 'Studio');
+    const studioUnspoken = await waitSpoken(page, ['KICK step 1, on', 'Mute KICK', 'KICK volume', 'Tempo', 'Track name', 'Save track']);
+    record(`${tag}: screen readers get the studio's names`, !studioUnspoken.length, {studioUnspoken});
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
     }
@@ -373,7 +395,7 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     record(`${tag}: the dock opens the XAML stage; a song queues, counts down and plays`, stageOpen && next && onStage && audio.includes('running'), {stageOpen, next, onStage, audio});
 
     const done = await waitText(page, 'You found your frequency', 26000);
-    const reward = await visible(page, '+40 credits');
+    const reward = await waitText(page, '+40 credits', 3000);
     const coinsAfter = await game(page, () => AfterhoursWorld.game.state.coins);
     await page.screenshot({path: path.join(out, `${band}-set-complete.png`)});
     record(`${tag}: a finished set shows its reward in the stage panel`, done && reward && coinsAfter === coinsBefore + 40, {done, reward, coinsBefore, coinsAfter});
@@ -395,7 +417,8 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     await page.waitForTimeout(500);
     await xamlClick(page, 'Furniture shop');
     await page.waitForTimeout(1500);
-    const width = await page.evaluate(() => Math.max(...[...document.querySelectorAll('*')].filter(e => !e.closest('.ah-root') && e.textContent.trim() === 'Room for imagination').map(e => e.getBoundingClientRect().right)));
+    await waitText(page, 'Room for imagination');
+    const width = Math.max(...(await nodes(page, /^(Room for imagination|Search furniture)$/)).map(n => n.x + n.w));
     await page.screenshot({path: path.join(out, `${band}-shop.png`)});
     record(`${tag}: shop fits the phone`, await waitText(page, 'Room for imagination') && width <= 390, {width});
     await page.keyboard.press('Escape');
@@ -405,7 +428,7 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     // A flyout that just closed can still swallow one click; try once more if needed.
     if (!(await waitText(page, 'Find your sound', 2500))) await xamlClick(page, '\uE8D6');
     const studioPhone = await waitText(page, 'Find your sound', 5000);
-    const studioRight = await page.evaluate(() => Math.max(...[...document.querySelectorAll('*')].filter(e => !e.closest('.ah-root') && ['Save track', 'Find your sound'].includes(e.textContent.trim())).map(e => e.getBoundingClientRect().right)));
+    const studioRight = Math.max(...(await nodes(page, /^(Save track|Find your sound|Track name)$/)).map(n => n.x + n.w));
     await page.screenshot({path: path.join(out, `${band}-studio.png`)});
     record(`${tag}: studio opens from the bottom bar and fits the phone`, studioPhone && studioRight <= 390, {studioRight});
     await page.keyboard.press('Escape');
@@ -440,10 +463,7 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
   }
   const [a, b] = players;
   record('shared: both players show SHARED WORLD in the XAML top bar', await visible(a.page, 'SHARED WORLD') && await visible(b.page, 'SHARED WORLD'));
-  const inputs = a.page.locator('input, textarea');
-  const index = await inputs.evaluateAll(all => all.findIndex(e => !e.closest('.ah-root') && e.getBoundingClientRect().width > 0));
-  await inputs.nth(index).click();
-  await a.page.keyboard.type('hi from the other tab', {delay: 15});
+  await typeInto(a.page, 'Room message', 'hi from the other tab');
   await a.page.keyboard.press('Enter');
   await b.page.waitForFunction(() => [...document.querySelectorAll('.ah-root #messages .message p')].some(p => p.textContent.includes('hi from the other tab')), null, {timeout: 20000}).catch(() => {});
   await b.page.waitForTimeout(600);
@@ -471,7 +491,6 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
   await xamlClick(b.page, 'Weekly chart ↗');
   const chartOpen = await waitText(b.page, 'This week’s chart', 5000);
   const ranked = await waitText(b.page, 'Shared sketch', 5000);
-  await b.page.waitForTimeout(600); // let the drawer finish sliding in
   await b.page.screenshot({path: path.join(out, 'shared-chart.png')});
   await xamlClick(b.page, 'Back to the stage');
   const back = await waitText(b.page, 'The room is listening', 3000) && !(await visible(b.page, 'This week’s chart'));
