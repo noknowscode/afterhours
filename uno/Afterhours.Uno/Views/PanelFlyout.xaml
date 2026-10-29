@@ -1,0 +1,19 @@
+<Flyout x:Class="Afterhours.Uno.Views.PanelFlyout"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:utu="using:Uno.Toolkit.UI"
+        xmlns:uen="using:Uno.Extensions.Navigation.UI"
+        Placement="Full">
+  <!-- Every !Route panel opens in this right drawer; each page sets its own width. Mirrors Uno.Extensions' NavigationFlyout. -->
+  <Flyout.FlyoutPresenterStyle>
+    <Style TargetType="FlyoutPresenter" BasedOn="{StaticResource RightDrawerFlyoutPresenterStyle}">
+      <Setter Property="utu:DrawerFlyoutPresenter.DrawerLength" Value="Auto" />
+      <Setter Property="utu:DrawerFlyoutPresenter.LightDismissOverlayBackground" Value="{StaticResource DrawerScrimBrush}" />
+      <Setter Property="Background" Value="{StaticResource SurfacePanelBrush}" />
+    </Style>
+  </Flyout.FlyoutPresenterStyle>
+  <Grid>
+    <Frame uen:Region.Attached="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+           HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+  </Grid>
+</Flyout>

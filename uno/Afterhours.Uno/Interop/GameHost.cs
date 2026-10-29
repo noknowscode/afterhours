@@ -1,0 +1,85 @@
+using System.Runtime.InteropServices.JavaScript;
+
+namespace Afterhours.Uno.Interop;
+
+// The only C# that calls the game's JavaScript. Functions live in game/host.mjs.
+[System.Runtime.Versioning.SupportedOSPlatform("browser")]
+internal static partial class GameHost
+{
+    private const string Module = "afterhours";
+
+    public static Task ImportAsync(string url) => JSHost.ImportAsync(Module, url);
+
+    [JSImport("mount", Module)]
+    public static partial Task Mount(string elementId, [JSMarshalAs<JSType.Function<JSType.String>>] Action<string> onEvent);
+
+    [JSImport("invoke", Module)]
+    public static partial bool Invoke(string command);
+
+    [JSImport("travel", Module)]
+    public static partial bool Travel(int index);
+
+    [JSImport("say", Module)]
+    public static partial bool Say(string text, string mode, string target);
+
+    [JSImport("focusRoom", Module)]
+    public static partial void FocusRoom();
+
+    // Writes reply with {ok, error, result} as JSON.
+    [JSImport("buy", Module)]
+    public static partial string Buy(string type);
+
+    [JSImport("place", Module)]
+    public static partial Task<string> Place(string itemId);
+
+    [JSImport("use", Module)]
+    public static partial string Use(string itemId);
+
+    [JSImport("wrap", Module)]
+    public static partial string Wrap(string giftId, string contentId, string note);
+
+    [JSImport("saveBlueprint", Module)]
+    public static partial string SaveBlueprint();
+
+    [JSImport("restoreBlueprint", Module)]
+    public static partial string RestoreBlueprint(string blueprintId);
+
+    [JSImport("playDisc", Module)]
+    public static partial string PlayDisc(string discId);
+
+    // Studio edits reply with {ok, error, result: {draft, canUndo}}. One JS function, two argument shapes.
+    [JSImport("studio", Module)]
+    public static partial string Studio(string op, double a, double b);
+
+    [JSImport("studio", Module)]
+    public static partial string StudioText(string op, string text);
+
+    // An empty id toggles the studio draft.
+    [JSImport("playTrack", Module)]
+    public static partial string PlayTrack(string songId);
+
+    [JSImport("exportWav", Module)]
+    public static partial Task<string> ExportWav();
+
+    [JSImport("pressDisc", Module)]
+    public static partial string PressDisc(string songId);
+
+    [JSImport("deleteSong", Module)]
+    public static partial string DeleteSong(string songId);
+
+    [JSImport("perform", Module)]
+    public static partial string Perform(string songId);
+
+    // Song ids as a JSON array.
+    [JSImport("savePlaylist", Module)]
+    public static partial string SavePlaylist(string songIds);
+
+    [JSImport("playPlaylist", Module)]
+    public static partial string PlayPlaylist(string songIds);
+
+    [JSImport("stage", Module)]
+    public static partial string Stage(string op, string songId);
+
+    [JSImport("stageWatch", Module)]
+    public static partial void StageWatch(bool on);
+}

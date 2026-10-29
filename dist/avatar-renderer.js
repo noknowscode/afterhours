@@ -4,7 +4,7 @@
  const W=AfterhoursWardrobe, images={},parts=new Map(),bodies=new Map();
  const files={head:'wardrobe-heads-v1.webp',top:'wardrobe-tops-v1.webp',bottom:'wardrobe-bottoms-v1.webp'};
  let ready=null;
- const load=()=>ready??=Promise.all(Object.entries(files).map(([id,file])=>new Promise(resolve=>{const img=new Image();images[id]=img;img.onload=resolve;img.onerror=resolve;img.src='assets/'+file;})));
+ const load=()=>ready??=Promise.all(Object.entries(files).map(([id,file])=>new Promise(resolve=>{const img=new Image();images[id]=img;img.onload=resolve;img.onerror=resolve;img.src=(window.AfterhoursBase||'')+'assets/'+file;})));
  const heads=[[[244,12,240,235],[551,10,231,234]],[[176,253,326,258],[529,252,300,258]],[[201,511,278,227],[552,517,239,220]],[[210,738,247,252],[548,742,244,248]],[[199,990,298,244],[543,990,250,241]],[[242,1236,239,279],[561,1239,229,277]]];
  const headPins=[[[328,241],[660,238]],[[330,500],[670,500]],[[333,728],[668,730]],[[339,965],[672,968]],[[330,1221],[665,1221]],[[333,1496],[670,1488]]];
  const tops=[[[55,24,267,317],[401,20,286,317],[757,46,277,264]],[[56,348,281,361],[398,349,292,358],[762,377,286,299]],[[52,709,293,351],[400,711,291,344],[753,737,296,291]],[[52,1067,286,360],[398,1065,292,351],[748,1096,310,292]]];

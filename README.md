@@ -54,8 +54,10 @@ remain client-side. See [the detailed roadmap](REMAKE-ROADMAP.txt) for limits.
 ## Uno Platform WebAssembly
 
 `uno/` is a real Uno Platform / WinUI application targeting .NET 10 Browser
-WebAssembly. Its XAML shell hosts the canvas game in Uno's WebView2.
-The room renderer remains JavaScript; it has not been rewritten as native XAML.
+WebAssembly. Its XAML (MVUX) draws the menus, HUD, room heading, actions and chat,
+and hosts the JavaScript room in the same page through a `BrowserHtmlElement`.
+The room renderer, synth and most panels remain JavaScript; the migration plan is in
+[docs/specs/xaml-outer-ui-SPEC.md](docs/specs/xaml-outer-ui-SPEC.md).
 
 Install .NET 10 and the Uno prerequisites, then run:
 
@@ -67,8 +69,9 @@ The build copies the game into Uno's web assets and publishes the application
 to `release/uno`. Serve that directory over HTTP; WebAssembly does not run from
 a `file:` URL. `npm run start:uno` serves it with the local shared-world API.
 
-The build also verifies the compiled runtime, the WebView compatibility script,
-and every bundled game file. To create a portable ZIP after publishing, run
+The build fails on any warning outside the known Uno.Extensions/MVUX trim set, and
+verifies the compiled runtime, the scoped game CSS and every bundled game file.
+`dotnet test uno/Afterhours.Uno.Tests` runs the C# tests. To create a portable ZIP after publishing, run
 `python scripts/package-wasm.py` (Python 3 required for packaging).
 The ZIP includes `PLAY.txt` and a Node launcher; players do not need .NET.
 

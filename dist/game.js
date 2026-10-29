@@ -16,7 +16,7 @@
   let activeRoomId=game.state.activeRoom,screen='',pendingUse=null,carried=null,cleanupGame=null;
   let draft=copy(game.state.draft),music=new AfterhoursMusic(),studioHistory=[],stage=null,stageTimer=null,lastHud=0;
   let interactionBounds=[],petPosition=null,petWalker=null,lastPetPath=0,petPoseUntil=0,petPose='';
-  let newArt=new Image();newArt.src='assets/game-objects.webp';
+  let newArt=new Image();newArt.src=(window.AfterhoursBase||'')+'assets/game-objects.webp';
   // The atlas geometry is finalized by the asset packaging pass.
   const newCrops=[[108,12,325,460],[514,17,317,463],[940,11,332,482],[1364,93,326,391],[80,446,363,415],[525,573,333,228],[926,490,338,356],[1374,519,332,335]];
   const room=()=>window.AfterhoursOnline?.remoteRoom()||game.state.rooms.find(r=>r.id===activeRoomId)||game.state.rooms[0];
@@ -42,10 +42,13 @@
     s.coins=coins;s.activeRoom=activeRoomId;s.profile.avatar=spriteIndex;
   }
   persist=function(){if(window.AfterhoursOnline?.remoteRoom()){toast('Only the room owner can move these pieces.');return;}saveWorld();legacyPersist();game.save();window.AfterhoursOnline?.saveLayout();};
+  // Asks the hosting app to open one of its own panels (the Uno app draws these in XAML). The game's own
+  // dialog closes first: it sits in the browser's top layer and would cover the app's panel.
+  const openPanel=(route,data={})=>{close();window.AfterhoursHost?.open(route,data);};
   function act(type,payload={},success){
     if((type==='buy'||type==='room')&&!payload.id)payload.id=G.uid();
     try{saveWorld();const result=game.dispatch(type,payload);sync();if(success)toast(typeof success==='function'?success(result):success);return {ok:true,result};}
-    catch(e){notifyError(e.message);return {ok:false};}
+    catch(e){notifyError(e.message);return {ok:false,error:e.message};}
   }
   function notifyError(text){
     const el=get('panelError');if(el){el.textContent=text;el.hidden=false;}else toast(text);
@@ -223,48 +226,27 @@
   }
   const category=type=>Furniture.catalog[type].category||(['sofa','seat','table'].includes(type)?'lounge':['decks','speaker','records','jukebox'].includes(type)?'music':['vending','portal','dice','notice','bowl','gift'].includes(type)?'interactive':'decor');
   const collections=[['all','All collections','A room that feels like you'],['loft','Soft loft','Warm wood. Soft edges. Slow evenings.'],['diner','Midnight diner','Coffee and company, all night long.'],['studio','Sound studio','Find your sound. Make some noise.'],['arcade','Arcade nights','One more game before we go.'],['garden','Secret garden','Make a little room to breathe.'],['fantasy','Starlit fantasy','Moonlight, crystal, and a little magic.'],['den','After-hours den','Leather, chrome, and the good speakers.'],['originals','Afterhours originals','The pieces that started the night.']];
-  function catalog(tab='shop',filter='all',query='',collection='all'){
-    const selected=collections.find(c=>c[0]===collection)||collections[0];
-    panel('Room for imagination','THE FURNITURE SHOP',topTabs([['shop','Shop furniture'],['owned','My inventory'],['discs','Records']],tab)+
-      (tab==='discs'?`<p>Your own music, pressed into keepsakes. Each disc costs 10 credits and preserves that version of the song.</p><div id="catalogCards" class="record-grid"></div>`:
-      `<div class="catalog-layout"><nav class="collection-list" aria-label="Furniture collections">${collections.map(([key,name])=>`<button data-collection="${key}" class="${key===collection?'selected':''}" aria-pressed="${key===collection}"><span>${name}</span><small>${Object.values(Furniture.catalog).filter(c=>key==='all'||(c.collection||'originals')===key).length}</small></button>`).join('')}</nav><div class="catalog-main"><div class="collection-heading"><h3>${selected[1]}</h3><p>${selected[2]}</p></div><div class="catalog-toolbar"><input id="catalogSearch" class="search-field" value="${h(query)}" placeholder="Find your next favorite piece…" aria-label="Search furniture"><select id="catalogCategory" aria-label="Furniture category">${[['all','Every kind'],['lounge','Seats & tables'],['music','Music'],['interactive','Interactive'],['decor','Decor']].map(([value,name])=>`<option value="${value}" ${filter===value?'selected':''}>${name}</option>`).join('')}</select></div><p class="catalog-balance">${credit(game.state.coins)} to spend · ${game.state.items.length} pieces in your collection</p><div id="catalogCards" class="furniture-grid"></div></div></div>`),true);
-    get('modal').classList.add('catalog-modal');
-    buttons('[data-tab]',b=>catalog(b.dataset.tab));buttons('[data-collection]',b=>catalog(tab,filter,query,b.dataset.collection));
-    if(tab==='discs'){
-      get('catalogCards').innerHTML=game.state.discs.length?game.state.discs.map(d=>`<article class="song-card"><span class="disc-icon">◉</span><h3>${h(d.song.title)}</h3><p>by ${h(d.artist)} · ${d.song.bpm} BPM</p><button class="soft-button" data-play-disc="${d.id}">▶ Play record</button></article>`).join(''):'<p>Your record shelf is empty. Save a song in the studio, then press it in your library.</p>';
-      buttons('[data-play-disc]',b=>playSong(game.state.discs.find(d=>d.id===b.dataset.playDisc).song));return;
-    }
-    const refresh=()=>catalog(tab,get('catalogCategory').value,get('catalogSearch').value,collection);
-    get('catalogCategory').onchange=refresh;
-    get('catalogSearch').oninput=()=>{const p=get('catalogSearch').selectionStart;refresh();get('catalogSearch').focus();get('catalogSearch').setSelectionRange(p,p);};
-    const entries=tab==='shop'?Object.keys(Furniture.catalog).sort((a,b)=>Number(!!Furniture.catalog[b].atlas)-Number(!!Furniture.catalog[a].atlas)).map(type=>({type})):game.state.items;
-    const filtered=entries.filter(i=>{const c=Furniture.catalog[i.type];return !i.wrapped&&(filter==='all'||category(i.type)===filter)&&(collection==='all'||(c.collection||'originals')===collection)&&(c.name+' '+(c.description||'')+' '+(c.collection||'originals')).toLowerCase().includes(query.toLowerCase());});
-    if(!filtered.length)get('catalogCards').innerHTML='<p class="empty-state">No pieces here yet. Try another collection or search.</p>';
-    filtered.forEach(item=>{
-      const c=Furniture.catalog[item.type],b=document.createElement('button');b.className='furniture-card';
-      const name=document.createElement('b');name.textContent=c.name;const detail=document.createElement('small');detail.textContent=tab==='shop'?c.price+' ✦'+(c.seats?' · '+c.seats.length+(c.seats.length===1?' seat':' seats'):''):item.placed===false?'In inventory':(game.state.rooms.find(r=>r.id===item.roomId)?.name||'In room');
-      b.append(artCard(item.type),name,detail);b.onclick=()=>itemDetails(item.type,tab==='owned'?item.id:null);get('catalogCards').append(b);
-    });
-  }
+  // The furniture shop, inventory and records are XAML panels in the Uno app.
+  function catalog(tab='shop'){openPanel('Catalog',{tab});}
   const descriptions={
     sofa:'Two seats for long conversations.',seat:'A little corner for a quiet moment.',table:'A warm glow and a place to gather.',decks:'Open the studio, make a track, and take it to the stage.',
     speaker:'Play a song from your library in your room.',records:'Your collection of original music discs.',plant:'A little green. Water it and watch it glow.',lamp:'Switch the light on or off. Set the mood.',
     jukebox:'Build a room playlist from your own songs.',vending:'Walk over, grab a soda, and enjoy it. Refills cost 2 credits.',portal:'Link this portal to one of your rooms.',dice:'Roll a six-sided die for your own room games.',notice:'Leave a note for your room.',bowl:'Feed and care for your companion.',gift:'Wrap an owned piece with a personal note, then open it to reveal the surprise.'
   };
-  function itemDetails(type,id){
-    const item=game.state.items.find(i=>i.id===id),c=Furniture.catalog[type];
-    panel(c.name,'THE AFTERHOURS COLLECTION',`<div id="itemPreview" class="item-preview"></div><p>${h(c.description||descriptions[type])}</p><p>${c.w} × ${c.d} tiles · ${item?'Owned':credit(c.price)}</p><div class="button-row"><button id="itemPrimary" class="primary">${item?'Place / move piece':'Buy for '+c.price+' ✦'}</button>${item?'<button id="itemUse" class="soft-button">Interact</button>':''}<button id="backCatalog" class="soft-button">Back to catalog</button></div>`);
-    get('itemPreview').append(artCard(type));button('backCatalog',()=>catalog(item?'owned':'shop'));
-    button('itemPrimary',async()=>{
-      let owned=item;
-      if(!owned){const out=act('buy',{type},'Added to your collection.');if(!out.ok)return;owned=game.state.items.find(i=>i.id===out.result.id);}
-      const destination=owned.placed!==false?owned.roomId:activeRoomId;
-      if(window.AfterhoursOnline?.connected()){
-        if(!await window.AfterhoursOnline.visitOwnRoom(destination))return;
-      }else if(owned.placed!==false&&owned.roomId!==activeRoomId)visitRoom(owned.roomId);else if(!personal)visitRoom(activeRoomId);
-      sync();startEditing();close();selectFurniture(owned.id);toast('Choose a clear tile. R rotates; Esc cancels.');
-    });
-    button('itemUse',()=>{if(item.placed===false){notifyError('Place this piece in a room first.');return;}if(item.roomId!==activeRoomId||!personal)visitRoom(item.roomId);openObject(game.state.items.find(i=>i.id===id));});
+  // Takes an owned piece to its room (or your room) and selects it for placement.
+  async function placeItem(id){
+    const owned=game.state.items.find(i=>i.id===id);if(!owned)return false;
+    const destination=owned.placed!==false?owned.roomId:activeRoomId;
+    if(window.AfterhoursOnline?.connected()){
+      if(!await window.AfterhoursOnline.visitOwnRoom(destination))return false;
+    }else if(owned.placed!==false&&owned.roomId!==activeRoomId)visitRoom(owned.roomId);else if(!personal)visitRoom(activeRoomId);
+    sync();startEditing();close();selectFurniture(owned.id);toast('Choose a clear tile. R rotates; Esc cancels.');return true;
+  }
+  // Interacts with an owned piece where it stands.
+  function useItem(id){
+    const item=game.state.items.find(i=>i.id===id);if(!item)return {ok:false,error:'That piece is no longer in your collection.'};
+    if(item.placed===false)return {ok:false,error:'Place this piece in a room first.'};
+    if(item.roomId!==activeRoomId||!personal)visitRoom(item.roomId);openObject(game.state.items.find(i=>i.id===id));return {ok:true};
   }
   showInventory=()=>catalog('owned');button('openInventory',showInventory);
   function roomTools(){
@@ -277,10 +259,11 @@
     get('roomSettings').onsubmit=e=>{e.preventDefault();const out=act('roomSettings',{id:r.id,name:get('settingsName').value,description:get('settingsDescription').value,tags:get('settingsTags').value,lighting:get('roomLighting').value,door:get('roomDoor').value},'Room settings saved.');if(out.ok){get('roomTitle').textContent=room().name;close();}};
     button('blueprints',blueprints);button('roomRules',rulesPanel);button('roomNotes',notesPanel);button('roomPlaylist',playlistPanel);button('roomEvent',eventPanel);
   }
-  function blueprints(){
-    panel('Keep a room in your pocket','BLUEPRINTS',`<p>A blueprint remembers positions and lighting. Restoring moves your owned pieces back into place.</p><button class="primary" id="saveBlueprint">Save current layout</button><div class="directory-list">${game.state.blueprints.map(b=>`<div class="directory-room"><span><b>${h(b.name)}</b><small>${b.items.length} pieces</small></span><button class="soft-button" data-blueprint="${b.id}">Restore</button></div>`).join('')||'<p>No blueprints yet.</p>'}</div>`);
-    button('saveBlueprint',()=>{if(act('blueprint',{room:activeRoomId,name:room().name},'Blueprint saved.').ok)blueprints();});
-    buttons('[data-blueprint]',b=>{const bp=game.state.blueprints.find(x=>x.id===b.dataset.blueprint);if(act('restoreBlueprint',{id:bp.id},'Layout restored.').ok){visitRoom(bp.room);}});
+  function blueprints(){openPanel('Blueprints');}
+  function saveBlueprint(){return act('blueprint',{room:activeRoomId,name:room().name},'Blueprint saved.');}
+  function restoreBlueprint(id){
+    const bp=game.state.blueprints.find(x=>x.id===id),out=act('restoreBlueprint',{id},'Layout restored.');
+    if(out.ok&&bp)visitRoom(bp.room);return out;
   }
   function notesPanel(){
     panel('Leave a little something','MESSAGE BOARD',`<form id="noteForm"><label class="form-field">Your note<textarea id="noteText" maxlength="180" placeholder="A message for this room…"></textarea></label><button class="primary">Pin note</button></form><div class="notes-grid">${room().notes.map(n=>`<article><p>${h(n.text)}</p><small>${h(n.name)}</small><button data-remove-note="${n.id}" aria-label="Remove note">×</button></article>`).join('')}</div>`);
@@ -307,11 +290,8 @@
     get('eventForm').onsubmit=e=>{e.preventDefault();r.event={name:get('eventName').value.trim().slice(0,60)||'Listening party',start:Date.now()+Number(get('eventDelay').value)*60000};game.save();message('system',player.name+' is hosting '+r.event.name);close();};
     button('endEvent',()=>{r.event=null;game.save();close();});
   }
-  function playlistPanel(){
-    const r=room();panel('The room has a soundtrack','ROOM JUKEBOX',`<p>Select songs for this room. The jukebox plays them in order.</p><div class="playlist">${game.state.songs.length?game.state.songs.map(s=>`<label><input type="checkbox" value="${s.id}" ${r.playlist.includes(s.id)?'checked':''}><span>${h(s.title)}<small>${s.bpm} BPM · ${h(s.pack)}</small></span></label>`).join(''):'<p>Save your first track in the studio to build a playlist.</p>'}</div><button id="savePlaylist" class="primary">Save playlist</button> <button id="playPlaylist" class="soft-button">▶ Play playlist</button>`);
-    const save=()=>{r.playlist=Array.from(get('modalBody').querySelectorAll('.playlist input:checked')).map(i=>i.value);game.save();};
-    button('savePlaylist',()=>{save();toast('Playlist saved.');close();});button('playPlaylist',()=>{save();startPlaylist();});
-  }
+  function playlistPanel(){openPanel('Jukebox');}
+  function savePlaylist(ids){const r=room(),known=new Set(game.state.songs.map(t=>t.id));r.playlist=ids.filter(id=>known.has(id));game.save();return {ok:true};}
   let playlistTimer=null;
   function startPlaylist(){
     const list=room().playlist.map(id=>game.state.songs.find(s=>s.id===id)).filter(Boolean);
@@ -321,89 +301,79 @@
   }
   function rememberStudio(){studioHistory.push(copy(draft));if(studioHistory.length>40)studioHistory.shift();}
   function saveDraft(){game.state.draft=copy(draft);game.save();if(music.running&&!stage)music.update(draft);}
-  studio=function(tab='editor'){
-    const s=game.state;
-    let body=topTabs([['editor','Studio'],['library','Song library']],tab);
-    if(tab==='editor'){
-      body+=`<div class="studio-header"><label class="form-field">Track name<input id="songName" maxlength="48" value="${h(draft.title)}" aria-label="Track name"></label><label class="form-field">Sound pack<select id="soundPack"><option value="velvet" ${draft.pack==='velvet'?'selected':''}>Velvet · warm & mellow</option><option value="club" ${draft.pack==='club'?'selected':''}>Club · bass & movement</option><option value="arcade" ${draft.pack==='arcade'?'selected':''}>Arcade · chiptune</option></select></label></div>
-        <div class="sequencer-scroll"><div class="sequencer-board"><div class="beat-ruler"><span>INSTRUMENT</span><div>${Array.from({length:draft.length},(_,i)=>`<span>${i%4===0?i/4+1:'·'}</span>`).join('')}</div></div>
-        ${['KICK','SNARE','HI-HAT','MELODY'].map((name,r)=>`<div class="seq-row"><div class="lane-label"><b>${name}</b><div><button data-mute="${r}" aria-label="Mute ${name}" aria-pressed="${draft.muted[r]}" class="${draft.muted[r]?'selected':''}">M</button><button data-solo="${r}" aria-label="Solo ${name}">S</button><input type="range" min="0" max="100" value="${Math.round(draft.volumes[r]*100)}" data-volume="${r}" aria-label="${name} volume"></div></div><div class="seq-steps" style="--steps:${draft.length}">${draft.pattern[r].map((v,c)=>`<button class="seq-step ${v?'on':''} ${c%4===0?'bar-start':''}" data-row="${r}" data-step="${c}" aria-label="${name} step ${c+1}" aria-pressed="${!!v}"></button>`).join('')}</div></div>`).join('')}</div></div>
-        <div class="studio-controls"><label>Tempo <input id="gameTempo" type="range" min="60" max="160" value="${draft.bpm}"><b id="tempoReadout">${draft.bpm}</b> BPM</label><select id="songLength" aria-label="Pattern length"><option value="16" ${draft.length===16?'selected':''}>1 bar · 16 steps</option><option value="32" ${draft.length===32?'selected':''}>2 bars · 32 steps</option></select><button id="studioUndo" class="soft-button" ${studioHistory.length?'':'disabled'}>↶ Undo</button><button id="clearSong" class="soft-button">Clear</button></div>
-        <div class="button-row studio-transport"><button id="gameStudioPlay" class="primary">${music.running?'Ⅱ Pause':'▶ Play'}</button><button id="gameSaveSong" class="primary">Save track</button><button id="newSong" class="soft-button">New track</button><button id="downloadSong" class="soft-button">Export WAV</button></div><p class="small-note">Four instruments, sixteen or thirty-two steps. M mutes a lane; S solos it. Every sound is synthesized here.</p>`;
-    }else{
-      body+=`<div class="library-header"><p>${s.songs.length} original tracks in your collection.</p><button id="libraryNew" class="soft-button">＋ New track</button></div><div class="record-grid">${s.songs.map(track=>`<article class="song-card"><div class="sleeve ${track.pack}"><span>AFTER<br>HOURS</span><i>◉</i></div><h3>${h(track.title)}</h3><p>${track.bpm} BPM · ${h(track.pack)} · ${track.length} steps</p><div class="button-row"><button class="soft-button" data-song-play="${track.id}">▶ Play</button><button class="soft-button" data-song-edit="${track.id}">Edit</button><button class="soft-button" data-song-stage="${track.id}">Perform</button><button class="soft-button" data-song-disc="${track.id}">Press disc · 10 ✦</button><button class="text-button" data-song-delete="${track.id}">Delete</button></div></article>`).join('')||'<div class="empty-state"><span>♫</span><h3>Your first record starts here.</h3><p>Make a loop in the studio, give it a name, and save it.</p></div>'}</div>`;
-    }
-    panel(tab==='editor'?'Find your sound':'Your discography','THE AFTERHOURS STUDIO',body,true);
-    buttons('[data-tab]',b=>studio(b.dataset.tab));
-    if(tab==='library'){
-      button('libraryNew',()=>{draft=G.song({pattern:G.starterPattern});studio();});
-      buttons('[data-song-play]',b=>playSong(s.songs.find(t=>t.id===b.dataset.songPlay)));
-      buttons('[data-song-edit]',b=>{draft=copy(s.songs.find(t=>t.id===b.dataset.songEdit));studioHistory=[];studio();});
-      buttons('[data-song-stage]',b=>queueSong(b.dataset.songStage));
-      buttons('[data-song-disc]',b=>{if(act('disc',{id:b.dataset.songDisc},'Pressed onto a collectible disc.').ok)studio('library');});
-      buttons('[data-song-delete]',b=>{
-        const track=s.songs.find(t=>t.id===b.dataset.songDelete);
-        panel('Delete this track?','SONG LIBRARY',`<p>Remove “${h(track.title)}” from your song library and playlists? Discs you already pressed keep their own copy.</p><button class="primary" id="confirmDeleteSong">Delete track</button> <button class="soft-button" id="cancelDeleteSong">Keep it</button>`);
-        button('confirmDeleteSong',()=>{act('deleteSong',{id:track.id});studio('library');});button('cancelDeleteSong',()=>studio('library'));
-      });return;
-    }
-    get('songName').oninput=e=>{draft.title=e.target.value;saveDraft();};
-    get('soundPack').onchange=e=>{rememberStudio();draft.pack=e.target.value;saveDraft();};
-    buttons('[data-step]',b=>{rememberStudio();const r=+b.dataset.row,c=+b.dataset.step;draft.pattern[r][c]=1-draft.pattern[r][c];b.classList.toggle('on',!!draft.pattern[r][c]);b.setAttribute('aria-pressed',!!draft.pattern[r][c]);get('studioUndo').disabled=false;saveDraft();});
-    buttons('[data-mute]',b=>{rememberStudio();const r=+b.dataset.mute;draft.muted[r]=!draft.muted[r];b.classList.toggle('selected',draft.muted[r]);b.setAttribute('aria-pressed',draft.muted[r]);saveDraft();});
-    buttons('[data-solo]',b=>{rememberStudio();const r=+b.dataset.solo,solo=draft.muted.every((v,i)=>v===(i!==r));draft.muted=draft.muted.map((_,i)=>solo?false:i!==r);saveDraft();studio();});
-    get('modalBody').querySelectorAll('[data-volume]').forEach(input=>input.oninput=()=>{draft.volumes[+input.dataset.volume]=+input.value/100;saveDraft();});
-    get('gameTempo').oninput=e=>{draft.bpm=+e.target.value;get('tempoReadout').textContent=draft.bpm;saveDraft();};
-    get('songLength').onchange=e=>{rememberStudio();draft.length=+e.target.value;draft.pattern=G.pattern(draft.pattern,draft.length);saveDraft();studio();};
-    button('studioUndo',()=>{if(studioHistory.length){draft=studioHistory.pop();saveDraft();studio();}});
-    button('clearSong',()=>{rememberStudio();draft.pattern=Array.from({length:4},()=>Array(draft.length).fill(0));saveDraft();studio();});
-    button('newSong',()=>{rememberStudio();draft=G.song({pattern:G.starterPattern,title:'Untitled afterhours'});saveDraft();studio();});
-    button('gameStudioPlay',()=>{if(stage){notifyError('Finish or leave your stage performance first.');return;}if(music.running)stopMusic();else playSong(draft);});
-    button('gameSaveSong',()=>{draft.title=get('songName').value;const out=act('song',draft,'Track saved to your library.');if(out.ok){draft=copy(out.result);studio('library');}});
-    button('downloadSong',async()=>{
-      const b=get('downloadSong');b.disabled=true;b.textContent='Rendering…';
-      try{const blob=await music.wav(draft);download(blob,(draft.title||'afterhours').replace(/[^a-z0-9 -]/gi,'').slice(0,48)+'.wav');toast('Your original track is ready.');}catch{notifyError('Audio export is unavailable in this browser.');}
-      if(b.isConnected){b.disabled=false;b.textContent='Export WAV';}
-    });
+  studio=function(tab='editor'){openPanel('Studio',{tab});};
+  // The studio as edits for the hosting app's studio: each changes the draft the way the old buttons did and
+  // replies with the whole draft, so the app never waits on a save echo.
+  const lane=r=>{if(!(r>=0&&r<4))throw Error('Unknown lane.');return r;};
+  const studioOps={
+    get:()=>{},
+    step:(r,c)=>{lane(r);if(!(c>=0&&c<draft.length))throw Error('Unknown step.');rememberStudio();draft.pattern[r][c]=1-draft.pattern[r][c];},
+    mute:r=>{lane(r);rememberStudio();draft.muted[r]=!draft.muted[r];},
+    solo:r=>{lane(r);rememberStudio();const solo=draft.muted.every((v,i)=>v===(i!==r));draft.muted=draft.muted.map((_,i)=>solo?false:i!==r);},
+    volume:(r,v)=>{draft.volumes[lane(r)]=Math.max(0,Math.min(1,+v||0));},
+    tempo:bpm=>{draft.bpm=Math.max(60,Math.min(160,Math.round(+bpm)||draft.bpm));},
+    length:n=>{if(n!==16&&n!==32)throw Error('Choose 16 or 32 steps.');rememberStudio();draft.length=n;draft.pattern=G.pattern(draft.pattern,n);},
+    pack:p=>{if(!['velvet','club','arcade'].includes(p))throw Error('Unknown sound pack.');rememberStudio();draft.pack=p;},
+    title:t=>{draft.title=String(t).slice(0,48);},
+    undo:()=>{if(studioHistory.length)draft=studioHistory.pop();},
+    clear:()=>{rememberStudio();draft.pattern=Array.from({length:4},()=>Array(draft.length).fill(0));},
+    new:()=>{rememberStudio();draft=G.song({pattern:G.starterPattern,title:'Untitled afterhours'});},
+    edit:id=>{const track=game.state.songs.find(t=>t.id===id);if(!track)throw Error('This track is no longer in your library.');draft=copy(track);studioHistory=[];},
+    save:title=>{if(title!=null)draft.title=String(title).slice(0,48);const out=act('song',draft,'Track saved to your library.');if(!out.ok)throw Error(out.error);draft=copy(out.result);}
   };
+  function studioEdit(op,a,b){
+    const reply=(ok,error)=>({ok,error,result:{draft:copy(draft),canUndo:studioHistory.length>0}});
+    try{if(!studioOps[op])throw Error('Unknown studio edit.');studioOps[op](a,b);if(op!=='get')saveDraft();return reply(true,null);}
+    catch(e){return reply(false,e.message);}
+  }
+  function playTrack(id){const track=id?game.state.songs.find(t=>t.id===id):draft;if(!track)return false;if(music.running&&!id)stopMusic();else playSong(track);return true;}
+  async function exportWav(){
+    try{const blob=await music.wav(draft);download(blob,(draft.title||'afterhours').replace(/[^a-z0-9 -]/gi,'').slice(0,48)+'.wav');toast('Your original track is ready.');return {ok:true};}
+    catch{notifyError('Audio export is unavailable in this browser.');return {ok:false,error:'Audio export is unavailable in this browser.'};}
+  }
   async function playSong(track){
     if(stage&&stage.song.id!==track.id){toast('Leave the stage before changing the track.');return;}
     try{
       clearInterval(timer);audio=false;
       await music.play(track,index=>{
-        document.querySelectorAll('.seq-step').forEach(b=>b.classList.toggle('current',+b.dataset.step===index));
+        playback(track,index);
         $('.progress i').style.width=((index+1)/track.length*100)+'%';
         const elapsed=Math.floor((Date.now()-music.started)/1000);get('playTime').textContent=Math.floor(elapsed/60)+':'+String(elapsed%60).padStart(2,'0');
       });
       get('trackTitle').textContent=track.title;$('.track p').textContent=game.state.profile.name+' · '+track.pack;document.body.classList.add('is-playing');syncAudioControls();
     }catch{toast('Your browser could not start audio. Try the Play button again.');}
   }
-  function stopMusic(){music.stop();clearTimeout(playlistTimer);document.body.classList.remove('is-playing');document.querySelectorAll('.seq-step.current').forEach(b=>b.classList.remove('current'));syncAudioControls();}
-  function syncAudioControls(){get('sound').textContent=music.running?'♫ Sound on':'♫ Sound off';get('play').textContent=music.running?'Ⅱ':'▶';if(get('gameStudioPlay'))get('gameStudioPlay').textContent=music.running?'Ⅱ Pause':'▶ Play';}
+  function stopMusic(){music.stop();clearTimeout(playlistTimer);document.body.classList.remove('is-playing');syncAudioControls();}
+  // Tells the hosting app what is playing and which step sounds (it draws the studio playhead).
+  function playback(track,step){window.AfterhoursHost?.notify?.('playback',{running:music.running,title:track?.title||'',step});}
+  function syncAudioControls(){get('sound').textContent=music.running?'♫ Sound on':'♫ Sound off';get('play').textContent=music.running?'Ⅱ':'▶';playback(music.song,-1);}
   toggleSound=()=>music.running?stopMusic():playSong(draft);
   button('sound',toggleSound);button('play',toggleSound);button('studioOpen',()=>studio());
-  function stagePanel(){
-    if(window.AfterhoursOnline?.connected())return window.AfterhoursOnline.stagePanel();
-    const s=game.state;
-    let body='<p>Play an original track for the room. Resident characters react to your performance. Finish a set to earn 40 credits and artist XP, up to five rewarded sets each day.</p>';
-    if(stage){
-      const remaining=Math.max(0,Math.ceil((stage.end-Date.now())/1000));
-      body+=`<div class="stage-now"><div class="stage-disc">◉</div><span class="eyebrow">${stage.started?'ON STAGE':'YOU’RE NEXT'}</span><h3>${h(stage.song.title)}</h3><p id="stageCountdown">${remaining}s ${stage.started?'remaining':'until your set'}</p><div class="mini-meter"><i id="stageProgress" style="width:0%"></i></div></div><button class="soft-button" id="leaveStage">Leave queue / stage</button>`;
-    }else{
-      body+=`<div class="stage-lineup"><span>01</span><div><b>Open mic · your slot is ready</b><p>One original track. Twenty seconds in the spotlight.</p></div><span>♫</span></div><div class="song-picker">${s.songs.map(t=>`<button data-queue-song="${t.id}"><span>◉</span><div><b>${h(t.title)}</b><small>${t.bpm} BPM · ${h(t.pack)}</small></div><em>Join stage ↗</em></button>`).join('')||'<div class="empty-state"><span>♫</span><h3>Something only you could make.</h3><p>Save a track in the studio, then come back for your debut.</p><button id="stageToStudio" class="primary">Make my first track</button></div>'}</div>`;
-    }
-    body+='<p class="small-note">Solo world: the audience is made up of resident characters. Shared sessions show real players separately.</p>';
-    panel('Your moment on Side B','THE LISTENING STAGE',body);
-    buttons('[data-queue-song]',b=>queueSong(b.dataset.queueSong));button('stageToStudio',()=>studio());
-    button('leaveStage',()=>{cancelStage();stagePanel();});
+  function stagePanel(){openPanel('Stage');}
+  // The stage as data for the hosting app: solo here, shared from the online client. lastSet is the finished set
+  // the stage shows until you queue again or go back to the stage.
+  let lastSet=null,stageWatched=false;
+  function stageState(){
+    if(window.AfterhoursOnline?.connected())return window.AfterhoursOnline.stageState();
+    const now=Date.now(),songs=game.state.songs.map(t=>({id:t.id,title:t.title,detail:t.bpm+' BPM · '+t.pack}));
+    const current=stage&&{title:stage.song.title,artist:player.name,phase:stage.started?'ON STAGE':'YOU’RE NEXT',
+      remaining:Math.max(0,Math.ceil((stage.end-now)/1000)),progress:stage.started?Math.min(1,Math.round((now-stage.started)/200)/100):0,applause:stage.applause,started:!!stage.started};
+    return {mode:'solo',current,queue:[],own:!!stage,performing:!!stage?.started,canApplaud:false,applauded:false,listening:false,songs,chart:null,complete:stage?null:lastSet,
+      note:'Solo world: the audience is made up of resident characters. Shared sessions show real players separately.'};
   }
-  function queueSong(id){
-    if(window.AfterhoursOnline?.connected())return window.AfterhoursOnline.queueSong(id);
-    if(stage){toast('You are already in the stage queue.');stagePanel();return;}
+  const stageOps={
+    queue:id=>queueSong(id,false),leave:()=>window.AfterhoursOnline?.connected()?window.AfterhoursOnline.leaveStage():cancelStage(),
+    applaud:()=>window.AfterhoursOnline?.applaud(),listen:()=>window.AfterhoursOnline?.toggleListen(),dismiss:()=>{lastSet=null;},
+    chart:()=>window.AfterhoursOnline?.chartPanel(),open:()=>stagePanel(),
+    watch:on=>{stageWatched=!!on;}
+  };
+  function queueSong(id,show=true){
+    if(window.AfterhoursOnline?.connected())return window.AfterhoursOnline.queueSong(id,show);
+    if(stage){toast('You are already in the stage queue.');if(show)stagePanel();return;}
     const song=game.state.songs.find(t=>t.id===id);if(!song)return;
     if(personal||roomIndex!==0)enterRoom(0,false);
     stage={id:G.uid(),song:copy(song),queued:Date.now(),started:0,end:Date.now()+4000,applause:0};music.ensure().catch(()=>{});
-    stopMusic();message('system',player.name+' joined the stage queue with “'+song.title+'”.');stagePanel();
+    lastSet=null;stopMusic();message('system',player.name+' joined the stage queue with “'+song.title+'”.');if(show)stagePanel();
     stageTimer=setInterval(tickStage,200);
   }
   function tickStage(){
@@ -412,7 +382,6 @@
     if(!stage.started&&now>=stage.end){
       stage.started=now;stage.end=now+20000;
       playSong(stage.song);message('system',player.name+' is now performing “'+stage.song.title+'”.');
-      if(screen==='Your moment on Side B')stagePanel();
     }
     if(stage.started){
       const elapsed=now-stage.started,count=Math.min(4,Math.floor(elapsed/4200));
@@ -421,14 +390,13 @@
         const completed=stage;stage=null;clearInterval(stageTimer);stopMusic();
         const out=act('performance',{id:completed.id,songId:completed.song.id,elapsed:now-completed.started});
         message('system','Set complete. '+(out.ok&&out.result?'You earned '+out.result+' credits.':'Thanks for playing.'));
-        panel('You found your frequency','SET COMPLETE',`<div class="reward-hero"><span>✦</span><h3>${out.ok&&out.result?'+'+out.result+' credits':'Set complete'}</h3><p>“${h(completed.song.title)}” · ${completed.applause} resident reactions</p></div><div class="button-row"><button id="stageQuests" class="primary">Collect quest rewards</button><button id="stageAgain" class="soft-button">Back to the stage</button></div>`);
-        button('stageQuests',()=>journal());button('stageAgain',stagePanel);return;
+        lastSet={credits:out.ok&&out.result?out.result:0,title:completed.song.title,applause:completed.applause};
+        if(!stageWatched)stagePanel();return;
       }
     }
-    if(get('stageCountdown'))get('stageCountdown').textContent=Math.max(0,Math.ceil((stage.end-now)/1000))+'s '+(stage.started?'remaining':'until your set');
-    if(get('stageProgress'))get('stageProgress').style.width=stage.started?(now-stage.started)/200+'%':'0%';
   }
   function cancelStage(){if(!stage)return;clearInterval(stageTimer);stage=null;stopMusic();toast('You left the stage. Your song is still saved.');}
+  function stageAct(op,id){if(!stageOps[op])return {ok:false,error:'Unknown stage action.'};stageOps[op](id);return {ok:true};}
   function arcade(){
     const cards=[['tiles','Tile Rush','Claim the floor. Keep more tiles than your rival.','45 seconds · keyboard or tap','▦'],['snow','Snow Jam','Dodge, aim, and land five snowball hits.','45 seconds · move + click','✧'],['quiz','Pop Quiz','Eight music questions. How well do you know your sound?','60 seconds · choose an answer','?']];
     panel('Just one more round','AFTERHOURS ARCADE',`<p>Original games inspired by the social-game era. Play against a resident rival, set a personal best, and earn credits.</p><div class="arcade-games">${cards.map(([id,title,description,instructions,icon])=>`<article class="arcade-card ${id}"><span>${icon}</span><small>BEST ${game.state.best[id]||0}</small><h3>${title}</h3><p>${description}</p><em>${instructions}</em><button class="primary" data-game="${id}">Play ${title}</button></article>`).join('')}</div><p class="small-note">Up to eight rewarded rounds each day. Wins earn 30 credits; completed rounds earn 15.</p>`,true);
@@ -516,11 +484,7 @@
     }
     if(item.type==='gift'){
       if(item.contents)use('Open your gift',()=>{act('itemAction',{id:item.id,action:'unwrap'},'Your gift is in the inventory.');});
-      else actions.push({label:'Wrap a piece',direct:true,fn:()=>{
-        const options=game.state.items.filter(i=>i.id!==item.id&&i.placed===false&&!i.wrapped);
-        panel('A small surprise','WRAP A GIFT',`<p>Choose a piece from your inventory. It stays safely inside this box until opened.</p><select id="giftContents" class="search-field">${options.map(i=>`<option value="${i.id}">${h(Furniture.catalog[i.type].name)}</option>`).join('')}</select>${field('Personal note','giftNote','','Made me think of you.')}<button id="wrapGift" class="primary" ${options.length?'':'disabled'}>Wrap gift</button>`);
-        button('wrapGift',()=>{if(act('itemAction',{id:item.id,action:'wrap',content:get('giftContents').value,note:get('giftNote').value},'A little surprise, wrapped and ready.').ok)close();});
-      }});
+      else actions.push({label:'Wrap a piece',direct:true,fn:()=>{close();openPanel('WrapGift',{itemId:item.id});}});
     }
     panel(c.name,'ROOM INTERACTION',`<div id="objectPreview" class="item-preview"></div><p>${h(item.contents?item.note:c.description||descriptions[item.type])}</p><div class="button-row">${actions.map((a,i)=>`<button class="${i===0?'primary':'soft-button'}" data-object-action="${i}">${h(a.label)}</button>`).join('')}<button class="soft-button" id="objectMove">Move / rotate</button></div>`);
     get('objectPreview').append(artCard(item.type));buttons('[data-object-action]',b=>{const a=actions[+b.dataset.objectAction];if(a.direct)a.fn();else approach(item,a.fn);});
@@ -660,8 +624,19 @@
     spriteImage,backImage,seatedImage,seatedCrops,drawAvatarLabels,drawWalker,avatarDepth,markArrival,drawArrival,
     setSeat:offers=>useSeat(offers),stand:()=>standUp(),navigationOptions,refreshWhispers,
     openJournal:journal,download,stagePanel,playSong,stopMusic,
-    openCatalog:catalog,openNavigator,
-    updateHUD,showStudio:studio,
+    openCatalog:catalog,openNavigator,act,placeItem,useItem,saveBlueprint,restoreBlueprint,
+    wrapGift:(id,content,note)=>act('itemAction',{id,action:'wrap',content,note},'A little surprise, wrapped and ready.'),
+    playDisc:id=>{const disc=game.state.discs.find(d=>d.id===id);if(disc)playSong(disc.song);return !!disc;},
+    // The shop as data: collections, categories and every piece with its atlas crop.
+    shopData:()=>({collections:collections.map(([key,name,tagline])=>({key,name,tagline})),
+      categories:[['all','Every kind'],['lounge','Seats & tables'],['music','Music'],['interactive','Interactive'],['decor','Decor']].map(([key,name])=>({key,name})),
+      entries:Object.entries(Furniture.catalog).map(([type,c])=>{const {crop,image}=furnitureArt(type);return {type,name:c.name,description:c.description||descriptions[type]||'',price:c.price,w:c.w,d:c.d,seats:c.seats?.length||0,
+        collection:c.collection||'originals',category:category(type),featured:!!c.atlas,
+        atlas:{url:new URL(image.getAttribute('src'),location.href).href,width:image.naturalWidth,height:image.naturalHeight},crop};})}),
+    shopImages:()=>[...new Set(Object.keys(Furniture.catalog).map(type=>furnitureArt(type).image))],
+    updateHUD,showStudio:studio,studioEdit,playTrack,exportWav,savePlaylist,startPlaylist,
+    pressDisc:id=>act('disc',{id},'Pressed onto a collectible disc.'),deleteSong:id=>act('deleteSong',{id}),perform:id=>queueSong(id),
+    stageState,stageAct,openPanel,showJournal:()=>journal(),
     setActiveRoom:id=>{activeRoomId=id;game.state.activeRoom=id;},
     applyState:state=>{game.state=state;activeRoomId=state.activeRoom||state.rooms[0].id;spriteIndex=state.profile.avatar||0;sync();draft=copy(state.draft);$('.profile-art').style.backgroundPosition=(-spriteIndex*35)+'px -4px';resetPet();}
   };

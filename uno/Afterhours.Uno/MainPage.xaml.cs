@@ -4,54 +4,15 @@ public sealed partial class MainPage : Page
 {
     public MainPage()
     {
-        global::Uno.Foundation.WebAssemblyRuntime.InvokeJS("window.AfterhoursUno.prepareWebView() ? 'true' : 'false'");
         this.InitializeComponent();
-        Loaded += async (_, _) => await OpenGameAsync();
+        // xaml-lint: allow codebehind - the room is a native element; its id is only known here.
+        Loaded += (_, _) => MountRoom();
+        DataContextChanged += (_, _) => MountRoom();
     }
 
-    private async Task OpenGameAsync()
+    private void MountRoom()
     {
-        LoadingPanel.Visibility = Visibility.Visible;
-        LoadingRing.IsIndeterminate = true;
-        RetryButton.Visibility = Visibility.Collapsed;
-        LoadingMessage.Text = "Opening your world…";
-        try
-        {
-            await GameView.EnsureCoreWebView2Async();
-            // Uno 6.7 passes iframe IDs as strings to .NET 10's integer export.
-            // Normalize that boundary in our version-scoped JS compatibility hook.
-            for (var attempt = 0; attempt < 200; attempt++)
-            {
-                if (global::Uno.Foundation.WebAssemblyRuntime.InvokeJS("window.AfterhoursUno.prepareWebView() ? 'true' : 'false'") == "true")
-                    break;
-                await Task.Delay(10);
-            }
-            GameView.NavigationCompleted -= GameView_NavigationCompleted;
-            GameView.NavigationCompleted += GameView_NavigationCompleted;
-            var address = global::Uno.Foundation.WebAssemblyRuntime.InvokeJS("new URL('game/index.html', document.baseURI).href");
-            GameView.Source = new Uri(address);
-        }
-        catch (Exception)
-        {
-            ShowRetry();
-        }
+        if (IsLoaded && DataContext is MainViewModel { Model: var model } && Room.Element is { } element)
+            _ = model.Mount(element.ElementId);
     }
-
-    private void GameView_NavigationCompleted(WebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs args)
-    {
-        LoadingRing.IsIndeterminate = false;
-        if (args.IsSuccess)
-            LoadingPanel.Visibility = Visibility.Collapsed;
-        else
-            ShowRetry();
-    }
-
-    private void ShowRetry()
-    {
-        LoadingMessage.Text = "Your world could not load. Check your connection and try again.";
-        LoadingRing.IsIndeterminate = false;
-        RetryButton.Visibility = Visibility.Visible;
-    }
-
-    private async void Retry_Click(object sender, RoutedEventArgs e) => await OpenGameAsync();
 }

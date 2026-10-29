@@ -1,0 +1,27 @@
+<Page x:Class="Afterhours.Uno.Views.WrapGiftPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}" Width="{utu:Responsive Narrowest=340, Narrow=440}">
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+    <conv:BoolToVisibilityConverter x:Key="HiddenWhen" Invert="True" />
+  </Page.Resources>
+  <!-- Wrap an inventory piece in a gift box. Opened with !WrapGift and a WrapGiftRequest(itemId) from the game. -->
+  <StackPanel Padding="24" Spacing="12">
+    <TextBlock Text="WRAP A GIFT" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+    <TextBlock Text="A small surprise" Style="{StaticResource TitleText}" />
+    <TextBlock Text="Choose a piece from your inventory. It stays safely inside this box until opened."
+               Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+    <InfoBar IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+    <ComboBox ItemsSource="{Binding Options}" DisplayMemberPath="Name" SelectedValuePath="Id" HorizontalAlignment="Stretch"
+              SelectedValue="{Binding Contents, Mode=TwoWay}" PlaceholderText="Choose a piece" AutomationProperties.Name="Piece to wrap"
+              Visibility="{Binding HasOptions, Converter={StaticResource ShownWhen}}" />
+    <TextBlock Text="Nothing to wrap yet. Put a piece away into your inventory first." Style="{StaticResource BodyText}"
+               TextWrapping="Wrap" TextTrimming="None" Visibility="{Binding HasOptions, Converter={StaticResource HiddenWhen}}" />
+    <TextBox Text="{Binding Note, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" PlaceholderText="Made me think of you."
+             MaxLength="120" AutomationProperties.Name="Personal note" />
+    <Button Content="Wrap gift" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding Wrap}" />
+  </StackPanel>
+</Page>

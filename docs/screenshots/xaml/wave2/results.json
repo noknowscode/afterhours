@@ -1,0 +1,227 @@
+{
+  "base": "http://127.0.0.1:4177/",
+  "date": "2026-10-23T18:12:38.032Z",
+  "results": [
+    {
+      "key": "wide 1440px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "wide 1440px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "wide 1440px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": true,
+      "railIcons": true,
+      "chatColumn": true
+    },
+    {
+      "key": "wide 1440px: daily gift pays and the HUD follows",
+      "pass": true,
+      "after": 275
+    },
+    {
+      "key": "wide 1440px: room list travels",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: dance runs and relabels",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: room shortcuts ignore XAML focus",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: chat sends through the game and lists the line",
+      "pass": true,
+      "inGame": true
+    },
+    {
+      "key": "wide 1440px: decorate shows the XAML editor bar and Done closes it",
+      "pass": true,
+      "editing": true,
+      "closed": true,
+      "doneStillShown": []
+    },
+    {
+      "key": "wide 1440px: play starts audio and shows pause",
+      "pass": true,
+      "audio": [
+        "running",
+        "running"
+      ]
+    },
+    {
+      "key": "wide 1440px: dock opens a game panel",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: portrait renders",
+      "pass": true,
+      "portrait": [
+        68
+      ]
+    },
+    {
+      "key": "wide 1440px: shop opens with cards and furniture art",
+      "pass": true,
+      "cardsShown": 12,
+      "atlases": 29
+    },
+    {
+      "key": "wide 1440px: search filters the cards",
+      "pass": true,
+      "filtered": 2
+    },
+    {
+      "key": "wide 1440px: shop art is clipped to its sprite in cards and detail",
+      "pass": true,
+      "unclipped": 0
+    },
+    {
+      "key": "wide 1440px: buying from XAML pays, closes the shop and starts placing",
+      "pass": true,
+      "coinsBefore": 275,
+      "coinsAfter": 195,
+      "placing": true
+    },
+    {
+      "key": "wide 1440px: inventory lists the new piece",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: records tab shows its empty state",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: a failed purchase shows the game's message and keeps credits",
+      "pass": true,
+      "shopError": [
+        "✦",
+        "1 / 1 · 20 credits",
+        "You do not have enough credits.",
+        "2 × 1 tiles · 80 ✦"
+      ]
+    },
+    {
+      "key": "wide 1440px: the game opens XAML blueprints; save and restore work",
+      "pass": true,
+      "blueprintsOpen": true,
+      "saved": 1
+    },
+    {
+      "key": "wide 1440px: gift wrap opens from the game and wraps the chosen piece",
+      "pass": true,
+      "wrapOpen": true,
+      "wrapped": "14250c25-7fe2-402b-a2e0-1665d0306075",
+      "expected": "14250c25-7fe2-402b-a2e0-1665d0306075"
+    },
+    {
+      "key": "wide 1440px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "normal 1000px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "normal 1000px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "normal 1000px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": false,
+      "railIcons": true,
+      "chatColumn": false
+    },
+    {
+      "key": "normal 1000px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "narrow 800px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "narrow 800px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "narrow 800px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": false,
+      "railIcons": true,
+      "chatColumn": false
+    },
+    {
+      "key": "narrow 800px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "phone 390px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "phone 390px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "phone 390px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": false,
+      "railIcons": true,
+      "chatColumn": false
+    },
+    {
+      "key": "phone 390px: shop fits the phone",
+      "pass": true,
+      "width": 366
+    },
+    {
+      "key": "phone 390px: chat opens from the bottom bar",
+      "pass": true
+    },
+    {
+      "key": "phone 390px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "shared: both players show SHARED WORLD in the XAML top bar",
+      "pass": true
+    },
+    {
+      "key": "shared: a XAML chat line reaches the other player's XAML chat",
+      "pass": true
+    },
+    {
+      "key": "shared: no page errors",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "key": "shared: no page errors",
+      "pass": true,
+      "errors": []
+    }
+  ]
+}

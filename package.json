@@ -11,7 +11,7 @@
     "start:uno": "node scripts/start-uno.mjs",
     "build:uno": "node scripts/build-uno.mjs",
     "build:service": "node service/scripts/build.mjs && node service/scripts/validate-artifact.mjs",
-    "test": "node scripts/build-client.mjs && node service/scripts/build.mjs && node --test tests/test-game.cjs tests/test-mechanics.cjs tests/test-seating.cjs tests/test-session.mjs tests/test-worker.mjs tests/test-uno-bridge.cjs tests/test-accounts.mjs tests/test-room-view.cjs",
+    "test": "node scripts/build-client.mjs && node service/scripts/build.mjs && node --test tests/test-game.cjs tests/test-mechanics.cjs tests/test-seating.cjs tests/test-session.mjs tests/test-worker.mjs tests/test-accounts.mjs tests/test-room-view.cjs tests/test-host.mjs tests/test-scope-css.mjs tests/test-uno-warnings.mjs",
     "build:client": "node scripts/build-client.mjs",
     "prestart": "npm run build:client"
   },

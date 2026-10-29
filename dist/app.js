@@ -1,24 +1,26 @@
 const $=s=>document.querySelector(s),canvas=$('#room'),ctx=canvas.getContext('2d');
+// When hosted beside other UI, room keys only apply while the room (or nothing) has focus.
+const forRoom=e=>!document.querySelector('.ah-root')||e.target===document.body||!!e.target.closest?.('.ah-root');
 const rooms=[{title:'Side B',owner:'afterhours',mood:'underground sounds',count:6,icon:'◉',color:'#c7cbb6',tag:'A soft place to land'},{title:'Midnight Diner',owner:'peach.wav',mood:'late-night jazz',count:4,icon:'☕',color:'#cfb4a3',tag:'Coffee & conversations'},{title:'The Greenhouse',owner:'fern',mood:'ambient & slow mornings',count:3,icon:'✳',color:'#b6c8ab',tag:'Grow at your own pace'},{title:'Cloud Nine',owner:'moonchild',mood:'dream pop & new friends',count:5,icon:'☁',color:'#bdbcd3',tag:'Somewhere above it all'}];
 let saved={};try{saved=JSON.parse(localStorage.getItem('afterhours')||'{}')}catch{}let shirt=saved.shirt||'#8d9b65',coins=saved.coins??240,decor=AfterhoursFurniture.normalize(saved.decor||[]),roomIndex=0,personal=false,dancing=false,waving=0,liked=false;
 const player={x:5.5,y:5.5,tx:5.5,ty:5.5,name:'daydream',shirt};const people=[{x:3.7,y:4.2,name:'miso',chatColor:'#0f7a6c',shirt:'#d89574',hair:'#4d3931'},{x:5.8,y:3.3,name:'olive',chatColor:'#7a3fc9',shirt:'#84986e',hair:'#7b523a'},{x:7.2,y:5.7,name:'tomo',chatColor:'#1f5fbf',shirt:'#7c8eab',hair:'#373736'},{x:4.1,y:6.6,name:'peach.wav',chatColor:'#d6246e',shirt:'#b18e9e',hair:'#7d493a'},{x:5.7,y:7.3,name:'sunny',chatColor:'#b8520a',shirt:'#d4af68',hair:'#b98242'}];
 if(!saved.editorVersion){decor.forEach(d=>d.placed=false);decor=[...AfterhoursFurniture.starter(),...decor]}
 function persist(){try{localStorage.setItem('afterhours',JSON.stringify({...JSON.parse(localStorage.getItem('afterhours')||'{}'),shirt:player.shirt,coins,decor,editorVersion:1}))}catch{}$('#coins').textContent=coins}
 persist();function toast(s){$('#toast').textContent=s;$('#toast').style.opacity=1;clearTimeout(toast.t);toast.t=setTimeout(()=>$('#toast').style.opacity=0,2800)}
-const sceneImage=new Image();sceneImage.src='assets/side-b.webp';
-const roomAtlas=new Image();roomAtlas.src='assets/room-atlas.webp';
-const spriteImage=new Image();spriteImage.src='assets/avatars.webp';
+const sceneImage=new Image();sceneImage.src=(window.AfterhoursBase||'')+'assets/side-b.webp';
+const roomAtlas=new Image();roomAtlas.src=(window.AfterhoursBase||'')+'assets/room-atlas.webp';
+const spriteImage=new Image();spriteImage.src=(window.AfterhoursBase||'')+'assets/avatars.webp';
 const roomView=AfterhoursView.mount(canvas);
 let zoom=roomView.camera.zoom,hover=null,last=performance.now();
 const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
 let spriteIndex=Number.isInteger(saved.avatar)?saved.avatar:0,outfit=null;$('.profile-art').style.backgroundPosition=(-spriteIndex*35)+'px -4px';
-const personalImage=new Image();personalImage.src='assets/my-room.webp';
-const furnitureImage=new Image();furnitureImage.src='assets/furniture.webp';
-const backImage=new Image();backImage.src='assets/avatars-back.webp';
-const seatedImage=new Image();seatedImage.src='assets/avatars-seated.webp';
+const personalImage=new Image();personalImage.src=(window.AfterhoursBase||'')+'assets/my-room.webp';
+const furnitureImage=new Image();furnitureImage.src=(window.AfterhoursBase||'')+'assets/furniture.webp';
+const backImage=new Image();backImage.src=(window.AfterhoursBase||'')+'assets/avatars-back.webp';
+const seatedImage=new Image();seatedImage.src=(window.AfterhoursBase||'')+'assets/avatars-seated.webp';
 const furnitureCrops=[[15, 45, 428, 379], [473, 80, 478, 376], [1005, 27, 276, 421], [1366, 16, 391, 409], [121, 428, 179, 425], [466, 527, 382, 297], [909, 470, 403, 388], [1371, 474, 373, 359]];
 const furnitureAtlases={classic:furnitureImage};
-for(const [name,file] of Object.entries({objects:'game-objects.webp',loft:'furniture-loft-v1.webp',culture:'furniture-culture-v1.webp',fantasyA:'furniture-fantasy-a-v1.webp',fantasyB:'furniture-fantasy-b-v1.webp',denA:'furniture-man-cave-a-v1.webp',denB:'furniture-man-cave-b-v1.webp'})){const art=new Image();art.src='assets/'+file;furnitureAtlases[name]=art;}
+for(const [name,file] of Object.entries({objects:'game-objects.webp',loft:'furniture-loft-v1.webp',culture:'furniture-culture-v1.webp',fantasyA:'furniture-fantasy-a-v1.webp',fantasyB:'furniture-fantasy-b-v1.webp',denA:'furniture-man-cave-a-v1.webp',denB:'furniture-man-cave-b-v1.webp'})){const art=new Image();art.src=(window.AfterhoursBase||'')+'assets/'+file;furnitureAtlases[name]=art;}
 const objectCrops=[[108,12,325,460],[514,17,317,463],[940,11,332,482],[1364,93,326,391],[80,446,363,415],[525,573,333,228],[926,490,338,356],[1374,519,332,335]];
 function furnitureArt(type){const c=AfterhoursFurniture.catalog[type];return{image:furnitureAtlases[c.atlas||(c.cell<8?'classic':'objects')],crop:c.crop||(c.cell<8?furnitureCrops[c.cell]:objectCrops[c.cell-8])};}
 function iso(x,y,z=0){if(personal)return[750+(x-y)*75,270+(x+y)*35-z];return roomIndex===0?[750+(x-y)*75,200+(x+y)*42-z]:[750+(x-y)*82,325+(x+y)*30-z]}
@@ -181,9 +183,9 @@ canvas.addEventListener('pointerleave',()=>{hover=null;seatHover=null;if(!editor
 canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;canvas.focus();if(!editor.active)return;const hit=editor.selected?null:furnitureAt(e),point=tileAt(e);if(hit)selectFurniture(hit.id);const item=currentItem();editor.down={x:e.clientX,y:e.clientY,hit:hit?.id,dragged:false,offsetX:hit?point.x-item.x:0,offsetY:hit?point.y-item.y:0};canvas.setPointerCapture(e.pointerId)});
 canvas.addEventListener('pointerup',e=>{if(e.button!==0)return;const p=tileAt(e);if(editor.active){const down=editor.down;if(down?.dragged||(!down?.hit&&editor.selected)){moveGhost(p);placeGhost()}editor.down=null;if(canvas.hasPointerCapture(e.pointerId))canvas.releasePointerCapture(e.pointerId)}else{const offers=seatAt(e);if(offers){useSeat(offers);return}if(walkable(p))walkTo(p)}});
 canvas.addEventListener('pointercancel',()=>{editor.down=null;editor.ghost=null;editor.selected=null;updateEditor()});
-canvas.addEventListener('keydown',e=>{const movement=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'];if(movement.includes(e.key)&&!editor.active){e.preventDefault();heldKeys.add(e.key);dancing=false;$('#dance').textContent='✧ Dance';if(!e.repeat){nextKeyboardStep=0;keyboardStep(performance.now())}}});
+canvas.addEventListener('keydown',e=>{if(!forRoom(e))return;const movement=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'];if(movement.includes(e.key)&&!editor.active){e.preventDefault();heldKeys.add(e.key);dancing=false;$('#dance').textContent='✧ Dance';if(!e.repeat){nextKeyboardStep=0;keyboardStep(performance.now())}}});
 window.addEventListener('keyup',e=>heldKeys.delete(e.key));window.addEventListener('blur',()=>heldKeys.clear());canvas.addEventListener('blur',()=>heldKeys.clear());
-document.addEventListener('keydown',e=>{if(!editor.active||$('#modal').open||e.target.matches('input'))return;if(e.key.toLowerCase()==='r'){e.preventDefault();rotateFurniture()}if(e.key==='Escape'){editor.selected=null;editor.ghost=null;updateEditor()}if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undoFurniture()}});
+document.addEventListener('keydown',e=>{if(!forRoom(e))return;if(!editor.active||$('#modal').open||e.target.matches('input'))return;if(e.key.toLowerCase()==='r'){e.preventDefault();rotateFurniture()}if(e.key==='Escape'){editor.selected=null;editor.ghost=null;updateEditor()}if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();undoFurniture()}});
 
 const arrivals=new Map(),unboxed=new Map();let selection=null,introTimers=[];
 // The chevron marks whoever or whatever you last clicked, until you walk or change rooms.
@@ -244,7 +246,7 @@ $('#zoomIn').onclick=()=>changeZoom(.2);$('#zoomOut').onclick=()=>changeZoom(-.2
 $('#fitRoom').onclick=()=>{zoom=1;roomView.camera.x=750;roomView.camera.y=500;roomView.camera.follow=false;changeZoom(0);};
 $('#followPlayer').onclick=()=>{zoom=Math.max(zoom,1.6);roomView.camera.follow=true;[roomView.camera.x,roomView.camera.y]=iso(player.x,player.y-1);changeZoom(0);};
 let cameraDrag=null,spaceHeld=false;
-document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.target.matches('input,textarea,select,button')&&!$('#modal').open){spaceHeld=true;e.preventDefault();}});
+document.addEventListener('keydown',e=>{if(!forRoom(e))return;if(e.code==='Space'&&!e.target.matches('input,textarea,select,button')&&!$('#modal').open){spaceHeld=true;e.preventDefault();}});
 document.addEventListener('keyup',e=>{if(e.code==='Space')spaceHeld=false;});
 window.addEventListener('blur',()=>{spaceHeld=false;cameraDrag=null;});
 canvas.addEventListener('pointerdown',e=>{const touch=e.pointerType==='touch'&&!editor.active;if(!touch&&e.button!==1&&!(e.button===0&&spaceHeld))return;e.preventDefault();e.stopImmediatePropagation();cameraDrag={x:e.clientX,y:e.clientY,cx:roomView.camera.x,cy:roomView.camera.y,touch,moved:!touch};roomView.camera.follow=false;canvas.setPointerCapture(e.pointerId);canvas.style.cursor='grabbing';},true);
@@ -274,4 +276,4 @@ async function toggleSound(){try{if(!ac)ac=new(window.AudioContext||window.webki
 function studio(){modal('<div class="eyebrow">THE AFTERHOURS STUDIO</div><h2>Make something together.</h2><p>A tiny beat, a whole mood. Tap the steps, then play your original loop.</p><div id="sequencer"></div><div class="field-label"><label for="tempo">TEMPO <span id="bpmValue">88</span> BPM</label></div><input id="tempo" type="range" min="65" max="125" value="'+bpm+'" style="width:100%;margin-top:12px"><button class="primary" id="studioPlay">'+(audio?'Ⅱ Pause loop':'▶ Play loop')+'</button> <button class="primary" id="saveBeat">Save my beat</button><p style="margin-top:14px;font-size:10px">Synthesized in your browser · Saved locally · No streaming service required</p>');['KICK','SNARE','HI-HAT','MELODY'].forEach((name,row)=>{let l=document.createElement('div');l.className='field-label';l.textContent=name;let grid=document.createElement('div');grid.className='steps';patterns[row].forEach((v,col)=>{let b=document.createElement('button');b.className='step'+(v?' on':'');b.dataset.col=col;b.setAttribute('aria-label',`${name} step ${col+1}`);b.setAttribute('aria-pressed',!!v);b.onclick=()=>{patterns[row][col]=1-patterns[row][col];b.classList.toggle('on',!!patterns[row][col]);b.setAttribute('aria-pressed',!!patterns[row][col])};grid.append(b)});$('#sequencer').append(l,grid)});$('#bpmValue').textContent=bpm;$('#tempo').oninput=e=>{bpm=+e.target.value;$('#bpmValue').textContent=bpm;if(audio){clearInterval(timer);timer=setInterval(schedule,60000/bpm/2)}};$('#studioPlay').onclick=toggleSound;$('#saveBeat').onclick=()=>{try{let data=JSON.parse(localStorage.getItem('afterhours')||'{}');data.patterns=patterns;localStorage.setItem('afterhours',JSON.stringify(data))}catch{}$('#trackTitle').textContent='daydream’s B-side';$('#modal').close();toast('Your beat is saved. A little piece of you.')}}
 $('#studioOpen').onclick=studio;document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{if(b.dataset.view==='look')look();else if(b.dataset.view==='studio')studio();else enterRoom(0,b.dataset.view==='room')});
 
-document.addEventListener('keydown',e=>{if(e.target.matches('input,textarea')||$('#modal').open||editor.active)return;if(e.key==='Escape'&&seating.mode!=='standing'){standUp();return}if(e.key==='1')$('#wave').click();if(e.key==='2')$('#dance').click()});
+document.addEventListener('keydown',e=>{if(!forRoom(e))return;if(e.target.matches('input,textarea')||$('#modal').open||editor.active)return;if(e.key==='Escape'&&seating.mode!=='standing'){standUp();return}if(e.key==='1')$('#wave').click();if(e.key==='2')$('#dance').click()});

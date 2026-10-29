@@ -1,0 +1,129 @@
+{
+  "base": "http://127.0.0.1:4177/",
+  "date": "2026-10-23T15:34:40.040Z",
+  "results": {
+    "R1 hosting": {
+      "pass": true,
+      "ready": "AH_SPIKE ready scripts=15",
+      "msToReady": 5223,
+      "pageErrors": []
+    },
+    "R1 round trip": {
+      "pass": true,
+      "before": "✦ 240",
+      "after": "✦ 275",
+      "gameBefore": 240,
+      "gameAfter": 275,
+      "lastStateLog": "AH_SPIKE state bytes=2229 parseMs=3.80 coins=275"
+    },
+    "R3 css scope": {
+      "pass": true,
+      "leaks": []
+    },
+    "R6 font + spacing": {
+      "pass": true,
+      "fontFamily": "font-1056876642",
+      "loaded": true,
+      "letterSpacing": "2.7px",
+      "faces": [
+        "Segoe UI:unloaded",
+        "Roboto:unloaded",
+        "Barlow Condensed:unloaded",
+        "Barlow Condensed:loaded",
+        "DM Sans:unloaded",
+        "DM Sans:loaded",
+        "Space Grotesk:unloaded",
+        "Space Grotesk:loaded",
+        "font-1056876642:loaded",
+        "font1195424071:loaded"
+      ]
+    },
+    "R4 keys": {
+      "pass": true,
+      "p0": {
+        "x": 5.5,
+        "y": 5.5
+      },
+      "p1": {
+        "x": 5.5,
+        "y": 5.5
+      },
+      "typed": "wasd wasd",
+      "p2": {
+        "x": 5.5,
+        "y": 5.5
+      },
+      "p3": {
+        "x": 7.635800440083752,
+        "y": 3.3641995599162464
+      }
+    },
+    "R2 overlay": {
+      "pass": true,
+      "overCanvas": true,
+      "topElement": {
+        "tag": "P",
+        "inRoom": false
+      },
+      "status": "Flyout clicks 1",
+      "dismissed": true,
+      "focusInRoom": true
+    },
+    "R2 js dialog": {
+      "pass": true,
+      "dialogOpen": true,
+      "dialogClosed": true
+    },
+    "Navigation ! route": {
+      "pass": true,
+      "shown": true,
+      "routeOverCanvas": true,
+      "counted": true,
+      "closed": true
+    },
+    "Audio from XAML": {
+      "pass": true,
+      "contexts": [
+        "running"
+      ]
+    },
+    "R8 state volume": {
+      "pass": true,
+      "events": 2,
+      "last": {
+        "bytes": "2229",
+        "parseMs": "3.80",
+        "coins": "275"
+      }
+    },
+    "No page errors": {
+      "pass": true,
+      "errors": []
+    },
+    "No failed local requests": {
+      "pass": true,
+      "local": [],
+      "external": []
+    },
+    "Room art loads from game/assets": {
+      "pass": true,
+      "art": [
+        "avatars.webp:200",
+        "avatars.webp:200",
+        "side-b.webp:200",
+        "room-atlas.webp:200",
+        "my-room.webp:200",
+        "furniture.webp:200",
+        "avatars-back.webp:200",
+        "avatars-seated.webp:200",
+        "game-objects.webp:200",
+        "furniture-loft-v1.webp:200",
+        "furniture-culture-v1.webp:200",
+        "furniture-fantasy-a-v1.webp:200",
+        "furniture-fantasy-b-v1.webp:200",
+        "furniture-man-cave-a-v1.webp:200",
+        "furniture-man-cave-b-v1.webp:200"
+      ]
+    }
+  }
+}

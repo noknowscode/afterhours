@@ -1,0 +1,8 @@
+<UserControl x:Class="Afterhours.Uno.Presentation.Shell"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- A plain host: the Toolkit ExtendedSplashScreen requests a lowercase appmanifest.js on WebAssembly,
+       which 404s on case-sensitive hosts. MainPage shows its own loading panel. -->
+  <ContentControl x:Name="Host" Background="#14141B"
+                  HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+</UserControl>

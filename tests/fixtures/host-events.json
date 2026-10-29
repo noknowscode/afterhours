@@ -1,0 +1,471 @@
+[
+ {
+  "type": "ready",
+  "scripts": 15,
+  "publicRooms": [
+   {
+    "index": 0,
+    "title": "Side B",
+    "owner": "afterhours",
+    "mood": "underground sounds",
+    "count": 6,
+    "icon": "◉",
+    "tag": "A soft place to land"
+   },
+   {
+    "index": 1,
+    "title": "Midnight Diner",
+    "owner": "peach.wav",
+    "mood": "late-night jazz",
+    "count": 4,
+    "icon": "☕",
+    "tag": "Coffee & conversations"
+   }
+  ]
+ },
+ {
+  "type": "slices",
+  "slices": {
+   "coins": 240,
+   "profile": {
+    "id": "dba1ac7b-c668-4d3b-943d-909a36a51947",
+    "name": "daydream",
+    "motto": "Good people. Late nights.",
+    "joined": 1792773321143,
+    "xp": 0,
+    "avatar": 0,
+    "outfit": null,
+    "badges": [],
+    "chatColor": "#c8102e"
+   }
+  }
+ },
+ {
+  "type": "hud",
+  "hud": {
+   "coins": 240,
+   "name": "daydream",
+   "level": 1,
+   "xp": 0,
+   "xpLower": 0,
+   "xpUpper": 100,
+   "questsReady": 0,
+   "nextQuest": "Your first hello",
+   "nextQuestDetail": "0 / 1 · 20 credits",
+   "dailyClaimed": false,
+   "dailyLabel": "Daily gift · 35 ✦",
+   "chatColor": "#c8102e"
+  }
+ },
+ {
+  "type": "portrait",
+  "png": "data:image/png;base64,iVBORw0KGgo="
+ },
+ {
+  "type": "chrome",
+  "chrome": {
+   "room": {
+    "key": "public:0",
+    "title": "Side B",
+    "eyebrow": "PUBLIC ROOM / MUSIC & HANGOUTS",
+    "meta": "by afterhours · 6 people · underground sounds",
+    "guests": 6,
+    "saved": false,
+    "personal": false,
+    "index": 0
+   },
+   "editor": {
+    "active": false,
+    "title": "Choose a piece to move",
+    "hint": "Click or drag furniture · Your layout saves automatically",
+    "canRotate": false,
+    "canStore": false,
+    "canUndo": false
+   },
+   "actions": {
+    "dancing": false,
+    "seated": false
+   },
+   "nowPlaying": {
+    "title": "Midnight on the B-side",
+    "subtitle": "Afterhours house band • Lo-fi house",
+    "playing": false,
+    "progress": 0,
+    "time": "0:00"
+   },
+   "connection": {
+    "label": "SOLO WORLD",
+    "connected": false
+   }
+  }
+ },
+ {
+  "type": "chat",
+  "chat": {
+   "lines": [
+    {
+     "system": true,
+     "name": "",
+     "text": "You stepped into Side B.",
+     "color": ""
+    },
+    {
+     "system": false,
+     "name": "miso",
+     "text": "The stage is open.",
+     "color": "#0f7a6c"
+    }
+   ],
+   "whisperTargets": [
+    {
+     "id": "miso",
+     "name": "miso · resident"
+    }
+   ]
+  }
+ },
+ {
+  "type": "slices",
+  "slices": {
+   "coins": 160,
+   "activeRoom": "home",
+   "items": [
+    {
+     "id": "starter-sofa",
+     "type": "sofa",
+     "x": 1,
+     "y": 5,
+     "rot": 1,
+     "placed": true,
+     "roomId": "home",
+     "state": true
+    },
+    {
+     "id": "starter-decks",
+     "type": "decks",
+     "x": 5,
+     "y": 1,
+     "rot": 0,
+     "placed": true,
+     "roomId": "home",
+     "state": true
+    },
+    {
+     "id": "starter-speaker",
+     "type": "speaker",
+     "x": 7,
+     "y": 1,
+     "rot": 0,
+     "placed": true,
+     "roomId": "home",
+     "state": true
+    },
+    {
+     "id": "bought-sofa",
+     "type": "sofa",
+     "x": 4,
+     "y": 6,
+     "rot": 0,
+     "placed": false,
+     "roomId": null,
+     "state": true
+    }
+   ],
+   "rooms": [
+    {
+     "id": "home",
+     "name": "Your afterhours",
+     "description": "A little place to call my own.",
+     "tags": "music, hangout",
+     "lighting": "amber",
+     "door": "open",
+     "notes": [],
+     "playlist": [],
+     "event": null
+    }
+   ],
+   "discs": [
+    {
+     "id": "disc-1",
+     "song": {
+      "id": "song-1",
+      "title": "Side B",
+      "bpm": 92,
+      "updated": 1792454400000
+     },
+     "artist": "daydream",
+     "date": 1792454400000
+    }
+   ],
+   "blueprints": [
+    {
+     "id": "bp-1",
+     "name": "Your afterhours",
+     "room": "home",
+     "items": [
+      {
+       "id": "starter-sofa",
+       "type": "sofa",
+       "x": 1,
+       "y": 5,
+       "rot": 1,
+       "placed": true,
+       "roomId": "home",
+       "state": true
+      },
+      {
+       "id": "starter-decks",
+       "type": "decks",
+       "x": 5,
+       "y": 1,
+       "rot": 0,
+       "placed": true,
+       "roomId": "home",
+       "state": true
+      }
+     ],
+     "lighting": "amber"
+    }
+   ]
+  }
+ },
+ {
+  "type": "shop",
+  "shop": {
+   "collections": [
+    {
+     "key": "loft",
+     "name": "Soft loft",
+     "tagline": "Warm light, soft corners"
+    }
+   ],
+   "categories": [
+    {
+     "key": "seating",
+     "name": "Seating"
+    },
+    {
+     "key": "tables",
+     "name": "Tables"
+    }
+   ],
+   "entries": [
+    {
+     "type": "sofa",
+     "name": "Mint daybed sofa",
+     "description": "Room for two and a nap.",
+     "price": 75,
+     "w": 2,
+     "d": 1,
+     "seats": 2,
+     "collection": "loft",
+     "category": "seating",
+     "featured": false,
+     "atlas": {
+      "url": "assets/furniture/atlas-1.png",
+      "width": 1024,
+      "height": 1024
+     },
+     "crop": [
+      0,
+      0,
+      200,
+      150
+     ]
+    },
+    {
+     "type": "table",
+     "name": "Tulip cafe table",
+     "description": "Coffee for two.",
+     "price": 35,
+     "w": 1,
+     "d": 1,
+     "seats": 0,
+     "collection": "loft",
+     "category": "tables",
+     "featured": true,
+     "atlas": {
+      "url": "assets/furniture/atlas-1.png",
+      "width": 1024,
+      "height": 1024
+     },
+     "crop": [
+      200,
+      0,
+      100,
+      150
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "type": "open",
+  "route": "WrapGift",
+  "data": {
+   "itemId": "bought-sofa"
+  }
+ },
+ {
+  "type": "slices",
+  "slices": {
+   "songs": [
+    {
+     "id": "song-1",
+     "title": "Side B sketch",
+     "bpm": 96,
+     "pack": "club",
+     "length": 16,
+     "pattern": [
+      [
+       1,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0
+      ],
+      [
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0
+      ],
+      [
+       1,
+       0,
+       1,
+       0,
+       1,
+       0,
+       1,
+       1,
+       1,
+       0,
+       1,
+       0,
+       1,
+       0,
+       1,
+       0
+      ],
+      [
+       1,
+       0,
+       0,
+       1,
+       0,
+       0,
+       1,
+       0,
+       0,
+       1,
+       0,
+       0,
+       1,
+       0,
+       0,
+       0
+      ]
+     ],
+     "volumes": [
+      0.7,
+      0.7,
+      0.7,
+      0.7
+     ],
+     "muted": [
+      false,
+      false,
+      false,
+      false
+     ],
+     "created": 1792454400000,
+     "updated": 1793236500366
+    }
+   ]
+  }
+ },
+ {
+  "type": "playback",
+  "playback": {
+   "running": true,
+   "title": "Side B sketch",
+   "step": 5
+  }
+ },
+ {
+  "type": "stage",
+  "stage": {
+   "mode": "shared",
+   "current": {
+    "title": "Shared sketch",
+    "artist": "xamlalpha",
+    "phase": "ON STAGE",
+    "remaining": 12,
+    "progress": 0.4,
+    "applause": 2,
+    "started": true
+   },
+   "queue": [
+    {
+     "title": "Night bus",
+     "artist": "miso"
+    }
+   ],
+   "own": false,
+   "performing": false,
+   "canApplaud": true,
+   "applauded": false,
+   "listening": true,
+   "songs": [
+    {
+     "id": "song-1",
+     "title": "Side B sketch",
+     "detail": "96 BPM"
+    }
+   ],
+   "chart": {
+    "week": "WEEK 44 · RESETS MONDAY",
+    "top": [
+     {
+      "mark": "1",
+      "title": "Shared sketch",
+      "artist": "xamlalpha",
+      "listeners": 2,
+      "own": false
+     }
+    ],
+    "last": []
+   },
+   "complete": null,
+   "note": "Songs start from a shared clock."
+  }
+ },
+ {
+  "type": "unknown-future-event",
+  "value": 1
+ }
+]

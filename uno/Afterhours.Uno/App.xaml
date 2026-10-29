@@ -1,15 +1,21 @@
 <Application x:Class="Afterhours.Uno.App"
+       RequestedTheme="Dark"
        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       xmlns:utu="using:Uno.Toolkit.UI">
 
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
         <!-- Load WinUI resources -->
         <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+        <ToolkitResources xmlns="using:Uno.Toolkit.UI" />
+        <ResourceDictionary Source="ms-appx:///Themes/Tokens.xaml" />
+        <ResourceDictionary Source="ms-appx:///Themes/Type.xaml" />
+        <ResourceDictionary Source="ms-appx:///Themes/Controls.xaml" />
       </ResourceDictionary.MergedDictionaries>
-
-      <!-- Add resources here -->
+      <!-- Breakpoints from the game CSS: phone below 700, then 960, 1200 and 1600. -->
+      <utu:ResponsiveLayout x:Key="DefaultResponsiveLayout" Narrowest="0" Narrow="700" Normal="960" Wide="1200" Widest="1600" />
 
     </ResourceDictionary>
   </Application.Resources>

@@ -1,0 +1,132 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <!-- Fluent lightweight-styling keys tuned to the Afterhours palette. Values repeat Tokens.xaml (named in each comment)
+       because these live in a theme dictionary. The app is dark only, so only "Dark" is defined. -->
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Dark">
+        <SolidColorBrush x:Key="ButtonBackground" Color="#24242E" /> <!-- SurfaceRaised -->
+        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#2C2C38" /> <!-- SurfaceHover -->
+        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#1C1C25" /> <!-- SurfacePanel -->
+        <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="#1C1C25" /> <!-- SurfacePanel -->
+        <SolidColorBrush x:Key="ButtonForeground" Color="#C4BDCE" /> <!-- InkSoft -->
+        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#F3F1E9" /> <!-- Ink -->
+        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#F3F1E9" /> <!-- Ink -->
+        <SolidColorBrush x:Key="ButtonForegroundDisabled" Color="#92929F" /> <!-- Muted -->
+        <SolidColorBrush x:Key="ButtonBorderBrush" Color="#00000000" /> <!-- Transparent -->
+        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#00000000" /> <!-- Transparent -->
+        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#00000000" /> <!-- Transparent -->
+        <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="#00000000" /> <!-- Transparent -->
+        <SolidColorBrush x:Key="SliderThumbBackground" Color="#DFED8C" /> <!-- Acid -->
+        <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#E9F4AE" /> <!-- AcidHover -->
+        <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#C8D57A" /> <!-- AcidPressed -->
+        <SolidColorBrush x:Key="SliderTrackValueFill" Color="#DFED8C" /> <!-- Acid -->
+        <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#E9F4AE" /> <!-- AcidHover -->
+        <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#C8D57A" /> <!-- AcidPressed -->
+        <SolidColorBrush x:Key="SliderTrackFill" Color="#2C2C38" /> <!-- SurfaceHover -->
+        <SolidColorBrush x:Key="SliderTrackFillPointerOver" Color="#2C2C38" /> <!-- SurfaceHover -->
+        <SolidColorBrush x:Key="SliderTrackFillPressed" Color="#2C2C38" /> <!-- SurfaceHover -->
+        <SolidColorBrush x:Key="AccentButtonBackground" Color="#DFED8C" /> <!-- Acid -->
+        <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#E9F4AE" /> <!-- AcidHover -->
+        <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#C8D57A" /> <!-- AcidPressed -->
+        <SolidColorBrush x:Key="AccentButtonBackgroundDisabled" Color="#24242E" /> <!-- SurfaceRaised -->
+        <SolidColorBrush x:Key="AccentButtonForeground" Color="#303522" /> <!-- OnAcid -->
+        <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="#303522" /> <!-- OnAcid -->
+        <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="#303522" /> <!-- OnAcid -->
+        <SolidColorBrush x:Key="AccentButtonForegroundDisabled" Color="#92929F" /> <!-- Muted -->
+        <SolidColorBrush x:Key="AccentButtonBorderBrush" Color="#00000000" /> <!-- Transparent -->
+        <SolidColorBrush x:Key="AccentButtonBorderBrushPointerOver" Color="#00000000" /> <!-- Transparent -->
+        <SolidColorBrush x:Key="AccentButtonBorderBrushPressed" Color="#00000000" /> <!-- Transparent -->
+        <SolidColorBrush x:Key="TextControlBackground" Color="#24242E" /> <!-- SurfaceRaised -->
+        <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#2C2C38" /> <!-- SurfaceHover -->
+        <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#24242E" /> <!-- SurfaceRaised -->
+        <SolidColorBrush x:Key="TextControlForeground" Color="#F3F1E9" /> <!-- Ink -->
+        <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="#F3F1E9" /> <!-- Ink -->
+        <SolidColorBrush x:Key="TextControlForegroundFocused" Color="#F3F1E9" /> <!-- Ink -->
+        <SolidColorBrush x:Key="TextControlBorderBrush" Color="#14FFFFFF" /> <!-- Line -->
+        <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#14FFFFFF" /> <!-- Line -->
+        <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#DFED8C" /> <!-- Acid -->
+        <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="#92929F" /> <!-- Muted -->
+        <SolidColorBrush x:Key="TextControlPlaceholderForegroundPointerOver" Color="#92929F" /> <!-- Muted -->
+        <SolidColorBrush x:Key="TextControlPlaceholderForegroundFocused" Color="#92929F" /> <!-- Muted -->
+        <SolidColorBrush x:Key="ComboBoxBackground" Color="#24242E" /> <!-- SurfaceRaised -->
+        <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#2C2C38" /> <!-- SurfaceHover -->
+        <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="#1C1C25" /> <!-- SurfacePanel -->
+        <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="#14FFFFFF" /> <!-- Line -->
+        <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="#14FFFFFF" /> <!-- Line -->
+        <SolidColorBrush x:Key="ComboBoxForeground" Color="#F3F1E9" /> <!-- Ink -->
+        <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#1C1C25" /> <!-- SurfacePanel -->
+        <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#1C1C25" /> <!-- SurfacePanel -->
+        <SolidColorBrush x:Key="FlyoutBorderThemeBrush" Color="#14FFFFFF" /> <!-- Line -->
+        <SolidColorBrush x:Key="ListViewItemBackgroundPointerOver" Color="#2C2C38" /> <!-- SurfaceHover -->
+        <SolidColorBrush x:Key="ListViewItemBackgroundPressed" Color="#1C1C25" /> <!-- SurfacePanel -->
+        <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="#00000000" /> <!-- Transparent -->
+        <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="#2C2C38" /> <!-- SurfaceHover -->
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+
+  <Style x:Key="SoftButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+    <Setter Property="MinHeight" Value="{StaticResource ControlHeight}" />
+    <Setter Property="Padding" Value="{StaticResource ChipPadding}" />
+    <Setter Property="CornerRadius" Value="{StaticResource ChipRadius}" />
+    <Setter Property="FontFamily" Value="{StaticResource BodyFontFamily}" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+    <Setter Property="MinHeight" Value="{StaticResource ControlHeight}" />
+    <Setter Property="Padding" Value="{StaticResource ChipPadding}" />
+    <Setter Property="CornerRadius" Value="{StaticResource ChipRadius}" />
+    <Setter Property="FontFamily" Value="{StaticResource BodyStrongFontFamily}" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <!-- Rail and bar items: no fill until hovered. -->
+  <Style x:Key="QuietButtonStyle" TargetType="Button" BasedOn="{StaticResource SoftButtonStyle}">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+
+  <!-- Sequencer steps: the fill is the state, so hover only lifts opacity. -->
+  <Style x:Key="StepButtonStyle" TargetType="Button">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+            <VisualStateManager.VisualStateGroups>
+              <VisualStateGroup x:Name="CommonStates">
+                <VisualState x:Name="Normal" />
+                <VisualState x:Name="PointerOver">
+                  <VisualState.Setters>
+                    <Setter Target="Root.Opacity" Value="0.8" />
+                  </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Pressed">
+                  <VisualState.Setters>
+                    <Setter Target="Root.Opacity" Value="0.6" />
+                  </VisualState.Setters>
+                </VisualState>
+              </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+            <ContentPresenter Content="{TemplateBinding Content}" />
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
+  <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource SoftButtonStyle}">
+    <Setter Property="Width" Value="{StaticResource ControlHeight}" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+
+  <!-- A raised surface (cards, bars). xaml-lint: allow card - Fluent theme has no CardContentControl styles. -->
+  <Style x:Key="SurfaceCardStyle" TargetType="Border">
+    <Setter Property="Background" Value="{StaticResource SurfaceRaisedBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LineBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="{StaticResource CardRadius}" />
+    <Setter Property="Padding" Value="{StaticResource PanelPadding}" />
+  </Style>
+</ResourceDictionary>

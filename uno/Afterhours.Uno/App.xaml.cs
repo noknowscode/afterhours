@@ -1,5 +1,7 @@
 using System;
 using Microsoft.Extensions.Logging;
+using Afterhours.Uno.Services;
+using Afterhours.Uno.Views;
 using Uno.Resizetizer;
 
 namespace Afterhours.Uno;
@@ -16,49 +18,61 @@ public partial class App : Application
     }
 
     protected Window? MainWindow { get; private set; }
+    protected IHost? Host { get; private set; }
 
-    protected override void OnLaunched(LaunchActivatedEventArgs args)
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Trimming", "IL2026", Justification = "Uno.Extensions navigation and MVUX are used as in the Uno template.")]
+    protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
-        MainWindow = new Window();
+        var builder = this.CreateBuilder(args)
+            .UseToolkitNavigation()
+            .Configure(host => host
+                .ConfigureServices(services =>
+                {
+                    // The game runs as JavaScript in the browser page (the app's only target).
+                    if (OperatingSystem.IsBrowser())
+                    {
+                        var game = new JsGame(new GameEvents());
+                        services.AddSingleton<IGameStore>(game);
+                        services.AddSingleton<IRoomView>(game);
+                        services.AddSingleton<IMusic>(game);
+                        services.AddSingleton<IStage>(game);
+                    }
+                })
+                .UseNavigation(ReactiveViewModelMappings.ViewModelMappings, RegisterRoutes)
+                // Panels open as a right drawer; replaces the centred NavigationFlyout UseNavigation registers.
+                .ConfigureServices(services => services.AddTransient<Flyout, PanelFlyout>()));
+        MainWindow = builder.Window;
 #if DEBUG
         MainWindow.UseStudio();
 #endif
-
-
-        // Do not repeat app initialization when the Window already has content,
-        // just ensure that the window is active
-        if (MainWindow.Content is not Frame rootFrame)
-        {
-            // Create a Frame to act as the navigation context and navigate to the first page
-            rootFrame = new Frame();
-
-            // Place the frame in the current Window
-            MainWindow.Content = rootFrame;
-
-            rootFrame.NavigationFailed += OnNavigationFailed;
-        }
-
-        if (rootFrame.Content == null)
-        {
-            // When the navigation stack isn't restored navigate to the first page,
-            // configuring the new page by passing required information as a navigation
-            // parameter
-            rootFrame.Navigate(typeof(MainPage), args.Arguments);
-        }
-
         MainWindow.SetWindowIcon();
-        // Ensure the current window is active
-        MainWindow.Activate();
+        Host = await builder.NavigateAsync<Shell>();
     }
 
-    /// <summary>
-    /// Invoked when Navigation to a certain page fails
-    /// </summary>
-    /// <param name="sender">The Frame which failed navigation</param>
-    /// <param name="e">Details about the navigation failure</param>
-    void OnNavigationFailed(object sender, NavigationFailedEventArgs e)
+    private static void RegisterRoutes(IViewRegistry views, IRouteRegistry routes)
     {
-        throw new InvalidOperationException($"Failed to load {e.SourcePageType.FullName}: {e.Exception}");
+        views.Register(
+            new ViewMap(ViewModel: typeof(ShellModel)),
+            new ViewMap<MainPage, MainModel>(),
+            new DataViewMap<CatalogPage, CatalogModel, CatalogRequest>(),
+            new ViewMap<BlueprintsPage, BlueprintsModel>(),
+            new DataViewMap<WrapGiftPage, WrapGiftModel, WrapGiftRequest>(),
+            new DataViewMap<StudioPage, StudioModel, StudioRequest>(),
+            new ViewMap<JukeboxPage, JukeboxModel>(),
+            new ViewMap<StagePage, StageModel>(),
+            new ViewMap<ChartPage, ChartModel>());
+        routes.Register(
+            new RouteMap("", View: views.FindByViewModel<ShellModel>(), Nested:
+            [
+                new("Main", View: views.FindByViewModel<MainModel>(), IsDefault: true),
+                new("Catalog", View: views.FindByViewModel<CatalogModel>()),
+                new("Blueprints", View: views.FindByViewModel<BlueprintsModel>()),
+                new("WrapGift", View: views.FindByViewModel<WrapGiftModel>()),
+                new("Studio", View: views.FindByViewModel<StudioModel>()),
+                new("Jukebox", View: views.FindByViewModel<JukeboxModel>()),
+                new("Stage", View: views.FindByViewModel<StageModel>()),
+                new("Chart", View: views.FindByViewModel<ChartModel>()),
+            ]));
     }
 
     /// <summary>

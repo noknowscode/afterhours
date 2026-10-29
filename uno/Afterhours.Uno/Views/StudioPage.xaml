@@ -1,0 +1,267 @@
+<Page x:Class="Afterhours.Uno.Views.StudioPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:utu="using:Uno.Toolkit.UI"
+      xmlns:mvux="using:Uno.Extensions.Reactive.UI"
+      xmlns:conv="using:Afterhours.Uno.Converters"
+      Background="{StaticResource SurfacePanelBrush}"
+      Width="{utu:Responsive Narrowest=360, Narrow=640, Normal=900}">
+  <!-- The beat studio and song library. Opened with !Studio and a StudioRequest(tab). -->
+  <Page.Resources>
+    <conv:BoolToVisibilityConverter x:Key="ShownWhen" />
+    <conv:BoolToVisibilityConverter x:Key="HiddenWhen" Invert="True" />
+    <conv:BoolToBrushConverter x:Key="StepFill" TrueBrush="{StaticResource AcidBrush}" FalseBrush="{StaticResource SurfaceRaisedBrush}" />
+    <conv:BoolToBrushConverter x:Key="SelectedFill" TrueBrush="{StaticResource SurfaceAccentTintBrush}" FalseBrush="{StaticResource SurfaceRaisedBrush}" />
+    <conv:HexBrushConverter x:Key="Sleeve" Fallback="{StaticResource SurfaceRaisedBrush}" />
+    <!-- 28 × 28 cells on a 32 px pitch (StudioRules.CellPitch); the ruler row sits above the four lanes. -->
+    <!-- Each step is a button (a real control for keyboards and screen readers). -->
+    <DataTemplate x:Key="CellTemplate">
+      <Button Width="28" Height="28" Padding="0" CornerRadius="4" HorizontalAlignment="Left" VerticalAlignment="Top"
+              Background="{Binding On, Converter={StaticResource StepFill}}"
+              Style="{StaticResource StepButtonStyle}" AutomationProperties.Name="{Binding Name}"
+              CommandParameter="{Binding}" Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.ToggleStep}">
+        <Rectangle Width="2" Height="28" HorizontalAlignment="Left" Fill="{StaticResource InkSoftBrush}" Opacity="0.5"
+                   Visibility="{Binding BarStart, Converter={StaticResource ShownWhen}}" />
+      </Button>
+    </DataTemplate>
+    <DataTemplate x:Key="RulerTemplate">
+      <Grid Width="28" Height="28">
+        <Rectangle Width="2" HorizontalAlignment="Left" Fill="{StaticResource InkSoftBrush}" Opacity="0.5"
+                   Visibility="{Binding BarStart, Converter={StaticResource ShownWhen}}" />
+        <TextBlock Text="{Binding Label}" Style="{StaticResource CaptionText}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Grid>
+    </DataTemplate>
+  </Page.Resources>
+
+  <Grid Padding="24" RowSpacing="12">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+    <StackPanel Spacing="4">
+      <TextBlock Text="THE AFTERHOURS STUDIO" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+      <TextBlock Text="{Binding Tabs.Title}" Style="{StaticResource TitleText}" />
+    </StackPanel>
+
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="4">
+      <Button Style="{StaticResource QuietButtonStyle}" Command="{Binding ShowTab}" CommandParameter="editor">
+        <StackPanel Spacing="4">
+          <TextBlock Text="Studio" Style="{StaticResource BodyStrongText}" />
+          <Rectangle Height="2" Fill="{StaticResource AcidBrush}" Visibility="{Binding Tabs.IsEditor, Converter={StaticResource ShownWhen}}" />
+        </StackPanel>
+      </Button>
+      <Button Style="{StaticResource QuietButtonStyle}" Command="{Binding ShowTab}" CommandParameter="library">
+        <StackPanel Spacing="4">
+          <TextBlock Text="Song library" Style="{StaticResource BodyStrongText}" />
+          <Rectangle Height="2" Fill="{StaticResource AcidBrush}" Visibility="{Binding Tabs.IsLibrary, Converter={StaticResource ShownWhen}}" />
+        </StackPanel>
+      </Button>
+    </StackPanel>
+
+    <InfoBar Grid.Row="2" IsOpen="{Binding HasError}" Severity="Error" IsClosable="False" Message="{Binding Error}" />
+
+    <!-- Editor -->
+    <ScrollViewer Grid.Row="3" Visibility="{Binding Tabs.IsEditor, Converter={StaticResource ShownWhen}}">
+      <StackPanel Spacing="16">
+        <Grid ColumnSpacing="12" RowSpacing="8">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="{utu:Responsive Narrowest=0, Narrow=Auto}" />
+          </Grid.ColumnDefinitions>
+          <TextBox Header="Track name" Text="{Binding Title, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" MaxLength="48"
+                   AutomationProperties.Name="Track name" />
+          <ComboBox Grid.Column="1" Header="Sound pack" ItemsSource="{Binding Packs}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                    SelectedValue="{Binding Pack, Mode=TwoWay}" MinWidth="220" AutomationProperties.Name="Sound pack"
+                    Visibility="{utu:Responsive Narrowest=Collapsed, Narrow=Visible}" />
+        </Grid>
+
+        <!-- The board is always the ruler plus four lanes on a 32 px pitch, so its height is fixed. -->
+        <ScrollViewer Height="176" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled">
+          <Grid ColumnSpacing="12" Padding="0,0,0,12">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="{utu:Responsive Narrowest=128, Narrow=232}" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="4">
+              <TextBlock Height="28" Text="INSTRUMENT" Style="{StaticResource EyebrowText}" VerticalAlignment="Center" />
+              <ItemsControl ItemsSource="{Binding Lanes}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate>
+                    <Grid Height="28" Margin="0,0,0,4" ColumnSpacing="4">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="62" />
+                        <ColumnDefinition Width="28" />
+                        <ColumnDefinition Width="28" />
+                        <ColumnDefinition Width="*" />
+                      </Grid.ColumnDefinitions>
+                      <TextBlock Text="{Binding Name}" Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
+                      <Button Grid.Column="1" Content="M" Padding="0" Width="28" Height="28" Style="{StaticResource SoftButtonStyle}"
+                              Background="{Binding Muted, Converter={StaticResource SelectedFill}}" AutomationProperties.Name="{Binding MuteName}"
+                              CommandParameter="{Binding}" Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Mute}" />
+                      <Button Grid.Column="2" Content="S" Padding="0" Width="28" Height="28" Style="{StaticResource SoftButtonStyle}"
+                              AutomationProperties.Name="{Binding SoloName}"
+                              CommandParameter="{Binding}" Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Solo}" />
+                      <Slider Grid.Column="3" Minimum="0" Maximum="100" Value="{Binding Volume}" VerticalAlignment="Center"
+                              Visibility="{utu:Responsive Narrowest=Collapsed, Narrow=Visible}"
+                              AutomationProperties.Name="{Binding VolumeName}" ValueChanged="OnVolumeChanged" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+            <Grid Grid.Column="1" RowSpacing="4">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="28" />
+                <RowDefinition Height="Auto" />
+              </Grid.RowDefinitions>
+              <!-- Not virtualized: at most 128 steps, all in view. The width wraps each after Length cells. -->
+              <ItemsControl ItemsSource="{Binding Ruler}" ItemTemplate="{StaticResource RulerTemplate}" HorizontalAlignment="Left"
+                            Width="{Binding BoardWidth}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="32" ItemHeight="28" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+              </ItemsControl>
+              <ItemsControl Grid.Row="1" ItemsSource="{Binding Cells}" ItemTemplate="{StaticResource CellTemplate}" HorizontalAlignment="Left"
+                            Width="{Binding BoardWidth}" AutomationProperties.Name="Sequencer">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="32" ItemHeight="32" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+              </ItemsControl>
+              <!-- The playhead: one element moves; the cells never rebind per step. -->
+              <Canvas Grid.RowSpan="2" IsHitTestVisible="False" Visibility="{Binding Play.ShowPlayhead, Converter={StaticResource ShownWhen}}">
+                <Rectangle Canvas.Left="{Binding Play.PlayheadX}" Width="28" Height="156" RadiusX="4" RadiusY="4"
+                           Fill="{StaticResource AcidBrush}" Opacity="0.18" />
+                <Rectangle Canvas.Left="{Binding Play.PlayheadX}" Width="2" Height="156" Fill="{StaticResource AcidBrush}" />
+              </Canvas>
+            </Grid>
+          </Grid>
+        </ScrollViewer>
+
+        <!-- Tempo, then length and edits: one row from Narrow up, two on a phone. -->
+        <StackPanel Orientation="{utu:Responsive Narrowest=Vertical, Narrow=Horizontal}" Spacing="16">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="Tempo" Style="{StaticResource BodyText}" VerticalAlignment="Center" />
+            <Slider Minimum="60" Maximum="160" Width="{utu:Responsive Narrowest=120, Narrow=220}" Value="{Binding Tempo, Mode=TwoWay}"
+                    VerticalAlignment="Center" AutomationProperties.Name="Tempo" />
+            <TextBlock Text="{Binding Tempo}" Style="{StaticResource NumeralText}" VerticalAlignment="Center" />
+            <TextBlock Text="BPM" Style="{StaticResource CaptionText}" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <ComboBox ItemsSource="{Binding Lengths}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                      SelectedValue="{Binding Length, Mode=TwoWay}" AutomationProperties.Name="Pattern length" />
+            <Button Content="↶ Undo" Style="{StaticResource SoftButtonStyle}" Command="{Binding Undo}" IsEnabled="{Binding CanUndo}" />
+            <Button Content="Clear" Style="{StaticResource SoftButtonStyle}" Command="{Binding Clear}" />
+          </StackPanel>
+        </StackPanel>
+
+        <StackPanel Orientation="{utu:Responsive Narrowest=Vertical, Narrow=Horizontal}" Spacing="8">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="{Binding Play.Label}" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding TogglePlay}" AutomationProperties.Name="Play or pause the track" />
+            <Button Content="Save track" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding SaveTrack}" />
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="New track" Style="{StaticResource SoftButtonStyle}" Command="{Binding NewTrack}" />
+            <Button Content="Export WAV" Style="{StaticResource SoftButtonStyle}" Command="{Binding ExportWav}" />
+          </StackPanel>
+        </StackPanel>
+        <TextBlock Text="Four instruments, sixteen or thirty-two steps. M mutes a lane; S solos it. Every sound is synthesized here."
+                   Style="{StaticResource CaptionText}" TextWrapping="Wrap" />
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Song library -->
+    <Grid Grid.Row="3" RowSpacing="12" Visibility="{Binding Tabs.IsLibrary, Converter={StaticResource ShownWhen}}">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+      </Grid.RowDefinitions>
+      <Grid ColumnSpacing="12">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <TextBlock Text="{Binding SongCount}" Style="{StaticResource BodyText}" VerticalAlignment="Center" />
+        <Button Grid.Column="1" Content="＋ New track" Style="{StaticResource SoftButtonStyle}" Command="{Binding StartNewTrack}" />
+      </Grid>
+      <mvux:FeedView Grid.Row="1" Source="{Binding Songs}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"
+                     Visibility="{Binding Confirm.IsOpen, Converter={StaticResource HiddenWhen}}">
+        <mvux:FeedView.ValueTemplate>
+          <DataTemplate>
+            <ScrollViewer>
+              <ItemsRepeater ItemsSource="{Binding Data}">
+                <ItemsRepeater.Layout>
+                  <UniformGridLayout MinItemWidth="300" MinItemHeight="176" MinRowSpacing="12" MinColumnSpacing="12" ItemsStretch="Fill" />
+                </ItemsRepeater.Layout>
+                <ItemsRepeater.ItemTemplate>
+                  <DataTemplate>
+                    <Grid Padding="12" ColumnSpacing="12" RowSpacing="8" CornerRadius="{StaticResource ChipRadius}"
+                          Background="{StaticResource SurfaceRaisedBrush}" AutomationProperties.Name="{Binding Title}">
+                      <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="64" />
+                        <ColumnDefinition Width="*" />
+                      </Grid.ColumnDefinitions>
+                      <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                      </Grid.RowDefinitions>
+                      <Border Width="64" Height="64" CornerRadius="4" Background="{Binding Sleeve, Converter={StaticResource Sleeve}}">
+                        <TextBlock Text="AFTER&#x0a;HOURS" Style="{StaticResource BodyStrongText}" Foreground="{StaticResource InkBrush}"
+                                   Margin="6" FontSize="12" LineHeight="12" />
+                      </Border>
+                      <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                        <TextBlock Text="{Binding Title}" Style="{StaticResource BodyStrongText}" />
+                        <TextBlock Text="{Binding Detail}" Style="{StaticResource CaptionText}" />
+                      </StackPanel>
+                      <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <Button Content="▶ Play" Style="{StaticResource SoftButtonStyle}" Background="{StaticResource SurfaceHoverBrush}" CommandParameter="{Binding}"
+                                  Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.PlaySong}" />
+                          <Button Content="Edit" Style="{StaticResource SoftButtonStyle}" Background="{StaticResource SurfaceHoverBrush}" CommandParameter="{Binding}"
+                                  Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.EditSong}" />
+                          <Button Content="Perform" Style="{StaticResource SoftButtonStyle}" Background="{StaticResource SurfaceHoverBrush}" CommandParameter="{Binding}"
+                                  Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.Perform}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <Button Content="Press disc · 10 ✦" Style="{StaticResource SoftButtonStyle}" Background="{StaticResource SurfaceHoverBrush}" CommandParameter="{Binding}"
+                                  Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.PressDisc}" />
+                          <Button Content="Delete" Style="{StaticResource QuietButtonStyle}" CommandParameter="{Binding}"
+                                  Command="{utu:AncestorBinding AncestorType=Page, Path=DataContext.DeleteSong}" />
+                        </StackPanel>
+                      </StackPanel>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsRepeater.ItemTemplate>
+              </ItemsRepeater>
+            </ScrollViewer>
+          </DataTemplate>
+        </mvux:FeedView.ValueTemplate>
+        <mvux:FeedView.NoneTemplate>
+          <DataTemplate>
+            <StackPanel Spacing="6" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <TextBlock Text="♫" Style="{StaticResource TitleText}" HorizontalAlignment="Center" />
+              <TextBlock Text="Your first record starts here." Style="{StaticResource BodyStrongText}" HorizontalAlignment="Center" />
+              <TextBlock Text="Make a loop in the studio, give it a name, and save it." Style="{StaticResource CaptionText}" HorizontalAlignment="Center" />
+            </StackPanel>
+          </DataTemplate>
+        </mvux:FeedView.NoneTemplate>
+      </mvux:FeedView>
+      <!-- Delete confirmation, in place of the list (as the game did). -->
+      <StackPanel Grid.Row="1" Spacing="12" MaxWidth="520" HorizontalAlignment="Left"
+                  Visibility="{Binding Confirm.IsOpen, Converter={StaticResource ShownWhen}}">
+        <TextBlock Text="SONG LIBRARY" Style="{StaticResource EyebrowText}" Foreground="{StaticResource AcidBrush}" />
+        <TextBlock Text="Delete this track?" Style="{StaticResource TitleText}" />
+        <TextBlock Text="{Binding Confirm.Message}" Style="{StaticResource BodyText}" TextWrapping="Wrap" TextTrimming="None" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Content="Delete track" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding ConfirmDelete}" />
+          <Button Content="Keep it" Style="{StaticResource SoftButtonStyle}" Command="{Binding KeepSong}" />
+        </StackPanel>
+      </StackPanel>
+    </Grid>
+  </Grid>
+</Page>

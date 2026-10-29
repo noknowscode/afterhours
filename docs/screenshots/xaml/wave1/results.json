@@ -1,0 +1,168 @@
+{
+  "base": "http://127.0.0.1:4177/",
+  "date": "2026-10-23T17:10:29.604Z",
+  "results": [
+    {
+      "key": "wide 1440px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "wide 1440px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "wide 1440px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": true,
+      "railIcons": true,
+      "chatColumn": true
+    },
+    {
+      "key": "wide 1440px: daily gift pays and the HUD follows",
+      "pass": true,
+      "after": 275
+    },
+    {
+      "key": "wide 1440px: room list travels",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: dance runs and relabels",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: room shortcuts ignore XAML focus",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: chat sends through the game and lists the line",
+      "pass": true,
+      "inGame": true
+    },
+    {
+      "key": "wide 1440px: decorate shows the XAML editor bar and Done closes it",
+      "pass": true,
+      "editing": true,
+      "closed": true,
+      "doneStillShown": []
+    },
+    {
+      "key": "wide 1440px: play starts audio and shows pause",
+      "pass": true,
+      "audio": [
+        "running",
+        "running"
+      ]
+    },
+    {
+      "key": "wide 1440px: dock opens a game panel",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: portrait renders",
+      "pass": true,
+      "portrait": [
+        68
+      ]
+    },
+    {
+      "key": "wide 1440px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "normal 1000px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "normal 1000px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "normal 1000px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": false,
+      "railIcons": true,
+      "chatColumn": false
+    },
+    {
+      "key": "normal 1000px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "narrow 800px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "narrow 800px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "narrow 800px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": false,
+      "railIcons": true,
+      "chatColumn": false
+    },
+    {
+      "key": "narrow 800px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "phone 390px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "phone 390px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "phone 390px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": false,
+      "railIcons": true,
+      "chatColumn": false
+    },
+    {
+      "key": "phone 390px: chat opens from the bottom bar",
+      "pass": true
+    },
+    {
+      "key": "phone 390px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "shared: both players show SHARED WORLD in the XAML top bar",
+      "pass": true
+    },
+    {
+      "key": "shared: a XAML chat line reaches the other player's XAML chat",
+      "pass": true
+    },
+    {
+      "key": "shared: no page errors",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "key": "shared: no page errors",
+      "pass": true,
+      "errors": []
+    }
+  ]
+}

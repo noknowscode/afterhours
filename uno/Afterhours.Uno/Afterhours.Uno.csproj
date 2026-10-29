@@ -3,6 +3,10 @@
     <TargetFrameworks>net10.0-browserwasm</TargetFrameworks>
 
     <OutputType>Exe</OutputType>
+    <!-- Required by the JSImport/JSExport source generator. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- A member Uno has not implemented silently does nothing at runtime; fail the build instead. -->
+    <WarningsAsErrors>$(WarningsAsErrors);Uno0001</WarningsAsErrors>
     <UnoSingleProject>true</UnoSingleProject>
     <!-- Browser targets use NuGet/runtime packs and do not need Windows SDK registry discovery. -->
     <TargetPlatformSdkPath>$(MSBuildSDKsPath)</TargetPlatformSdkPath>
@@ -25,11 +29,14 @@
       https://aka.platform.uno/singleproject-features
     -->
     <UnoFeatures>
+      Hosting;
+      Toolkit;
+      MVUX;
+      Navigation;
     </UnoFeatures>
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Platforms/WebAssembly/WasmScripts/AfterhoursInterop.js" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" />
     <PackageReference Include="System.Security.Cryptography.Xml" />
   </ItemGroup>
