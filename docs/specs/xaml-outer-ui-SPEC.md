@@ -557,6 +557,33 @@ Decisions made while building (they amend the briefs above):
 - **`Uno0001` is an error.** `ItemsStackPanel.ItemsUpdatingScrollMode` is not implemented on WASM and slipped
   past the gate's regex; the regex is fixed, `Uno0001` is in `WarningsAsErrors`, and chat scrolls in code-behind.
 
+## Skia spike results (2026-10-29)
+
+Approved 2026-10-29. Built the same commit with `SkiaRenderer` added to `UnoFeatures` (clean `bin`/`obj`) and
+compared it with the native build in Chromium, 3 cold loads each on localhost. Screenshots in `docs/spikes/skia/`.
+
+| Check | Native (today) | Skia |
+|---|---|---|
+| Screen readers | no `aria-*` output | **works**: Tab exposes "Enable accessibility"; then `#uno-semantics-root` carries 40+ elements with our `AutomationProperties.Name`, roles (button, listbox, progressbar, combobox, dialog) and text |
+| Room hosting (`BrowserHtmlElement`) | works (pointer-events workaround) | works: pointermove/down/up reach the room canvas |
+| Drawer over the room | scrim dims the room | room **blanks** under the translucent scrim (documented: native elements do not alpha-blend) |
+| Symbols ✦ ✳ ✋ ☕ ☁ | browser fallback fonts | boxes; the default fallback fetches `NotoSansCJKsc-Regular.otf` (~16 MB) from GitHub |
+| Framework download (brotli) | 6.41 MB | 10.76 MB (+4.35: `dotnet.native` 0.90 → 2.59 MB, app assembly 2.58 MB) |
+| Room ready (cold, localhost) | 4.1–4.7 s | 5.6–5.7 s |
+| JS heap at ready | 10 MB | 20–22 MB |
+| Shop open (click → semantics) | 0.9 s (title) | 0.2 s |
+| Atlas clip, fonts, layout | fine | fine |
+
+Also found: list items are announced as record `ToString()` text (`RoomStop { Room = … }`), so list records need
+an accessible name; the page behind an open drawer stays in the semantic tree.
+
+**Verdict: go, with three fixes before switching.** (1) Ship a small OFL symbol font (Noto Sans Symbols 2 subset)
+and set `FeatureConfiguration.Font.FallbackService` to a `CoverageTableFontFallbackService` that serves it from
+the app package. (2) Make the drawer scrim transparent (or opaque) so the room never blanks. (3) Port
+`verify-xaml.mjs` to find controls through the semantic DOM by role and name and click their bounds with the
+real mouse (the semantic elements sit under the Skia canvas). The +4.35 MB and +1.3 s are the price; the app
+assembly size on Skia is worth a look first.
+
 ## Implementation Plan
 
 **Wave 0: prototype and spikes. Done 2026-10-23, verdict go** (see Wave 0 results). The spike code
@@ -606,7 +633,8 @@ Each wave is one or more conventional commits on its own branch, merged only wit
 - **R9 Accounts:** the Turnstile widget inside a XAML dialog's `BrowserHtmlElement`, and Supabase
   session/redirect flows driven from C#. Wave 7 is gated on a 15-min spike; if it fails, the account panels
   stay JS dialogs.
-- **R11 Screen readers on WASM native: open, needs a decision.** Wave 2 spike: `AutomationProperties.Name`
+- **R11 Screen readers on WASM native: spiked on Skia 2026-10-29, switch needs a decision** (see Skia spike
+  results). Wave 2 spike: `AutomationProperties.Name`
   produces no `aria-label` in the native (DOM) renderer of Uno 6.7.135, and setting
   `AutomationConfiguration.IsAccessibilityEnabled` changes nothing (0 aria labels outside the room, logged by
   `verify-xaml.mjs`). The documented screen-reader support (semantic DOM overlay, "Enable accessibility") is
@@ -616,9 +644,9 @@ Each wave is one or more conventional commits on its own branch, merged only wit
 
 ## Unresolved Questions
 
-- **R11 renderer:** move the WASM head to the Skia renderer for screen-reader support (architecture change;
-  re-run waves 0–2 checks, especially `BrowserHtmlElement` hosting and overlay blending), or ship Phase A on
-  the native renderer without screen-reader labels and decide before wave 8?
+- **R11 renderer:** the Skia spike works with three costs (download, boot, fallback font; see Skia spike
+  results). Switch now (port the runtime check to the semantic DOM, ship a symbol font, transparent scrim), or
+  stay native through Phase A and switch before wave 8?
 
 - ~~Server path, new dependencies, trim warnings, standalone build~~ **Approved 2026-10-23:** staged server
   order; `Hosting; MVUX; Navigation; Toolkit` + four OFL fonts + xUnit project; gate on no warnings beyond
