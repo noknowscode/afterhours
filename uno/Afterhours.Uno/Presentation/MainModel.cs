@@ -69,6 +69,9 @@ public partial record MainModel(IGameStore Store, IRoomView RoomView, INavigator
                 "Blueprints" => navigator.NavigateRouteAsync(navigator, "Blueprints", qualifier: Qualifiers.Dialog),
                 "WrapGift" when request.Text("itemId") is { } item =>
                     navigator.NavigateRouteAsync(navigator, "WrapGift", qualifier: Qualifiers.Dialog, data: new WrapGiftRequest(item)),
+                "Studio" => navigator.NavigateRouteAsync(navigator, "Studio", qualifier: Qualifiers.Dialog,
+                    data: new StudioRequest(request.Text("tab") ?? "editor")),
+                "Jukebox" => navigator.NavigateRouteAsync(navigator, "Jukebox", qualifier: Qualifiers.Dialog),
                 _ => Task.CompletedTask,
             };
         }

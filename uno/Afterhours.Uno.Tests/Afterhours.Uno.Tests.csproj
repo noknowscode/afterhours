@@ -6,7 +6,7 @@
 
   <!-- The app targets browser WebAssembly only, so its platform-free service files are compiled here directly. -->
   <ItemGroup>
-    <Compile Include="../Afterhours.Uno/Services/GameRecords.cs;../Afterhours.Uno/Services/BridgeJsonContext.cs;../Afterhours.Uno/Services/Latest.cs;../Afterhours.Uno/Services/GameEvents.cs;../Afterhours.Uno/Services/ShopRecords.cs;../Afterhours.Uno/Services/EventStream.cs;../Afterhours.Uno/Presentation/ShopViews.cs" Link="App/%(Filename)%(Extension)" />
+    <Compile Include="../Afterhours.Uno/Services/GameRecords.cs;../Afterhours.Uno/Services/BridgeJsonContext.cs;../Afterhours.Uno/Services/Latest.cs;../Afterhours.Uno/Services/GameEvents.cs;../Afterhours.Uno/Services/ShopRecords.cs;../Afterhours.Uno/Services/EventStream.cs;../Afterhours.Uno/Presentation/ShopViews.cs;../Afterhours.Uno/Services/MusicRecords.cs;../Afterhours.Uno/Presentation/StudioViews.cs" Link="App/%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

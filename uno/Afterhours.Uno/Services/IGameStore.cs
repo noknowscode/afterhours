@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json;
 
 namespace Afterhours.Uno.Services;
@@ -29,4 +30,21 @@ public interface IGameStore
     ActionReply RestoreBlueprint(string blueprintId);
 
     ActionReply PlayDisc(string discId);
+
+    IAsyncEnumerable<ImmutableList<Song>> WatchSongs(CancellationToken ct);
+
+    // Studio edits (step, mute, solo, volume, tempo, length, undo, clear, new) reply with the whole draft.
+    StudioReply Studio(string op, double a = 0, double b = 0);
+
+    // Studio edits that take text: pack, title, edit (a song id), save (the title).
+    StudioReply StudioText(string op, string text);
+
+    ActionReply PressDisc(string songId);
+
+    ActionReply DeleteSong(string songId);
+
+    // Queues the song for the stage; the game then asks for the stage panel.
+    ActionReply Perform(string songId);
+
+    ActionReply SavePlaylist(IEnumerable<string> songIds);
 }

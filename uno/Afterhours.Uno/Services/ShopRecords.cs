@@ -23,7 +23,8 @@ public sealed partial record OwnedItem(string Id, string Type, bool? Placed, str
     public bool InInventory => Placed == false;
 }
 
-public sealed partial record RoomRef(string Id, string Name);
+// Playlist holds song ids in play order (the room jukebox).
+public sealed partial record RoomRef(string Id, string Name, ImmutableList<string>? Playlist = null);
 
 public sealed partial record DiscSong(string Title, int Bpm);
 

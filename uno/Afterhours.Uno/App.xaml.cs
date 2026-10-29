@@ -34,6 +34,7 @@ public partial class App : Application
                         var game = new JsGame(new GameEvents());
                         services.AddSingleton<IGameStore>(game);
                         services.AddSingleton<IRoomView>(game);
+                        services.AddSingleton<IMusic>(game);
                     }
                 })
                 .UseNavigation(ReactiveViewModelMappings.ViewModelMappings, RegisterRoutes)
@@ -54,7 +55,9 @@ public partial class App : Application
             new ViewMap<MainPage, MainModel>(),
             new DataViewMap<CatalogPage, CatalogModel, CatalogRequest>(),
             new ViewMap<BlueprintsPage, BlueprintsModel>(),
-            new DataViewMap<WrapGiftPage, WrapGiftModel, WrapGiftRequest>());
+            new DataViewMap<WrapGiftPage, WrapGiftModel, WrapGiftRequest>(),
+            new DataViewMap<StudioPage, StudioModel, StudioRequest>(),
+            new ViewMap<JukeboxPage, JukeboxModel>());
         routes.Register(
             new RouteMap("", View: views.FindByViewModel<ShellModel>(), Nested:
             [
@@ -62,6 +65,8 @@ public partial class App : Application
                 new("Catalog", View: views.FindByViewModel<CatalogModel>()),
                 new("Blueprints", View: views.FindByViewModel<BlueprintsModel>()),
                 new("WrapGift", View: views.FindByViewModel<WrapGiftModel>()),
+                new("Studio", View: views.FindByViewModel<StudioModel>()),
+                new("Jukebox", View: views.FindByViewModel<JukeboxModel>()),
             ]));
     }
 

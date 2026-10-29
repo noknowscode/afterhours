@@ -6,7 +6,7 @@ namespace Afterhours.Uno.Services;
 
 // Phase A: both interfaces are backed by the JavaScript game running in the same page.
 [System.Runtime.Versioning.SupportedOSPlatform("browser")]
-public sealed class JsGame(GameEvents events) : IGameStore, IRoomView
+public sealed class JsGame(GameEvents events) : IGameStore, IRoomView, IMusic
 {
     private static readonly TimeSpan OpenTimeout = TimeSpan.FromSeconds(15);
     private bool _mounted;
@@ -44,6 +44,33 @@ public sealed class JsGame(GameEvents events) : IGameStore, IRoomView
     public ActionReply RestoreBlueprint(string blueprintId) => Reply(() => GameHost.RestoreBlueprint(blueprintId));
 
     public ActionReply PlayDisc(string discId) => Reply(() => GameHost.PlayDisc(discId));
+
+    public IAsyncEnumerable<ImmutableList<Song>> WatchSongs(CancellationToken ct) => events.Songs.Watch(ct);
+
+    public StudioReply Studio(string op, double a = 0, double b = 0) => StudioReply(() => GameHost.Studio(op, a, b));
+
+    public StudioReply StudioText(string op, string text) => StudioReply(() => GameHost.StudioText(op, text));
+
+    public ActionReply PressDisc(string songId) => Reply(() => GameHost.PressDisc(songId));
+
+    public ActionReply DeleteSong(string songId) => Reply(() => GameHost.DeleteSong(songId));
+
+    public ActionReply Perform(string songId) => Reply(() => GameHost.Perform(songId));
+
+    public ActionReply SavePlaylist(IEnumerable<string> songIds) => Reply(() => GameHost.SavePlaylist(Ids(songIds)));
+
+    public IAsyncEnumerable<Playback> WatchPlayback(CancellationToken ct) => events.Playback.Watch(ct);
+
+    public bool Play(string? songId) => _mounted && Parse(GameHost.PlayTrack(songId ?? "")).Ok;
+
+    public async Task<ActionReply> ExportWav() => _mounted ? Parse(await GameHost.ExportWav()) : ActionReply.NotReady;
+
+    public ActionReply PlayPlaylist(IEnumerable<string> songIds) => Reply(() => GameHost.PlayPlaylist(Ids(songIds)));
+
+    private static string Ids(IEnumerable<string> ids) => JsonSerializer.Serialize(ids.ToImmutableList(), BridgeJsonContext.Default.ImmutableListString);
+
+    private StudioReply StudioReply(Func<string> call) =>
+        _mounted ? JsonSerializer.Deserialize(call(), BridgeJsonContext.Default.StudioReply)! : Services.StudioReply.NotReady;
 
     private ActionReply Reply(Func<string> call) => _mounted ? Parse(call()) : ActionReply.NotReady;
 

@@ -16,6 +16,15 @@
         <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#00000000" /> <!-- Transparent -->
         <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#00000000" /> <!-- Transparent -->
         <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="#00000000" /> <!-- Transparent -->
+        <SolidColorBrush x:Key="SliderThumbBackground" Color="#DFED8C" /> <!-- Acid -->
+        <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#E9F4AE" /> <!-- AcidHover -->
+        <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#C8D57A" /> <!-- AcidPressed -->
+        <SolidColorBrush x:Key="SliderTrackValueFill" Color="#DFED8C" /> <!-- Acid -->
+        <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#E9F4AE" /> <!-- AcidHover -->
+        <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#C8D57A" /> <!-- AcidPressed -->
+        <SolidColorBrush x:Key="SliderTrackFill" Color="#2C2C38" /> <!-- SurfaceHover -->
+        <SolidColorBrush x:Key="SliderTrackFillPointerOver" Color="#2C2C38" /> <!-- SurfaceHover -->
+        <SolidColorBrush x:Key="SliderTrackFillPressed" Color="#2C2C38" /> <!-- SurfaceHover -->
         <SolidColorBrush x:Key="AccentButtonBackground" Color="#DFED8C" /> <!-- Acid -->
         <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#E9F4AE" /> <!-- AcidHover -->
         <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#C8D57A" /> <!-- AcidPressed -->
@@ -76,6 +85,35 @@
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Left" />
+  </Style>
+
+  <!-- Sequencer steps: the fill is the state, so hover only lifts opacity. -->
+  <Style x:Key="StepButtonStyle" TargetType="Button">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid x:Name="Root" Background="{TemplateBinding Background}" CornerRadius="{TemplateBinding CornerRadius}">
+            <VisualStateManager.VisualStateGroups>
+              <VisualStateGroup x:Name="CommonStates">
+                <VisualState x:Name="Normal" />
+                <VisualState x:Name="PointerOver">
+                  <VisualState.Setters>
+                    <Setter Target="Root.Opacity" Value="0.8" />
+                  </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Pressed">
+                  <VisualState.Setters>
+                    <Setter Target="Root.Opacity" Value="0.6" />
+                  </VisualState.Setters>
+                </VisualState>
+              </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+            <ContentPresenter Content="{TemplateBinding Content}" />
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
   </Style>
 
   <Style x:Key="IconButtonStyle" TargetType="Button" BasedOn="{StaticResource SoftButtonStyle}">
