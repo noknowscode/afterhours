@@ -88,6 +88,12 @@ const waitText = async (page, pattern, ms = 5000) => {
     if ((await nodes(page, pattern)).length) return true;
   return false;
 };
+// Waits up to `ms` for XAML text to disappear (a sheet closing).
+const waitGone = async (page, pattern, ms = 4000) => {
+  for (const start = Date.now(); Date.now() - start < ms; await page.waitForTimeout(150))
+    if (!(await nodes(page, pattern)).length) return true;
+  return false;
+};
 // How many distinct colours (4 bits a channel) a region of the screen shows: art against a flat fill.
 const colours = async (page, r) => {
   const png = await page.screenshot({clip: {x: r.x, y: r.y, width: r.w, height: r.h}});
@@ -213,8 +219,8 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     record(`${tag}: play starts audio and shows pause`, audio.includes('running') && await visible(page, 'Ⅱ'), {audio});
     await xamlClick(page, 'Ⅱ');
 
-    // A game panel opened from XAML (your circle stays a game panel until wave 6).
-    await xamlClick(page, 'Friends');
+    // A game panel opened from XAML (joining the shared world stays a game panel until wave 7).
+    await xamlClick(page, 'JOIN SHARED WORLD');
     await page.waitForTimeout(500);
     record(`${tag}: dock opens a game panel`, await game(page, () => document.querySelector('.ah-root #modal').open));
     await page.screenshot({path: path.join(out, `${band}-game-panel.png`)});
@@ -559,6 +565,40 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     record(`${tag}: a portal links to another of your rooms`, portalOpen && linked && !(await visible(page, 'Where does this lead?')), {portalOpen, linked});
     }
 
+    // Wave 6 (solo): a resident joins your circle, then is blocked and unblocked; chat preferences save.
+    {
+    await game(page, () => window.AfterhoursHost.open('Resident', {name: 'miso'}));
+    const residentOpen = await waitText(page, 'RESIDENT CHARACTER', 5000) && await waitText(page, 'This resident is part of the solo world.', 1000);
+    await page.waitForTimeout(400);
+    await xamlClick(page, 'Add to my circle');
+    const circled = await waitText(page, 'Remove from circle', 3000) && await game(page, () => AfterhoursWorld.game.state.friends.includes('miso'));
+    await page.screenshot({path: path.join(out, `${band}-resident.png`)});
+    record(`${tag}: a resident is added to your circle`, residentOpen && circled, {residentOpen, circled});
+    await xamlClick(page, 'Block replies');
+    await page.waitForTimeout(800);
+    const blocked = await game(page, () => AfterhoursWorld.game.state.blocked.includes('miso')) && !(await visible(page, 'RESIDENT CHARACTER'));
+
+    const friendsOpen = await openSheet(page, 'Friends', 'Good company');
+    const listed = await waitText(page, 'miso', 3000);
+    await page.screenshot({path: path.join(out, `${band}-friends.png`)});
+    await clickThrough(page, 'miso', 'RESIDENT CHARACTER');
+    const viewed = await visible(page, 'Remove from circle');
+    record(`${tag}: your circle lists the resident and opens their card`, blocked && friendsOpen && listed && viewed, {blocked, friendsOpen, listed, viewed});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
+
+    const prefsOpen = await openSheet(page, 'Chat preferences', 'Make space for yourself');
+    await xamlClick(page, 'Unblock miso');
+    const unblocked = await waitText(page, 'Nobody is blocked.', 3000) && await game(page, () => !AfterhoursWorld.game.state.blocked.length);
+    await xamlClick(page, 'Mute resident replies');
+    await page.waitForTimeout(300);
+    await xamlClick(page, 'Save preferences');
+    await page.waitForTimeout(800);
+    const muted = await game(page, () => AfterhoursWorld.game.state.settings.muteGuests);
+    record(`${tag}: chat preferences unblock a resident and mute replies`, prefsOpen && unblocked && muted === true, {prefsOpen, unblocked, muted});
+    await game(page, () => { AfterhoursWorld.game.state.settings.muteGuests = false; AfterhoursWorld.game.save(); });
+    }
+
     // Wave 4: journal, help, wardrobe and profile (last: restoring a save replaces the world).
     {
     const ready = await game(page, () => AfterhoursWorld.journalState().quests.find(q => q.value === q.target && !q.claimed));
@@ -731,6 +771,43 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
   await xamlClick(b.page, 'Back to the stage');
   const back = await waitText(b.page, 'The room is listening', 3000) && !(await visible(b.page, 'This week’s chart'));
   record('shared: the weekly chart opens from the stage and ranks the applauded track', over && chartOpen && ranked && back, {over, chartOpen, ranked, back});
+  // Wave 6: the shared world panel lists the other player; a friend request is accepted; a trade opens and is cancelled.
+  {
+  const alpha = await a.page.evaluate(() => AfterhoursOnline.socialState().name);
+  await a.page.keyboard.press('Escape');
+  await b.page.keyboard.press('Escape');
+  await a.page.waitForTimeout(600);
+  const worldOpen = await openSheet(a.page, 'SHARED WORLD', 'The world is better together') && await waitText(a.page, /^Connected as xamlalpha/, 2000);
+  const beta = await waitText(a.page, /^xamlbeta(-\w+)?$/, 5000);
+  await a.page.screenshot({path: path.join(out, 'shared-world.png')});
+  record('shared: the XAML shared world lists the other player', worldOpen && beta, {worldOpen, beta});
+  await clickThrough(a.page, /^xamlbeta(-\w+)?$/, 'CONNECTED PLAYER');
+  await xamlClick(a.page, 'Add friend');
+  await a.page.waitForTimeout(1500);
+  await openSheet(b.page, 'Friends', 'Good company');
+  const asked = await waitText(b.page, 'Wants to be friends', 8000);
+  await xamlClick(b.page, 'Accept');
+  const befriended = await waitText(b.page, alpha, 8000) && await waitText(b.page, /^(Here now|Seen .+)$/, 3000);
+  await b.page.screenshot({path: path.join(out, 'shared-friends.png')});
+  record('shared: a friend request from the player card is accepted in Friends', asked && befriended, {asked, befriended});
+  await b.page.keyboard.press('Escape');
+  await b.page.waitForTimeout(600);
+
+  await xamlClick(a.page, 'Trade furniture');
+  const waiting = await waitText(a.page, 'Waiting for the other player to accept…', 8000);
+  await openSheet(b.page, 'SHARED WORLD', 'The world is better together');
+  await clickThrough(b.page, /^Furniture trade · xamlalpha/, 'FURNITURE TRADING');
+  await xamlClick(b.page, 'Accept trade invitation');
+  const opened = await waitText(b.page, 'Choose up to eight pieces from your inventory:', 8000) && await waitText(a.page, 'Choose up to eight pieces from your inventory:', 8000);
+  await a.page.screenshot({path: path.join(out, 'shared-trade.png')});
+  await xamlClick(a.page, 'Cancel trade');
+  const closed = await waitText(a.page, 'Trade closed', 8000) && await waitText(b.page, 'Trade closed', 8000);
+  record('shared: a trade is offered, accepted and cancelled, and both sheets follow it', waiting && opened && closed, {waiting, opened, closed});
+  await a.page.keyboard.press('Escape');
+  await b.page.keyboard.press('Escape');
+  await a.page.waitForTimeout(600);
+  }
+
   // Wave 5: the shared navigator lists the public rooms and joins one.
   await a.page.keyboard.press('Escape');
   await a.page.waitForTimeout(600);
@@ -739,7 +816,8 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
   await xamlClick(a.page, 'Midnight Diner');
   await a.page.waitForTimeout(2000);
   const joined = await a.page.evaluate(() => document.querySelector('.ah-root #roomTitle').textContent);
-  record('shared: the XAML navigator joins a shared public room', sharedNavigator && joined.startsWith('Midnight Diner') && !(await visible(a.page, 'Rooms with a heartbeat')), {sharedNavigator, joined});
+  const navigatorClosed = await waitGone(a.page, 'Rooms with a heartbeat', 4000);
+  record('shared: the XAML navigator joins a shared public room', sharedNavigator && joined.startsWith('Midnight Diner') && navigatorClosed, {sharedNavigator, joined, navigatorClosed});
   for (const p of players) {
     record('shared: no page errors', !p.errors.length, {errors: p.errors.slice(0, 3)});
     await p.context.close();

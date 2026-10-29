@@ -6,7 +6,7 @@
 
   <!-- The app targets browser WebAssembly only, so its platform-free service files are compiled here directly. -->
   <ItemGroup>
-    <Compile Include="../Afterhours.Uno/Services/GameRecords.cs;../Afterhours.Uno/Services/BridgeJsonContext.cs;../Afterhours.Uno/Services/Latest.cs;../Afterhours.Uno/Services/GameEvents.cs;../Afterhours.Uno/Services/ShopRecords.cs;../Afterhours.Uno/Services/EventStream.cs;../Afterhours.Uno/Presentation/ShopViews.cs;../Afterhours.Uno/Services/MusicRecords.cs;../Afterhours.Uno/Presentation/StudioViews.cs;../Afterhours.Uno/Services/StageRecords.cs;../Afterhours.Uno/Presentation/StageViews.cs;../Afterhours.Uno/Services/ResidentRecords.cs;../Afterhours.Uno/Presentation/ResidentViews.cs;../Afterhours.Uno/Services/RoomRecords.cs;../Afterhours.Uno/Presentation/RoomViews.cs" Link="App/%(Filename)%(Extension)" />
+    <Compile Include="../Afterhours.Uno/Services/GameRecords.cs;../Afterhours.Uno/Services/BridgeJsonContext.cs;../Afterhours.Uno/Services/Latest.cs;../Afterhours.Uno/Services/GameEvents.cs;../Afterhours.Uno/Services/ShopRecords.cs;../Afterhours.Uno/Services/EventStream.cs;../Afterhours.Uno/Presentation/ShopViews.cs;../Afterhours.Uno/Services/MusicRecords.cs;../Afterhours.Uno/Presentation/StudioViews.cs;../Afterhours.Uno/Services/StageRecords.cs;../Afterhours.Uno/Presentation/StageViews.cs;../Afterhours.Uno/Services/ResidentRecords.cs;../Afterhours.Uno/Presentation/ResidentViews.cs;../Afterhours.Uno/Services/RoomRecords.cs;../Afterhours.Uno/Presentation/RoomViews.cs;../Afterhours.Uno/Services/SocialRecords.cs;../Afterhours.Uno/Presentation/SocialViews.cs" Link="App/%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

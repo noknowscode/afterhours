@@ -111,6 +111,29 @@ test('panels that moved to XAML are requests to the host, not game markup', asyn
   assert.match(game, /openPanel\('RoomTools'\)/);
   assert.match(game, /openPanel\('RoomObject',\{itemId:item\.id\}\)/);
   assert.match(game, /openPanel\('Portal',\{itemId:item\.id\}\)/);
+  for (const title of ['CHAT PREFERENCES', 'RESIDENT CHARACTER', 'YOUR CIRCLE'])
+    assert.ok(!game.includes(`'${title}'`), title + ' is still built by the game');
+  for (const title of ['SHARED SESSIONS', 'SHARED WORLD', 'CONNECTED PLAYER', 'COMMUNITY', 'SINCE YOUR LAST VISIT', 'FRIENDS & REQUESTS', 'FURNITURE TRADING'])
+    assert.ok(!online.includes(`,'${title}'`), title + ' is still built by the online client');
+  assert.match(game, /button\('friendsTab',\(\)=>openPanel\('Friends'\)\);/);
+  assert.match(game, /button\('socialSettings',\(\)=>openPanel\('ChatPrefs'\)\);/);
+  assert.match(game, /openPanel\('Resident',\{name:person\.name\}\)/);
+  assert.match(online, /function playerPanel\(id\)\{select\('peer',id\);W\.openPanel\('Player',\{id\}\);\}/);
+  assert.match(online, /function friendsPanel\(\)\{W\.openPanel\('Friends'\);\}/);
+  assert.match(online, /W\.openPanel\('Trade',\{id:trade\.id\}\)/);
+  assert.match(online, /W\.openPanel\('Away'\)/);
+  assert.match(online, /if\(!ready\|\|online\)\{W\.openPanel\('SharedWorld'\);return;\}/);
+});
+
+test('every social action the app sends is one the online client knows', async () => {
+  const online = await readFile(new URL('../dist/online.js', import.meta.url), 'utf8');
+  const models = await Promise.all(['FriendsModel', 'PlayerModel', 'TradeModel', 'AwayModel', 'SharedWorldModel']
+    .map(name => readFile(new URL(`../uno/Afterhours.Uno/Presentation/${name}.cs`, import.meta.url), 'utf8')));
+  const page = await readFile(new URL('../uno/Afterhours.Uno/Views/SharedWorldPage.xaml', import.meta.url), 'utf8');
+  const sent = new Set([...models.join('\n').matchAll(/Social\.Act\("(\w+)"/g), ...page.matchAll(/Command="\{Binding Open\}" CommandParameter="(\w+)"/g)].map(m => m[1]));
+  const act = online.slice(online.indexOf('async function socialAct('), online.indexOf('  function stagePanel(){'));
+  assert.ok(sent.size >= 15, 'expected the social models to send their actions');
+  for (const op of sent) assert.match(act, new RegExp(`(case '${op}'|\\b${op}:\\[)`), op + ' is not a social action in online.js');
 });
 
 test('every function the app imports is exported by host.mjs', async () => {
