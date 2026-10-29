@@ -4,7 +4,7 @@
   const get=id=>document.getElementById(id),h=W.h;
   let ready=false,online=false,token='',state=null,solo=null,remote=null,applying=false,joining=false,lastPose=0,lastResponse=0,polling=false,lastGameRevision=-1,managed=false,account=null,retryAfter=0;
   let requestChain=Promise.resolve(),pending=0,lastChatIds=new Set(),seenNotifications=new Set(),seenDoorRequests=new Set(),rendered=new Map(),extrasTimer=null,lastTradeStatus='',lastStage='',listen=false,networkErrors=0;
-  let rosterSignature='',friendsSignature='',stageSignature='',poseSignature='';
+  let rosterSignature='',friendsSignature='',poseSignature='';
   const sharedMusic=new AfterhoursMusic(),originalDispatch=W.game.dispatch.bind(W.game),originalSave=W.game.save.bind(W.game),oldEnter=enterRoom,oldSeat=useSeat,oldStand=standUp,oldEditing=startEditing;
   async function request(path,body,auth=true){
     if(auth&&Date.now()<retryAfter)throw Error('The playtest is taking a short pause. Your saved character is safe; retry in a minute.');
@@ -60,11 +60,9 @@
     }
     const rosterKey=JSON.stringify([next.peers.map(p=>[p.id,p.name,p.level,p.motto]),next.doorRequests,next.trades.map(t=>[t.id,t.status])]);
     const friendsKey=JSON.stringify([next.friends,next.friendRequests]);
-    const stageKey=JSON.stringify([next.stage?.id,next.stage?.votes,next.stage&&Date.now()>=next.stage.start,next.queue,next.game.songs.map(s=>[s.id,s.updated])]);
-    if(get('sharedStage')&&stageKey!==stageSignature)renderStageBody();
     if(get('onlineFriends')&&friendsKey!==friendsSignature)renderFriends(get('onlineFriends'));
     if(get('sharedGuestList')&&rosterKey!==rosterSignature)renderGuests();
-    rosterSignature=rosterKey;friendsSignature=friendsKey;stageSignature=stageKey;
+    rosterSignature=rosterKey;friendsSignature=friendsKey;
   }
   async function connect(name,captchaToken){
     try{
@@ -232,13 +230,12 @@
       (items.length>10?`<p class="small-note">and ${items.length-10} more</p>`:'')+'</div><button class="primary" id="awayDone">Got it</button>');
     W.button('awayDone',()=>{send('awaySeen').catch(()=>{});W.close();});
   }
-  function chartPanel(){
-    const chart=state?.chart;if(!chart)return;const self=state.self.id;
-    const row=(e,mark)=>`<div class="chart-row${e.user===self?' own':''}"><span class="chart-rank">${mark||e.rank}</span><div><b>${h(e.title)}</b><small>${h(e.artist)}${e.user===self?' · you':''}</small></div><em>${e.listeners} ♡</em></div>`;
-    W.panel('This week’s chart','WEEK '+chart.week.slice(-2)+' · RESETS MONDAY',(chart.top.length?chart.top.map(e=>row(e)).join(''):'<p>No applause yet this week. Play a set and the chart opens.</p>')+
-      (chart.last?.top.length?'<h3 class="chart-heading">Last week</h3>'+chart.last.top.map(e=>row(e,['①','②','③'][e.rank-1])).join(''):'')+
-      '<p class="small-note">Ranked by how many different listeners applauded a track this week. The top three earn 150, 100 and 60 ✦.</p><button class="soft-button" id="chartBack">Back to the stage</button>');
-    W.button('chartBack',stagePanel);
+  // The weekly chart and the shared stage are XAML panels in the Uno app; these feed them.
+  function chartPanel(){W.openPanel('Chart');}
+  function chartState(){
+    const chart=state?.chart;if(!chart)return null;const self=state.self.id;
+    const row=(e,mark)=>({mark:mark||String(e.rank),title:e.title,artist:e.artist,listeners:e.listeners,own:e.user===self});
+    return {week:'WEEK '+chart.week.slice(-2)+' · RESETS MONDAY',top:chart.top.map(e=>row(e)),last:(chart.last?.top||[]).map(e=>row(e,['①','②','③'][e.rank-1]))};
   }
   function friendsPanel(){W.panel('Your people','FRIENDS & REQUESTS','<div id="onlineFriends"></div>');renderFriends(get('onlineFriends'));}
   function tradePanel(trade){
@@ -262,23 +259,21 @@
     W.button('updateTradeOffer',()=>send('tradeOffer',{id:trade.id,items:Array.from(get('modalBody').querySelectorAll('[data-trade-item]:checked')).map(i=>i.dataset.tradeItem)}));
     W.button('confirmTrade',()=>send('tradeConfirm',{id:trade.id}).then(out=>tradePanel(out.snapshot.trades.find(t=>t.id===trade.id))));
   }
-  function stagePanel(){W.panel('The room is listening','SHARED MUSIC STAGE','<div id="sharedStage"></div>');renderStageBody();}
-  function renderStageBody(){
-    if(!state||!get('sharedStage'))return;const current=state.stage,now=Date.now(),remaining=current?Math.max(0,Math.ceil((current.end-now)/1000)):0,own=current?.user===state.self.id;
-    get('sharedStage').innerHTML=(current?`<div class="stage-now"><div class="stage-disc">◉</div><span class="eyebrow">${now<current.start?'UP NEXT':'ON STAGE'}</span><h3>${h(current.song.title)}</h3><p>by ${h(current.artist)} · ${remaining}s remaining</p><p>${Object.keys(current.votes).length} applause</p><div class="button-row"><button class="primary" id="listenShared">${listen?'Ⅱ Mute stage':'▶ Listen together'}</button><button class="soft-button" id="voteShared" ${own||current.votes[state.self.id]||now<current.start?'disabled':''}>${own?'Your performance':current.votes[state.self.id]?'Applauded ✓':'♡ Applaud'}</button></div></div>`:'<p>The stage is open. Be the first to play tonight.</p>')+
-      '<h3>Up next</h3>'+state.queue.map((q,i)=>`<div class="stage-lineup"><span>${i+1}</span><div><b>${h(q.song.title)}</b><p>${h(q.artist)}</p></div></div>`).join('')+
-      (own||state.queue.some(q=>q.user===state.self.id)?'<button class="soft-button" id="leaveSharedStage">Leave queue / stage</button>':
-      '<div class="song-picker">'+state.game.songs.map(s=>`<button data-shared-song="${s.id}"><span>◉</span><div><b>${h(s.title)}</b><small>${s.bpm} BPM</small></div><em>Join queue ↗</em></button>`).join('')+'</div>')+
-      (!state.game.songs.length?'<button id="sharedMakeTrack" class="primary">Make your first track</button>':'')+
-      '<button class="soft-button" id="openChart">Weekly chart ↗</button><p class="small-note">Songs start from a shared clock. One applause per listener; artists cannot applaud their own set. Each listener’s applause pays the artist '+G.applause.credits+' ✦ once a day, up to '+G.applause.daily+' ✦ a day.</p>';
-    W.button('listenShared',()=>{listen=!listen;if(listen&&state.stage)playStage(state.stage);else sharedMusic.stop();renderStageBody();});
-    W.button('voteShared',()=>send('vote'));
-    W.button('leaveSharedStage',()=>send('leaveQueue'));
-    W.button('sharedMakeTrack',()=>W.showStudio());
-    W.button('openChart',chartPanel);
-    get('sharedStage').querySelectorAll('[data-shared-song]').forEach(b=>b.onclick=()=>queueSong(b.dataset.sharedSong));
+  function stagePanel(){W.stagePanel();}
+  function stageState(){
+    if(!state)return null;const current=state.stage,now=Date.now(),self=state.self.id;
+    return {mode:'shared',
+      current:current&&{title:current.song.title,artist:current.artist,phase:now<current.start?'UP NEXT':'ON STAGE',
+        remaining:Math.max(0,Math.ceil((current.end-now)/1000)),progress:now<current.start?0:Math.min(1,Math.round((now-current.start)/(current.end-current.start)*100)/100),
+        applause:Object.keys(current.votes).length,started:now>=current.start},
+      queue:state.queue.map(q=>({title:q.song.title,artist:q.artist})),
+      own:current?.user===self||state.queue.some(q=>q.user===self),performing:current?.user===self,
+      canApplaud:!!current&&current.user!==self&&!current.votes[self]&&now>=current.start,applauded:!!current?.votes[self],listening:listen,
+      songs:state.game.songs.map(s=>({id:s.id,title:s.title,detail:s.bpm+' BPM'})),chart:chartState(),complete:null,
+      note:'Songs start from a shared clock. One applause per listener; artists cannot applaud their own set. Each listener’s applause pays the artist '+G.applause.credits+' ✦ once a day, up to '+G.applause.daily+' ✦ a day.'};
   }
-  function queueSong(id){listen=true;sharedMusic.ensure().catch(()=>{});send('queue',{song:id}).then(()=>stagePanel()).catch(()=>{});}
+  function toggleListen(){listen=!listen;if(listen&&state?.stage)playStage(state.stage);else sharedMusic.stop();}
+  function queueSong(id,show=true){listen=true;sharedMusic.ensure().catch(()=>{});send('queue',{song:id}).then(()=>{if(show)stagePanel();}).catch(()=>{});}
   async function playStage(stage){
     try{W.stopMusic();await sharedMusic.play(stage.song,()=>{},stage.start);get('trackTitle').textContent=stage.song.title;$('.track p').textContent=stage.artist+' · live stage';}
     catch{listen=false;W.toast('Choose Listen to enable shared audio.');}
@@ -305,7 +300,8 @@
     W.ctx.fillStyle='#b5e8b2';W.ctx.beginPath();W.ctx.arc(x+22,y+26,3,0,Math.PI*2);W.ctx.fill();
   }
   const api={
-    directory:roomDirectory,connected:()=>online,remoteRoom:()=>remote,peers:()=>state?.peers||[],panel,renderFriends,stagePanel,queueSong,
+    directory:roomDirectory,connected:()=>online,remoteRoom:()=>remote,peers:()=>state?.peers||[],panel,renderFriends,stagePanel,chartPanel,queueSong,stageState,toggleListen,
+    leaveStage:()=>send('leaveQueue').catch(()=>{}),applaud:()=>send('vote').catch(()=>{}),
     visitOwnRoom:id=>joinRoom('home:'+state.self.id+':'+id),
     rollDice:id=>send('command',{type:'itemAction',payload:{id,action:'roll'}}).then(out=>out.result),
     chat:(text,mode,to)=>{if(online&&!(mode==='whisper'&&!state.peers.some(p=>p.id===to)))send('chat',{text,mode,to}).catch(()=>{});},
@@ -323,7 +319,6 @@
           networkErrors++;if(![429,503].includes(error.status)){retryAfter=Date.now()+Math.min(15000,1000*2**Math.min(networkErrors,4));get('connectionLabel').textContent='RECONNECTING…';}
         }).finally(()=>polling=false);
       }
-      if(get('sharedStage')&&state?.stage){const el=get('sharedStage').querySelector('.stage-now>p');if(el)el.textContent='by '+state.stage.artist+' · '+Math.max(0,Math.ceil((state.stage.end-Date.now())/1000))+'s remaining';}
     },
     layers(layers,t){if(!online)return;for(const peer of state?.peers||[])layers.push({depth:W.avatarDepth(rendered.get(peer.id)||peer.pose,peer.pose.seat?.sitting?peer.pose.seat:null),draw:()=>drawPeer(peer,t)});}
   };

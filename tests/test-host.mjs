@@ -88,6 +88,12 @@ test('panels that moved to XAML are requests to the host, not game markup', asyn
     assert.ok(!game.includes(`'${title}'`), title + ' is still built by the game');
   assert.match(game, /studio=function\(tab='editor'\)\{openPanel\('Studio',\{tab\}\);\};/);
   assert.match(game, /function playlistPanel\(\)\{openPanel\('Jukebox'\);\}/);
+  const online = await readFile(new URL('../dist/online.js', import.meta.url), 'utf8');
+  for (const title of ['THE LISTENING STAGE', 'SET COMPLETE'])
+    assert.ok(!game.includes(`'${title}'`), title + ' is still built by the game');
+  assert.ok(!online.includes("'SHARED MUSIC STAGE'"), 'the shared stage is still built by the online client');
+  assert.match(game, /function stagePanel\(\)\{openPanel\('Stage'\);\}/);
+  assert.match(online, /function chartPanel\(\)\{W\.openPanel\('Chart'\);\}/);
 });
 
 test('every studio edit the app sends exists in the game', async () => {

@@ -220,3 +220,19 @@ export function deleteSong(id) { return reply(world.deleteSong(id)); }
 export function perform(id) { world.perform(id); return reply({ ok: true }); }
 export function savePlaylist(ids) { return reply(world.savePlaylist(JSON.parse(ids))); }
 export function playPlaylist(ids) { world.savePlaylist(JSON.parse(ids)); world.startPlaylist(); return reply({ ok: true }); }
+
+// The stage (solo or shared). While the app's stage panel watches, its state is sent when it changes (the
+// countdown and progress move about four times a second); the game opens the panel itself only when it is closed.
+let stageTimer = null;
+export function stage(op, id) { return reply(world.stageAct(op, id)); }
+export function stageWatch(on) {
+  world.stageAct('watch', on);
+  clearInterval(stageTimer);
+  stageTimer = null;
+  delete sent.parts.stage;
+  if (on) {
+    const push = () => emitIfChanged('stage', world.stageState());
+    push();
+    stageTimer = setInterval(push, 250);
+  }
+}

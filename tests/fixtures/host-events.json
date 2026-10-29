@@ -417,6 +417,54 @@
   }
  },
  {
+  "type": "stage",
+  "stage": {
+   "mode": "shared",
+   "current": {
+    "title": "Shared sketch",
+    "artist": "xamlalpha",
+    "phase": "ON STAGE",
+    "remaining": 12,
+    "progress": 0.4,
+    "applause": 2,
+    "started": true
+   },
+   "queue": [
+    {
+     "title": "Night bus",
+     "artist": "miso"
+    }
+   ],
+   "own": false,
+   "performing": false,
+   "canApplaud": true,
+   "applauded": false,
+   "listening": true,
+   "songs": [
+    {
+     "id": "song-1",
+     "title": "Side B sketch",
+     "detail": "96 BPM"
+    }
+   ],
+   "chart": {
+    "week": "WEEK 44 · RESETS MONDAY",
+    "top": [
+     {
+      "mark": "1",
+      "title": "Shared sketch",
+      "artist": "xamlalpha",
+      "listeners": 2,
+      "own": false
+     }
+    ],
+    "last": []
+   },
+   "complete": null,
+   "note": "Songs start from a shared clock."
+  }
+ },
+ {
   "type": "unknown-future-event",
   "value": 1
  }

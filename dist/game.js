@@ -349,28 +349,31 @@
   function syncAudioControls(){get('sound').textContent=music.running?'♫ Sound on':'♫ Sound off';get('play').textContent=music.running?'Ⅱ':'▶';playback(music.song,-1);}
   toggleSound=()=>music.running?stopMusic():playSong(draft);
   button('sound',toggleSound);button('play',toggleSound);button('studioOpen',()=>studio());
-  function stagePanel(){
-    if(window.AfterhoursOnline?.connected())return window.AfterhoursOnline.stagePanel();
-    const s=game.state;
-    let body='<p>Play an original track for the room. Resident characters react to your performance. Finish a set to earn 40 credits and artist XP, up to five rewarded sets each day.</p>';
-    if(stage){
-      const remaining=Math.max(0,Math.ceil((stage.end-Date.now())/1000));
-      body+=`<div class="stage-now"><div class="stage-disc">◉</div><span class="eyebrow">${stage.started?'ON STAGE':'YOU’RE NEXT'}</span><h3>${h(stage.song.title)}</h3><p id="stageCountdown">${remaining}s ${stage.started?'remaining':'until your set'}</p><div class="mini-meter"><i id="stageProgress" style="width:0%"></i></div></div><button class="soft-button" id="leaveStage">Leave queue / stage</button>`;
-    }else{
-      body+=`<div class="stage-lineup"><span>01</span><div><b>Open mic · your slot is ready</b><p>One original track. Twenty seconds in the spotlight.</p></div><span>♫</span></div><div class="song-picker">${s.songs.map(t=>`<button data-queue-song="${t.id}"><span>◉</span><div><b>${h(t.title)}</b><small>${t.bpm} BPM · ${h(t.pack)}</small></div><em>Join stage ↗</em></button>`).join('')||'<div class="empty-state"><span>♫</span><h3>Something only you could make.</h3><p>Save a track in the studio, then come back for your debut.</p><button id="stageToStudio" class="primary">Make my first track</button></div>'}</div>`;
-    }
-    body+='<p class="small-note">Solo world: the audience is made up of resident characters. Shared sessions show real players separately.</p>';
-    panel('Your moment on Side B','THE LISTENING STAGE',body);
-    buttons('[data-queue-song]',b=>queueSong(b.dataset.queueSong));button('stageToStudio',()=>studio());
-    button('leaveStage',()=>{cancelStage();stagePanel();});
+  function stagePanel(){openPanel('Stage');}
+  // The stage as data for the hosting app: solo here, shared from the online client. lastSet is the finished set
+  // the stage shows until you queue again or go back to the stage.
+  let lastSet=null,stageWatched=false;
+  function stageState(){
+    if(window.AfterhoursOnline?.connected())return window.AfterhoursOnline.stageState();
+    const now=Date.now(),songs=game.state.songs.map(t=>({id:t.id,title:t.title,detail:t.bpm+' BPM · '+t.pack}));
+    const current=stage&&{title:stage.song.title,artist:player.name,phase:stage.started?'ON STAGE':'YOU’RE NEXT',
+      remaining:Math.max(0,Math.ceil((stage.end-now)/1000)),progress:stage.started?Math.min(1,Math.round((now-stage.started)/200)/100):0,applause:stage.applause,started:!!stage.started};
+    return {mode:'solo',current,queue:[],own:!!stage,performing:!!stage?.started,canApplaud:false,applauded:false,listening:false,songs,chart:null,complete:stage?null:lastSet,
+      note:'Solo world: the audience is made up of resident characters. Shared sessions show real players separately.'};
   }
-  function queueSong(id){
-    if(window.AfterhoursOnline?.connected())return window.AfterhoursOnline.queueSong(id);
-    if(stage){toast('You are already in the stage queue.');stagePanel();return;}
+  const stageOps={
+    queue:id=>queueSong(id,false),leave:()=>window.AfterhoursOnline?.connected()?window.AfterhoursOnline.leaveStage():cancelStage(),
+    applaud:()=>window.AfterhoursOnline?.applaud(),listen:()=>window.AfterhoursOnline?.toggleListen(),dismiss:()=>{lastSet=null;},
+    chart:()=>window.AfterhoursOnline?.chartPanel(),open:()=>stagePanel(),
+    watch:on=>{stageWatched=!!on;}
+  };
+  function queueSong(id,show=true){
+    if(window.AfterhoursOnline?.connected())return window.AfterhoursOnline.queueSong(id,show);
+    if(stage){toast('You are already in the stage queue.');if(show)stagePanel();return;}
     const song=game.state.songs.find(t=>t.id===id);if(!song)return;
     if(personal||roomIndex!==0)enterRoom(0,false);
     stage={id:G.uid(),song:copy(song),queued:Date.now(),started:0,end:Date.now()+4000,applause:0};music.ensure().catch(()=>{});
-    stopMusic();message('system',player.name+' joined the stage queue with “'+song.title+'”.');stagePanel();
+    lastSet=null;stopMusic();message('system',player.name+' joined the stage queue with “'+song.title+'”.');if(show)stagePanel();
     stageTimer=setInterval(tickStage,200);
   }
   function tickStage(){
@@ -379,7 +382,6 @@
     if(!stage.started&&now>=stage.end){
       stage.started=now;stage.end=now+20000;
       playSong(stage.song);message('system',player.name+' is now performing “'+stage.song.title+'”.');
-      if(screen==='Your moment on Side B')stagePanel();
     }
     if(stage.started){
       const elapsed=now-stage.started,count=Math.min(4,Math.floor(elapsed/4200));
@@ -388,14 +390,13 @@
         const completed=stage;stage=null;clearInterval(stageTimer);stopMusic();
         const out=act('performance',{id:completed.id,songId:completed.song.id,elapsed:now-completed.started});
         message('system','Set complete. '+(out.ok&&out.result?'You earned '+out.result+' credits.':'Thanks for playing.'));
-        panel('You found your frequency','SET COMPLETE',`<div class="reward-hero"><span>✦</span><h3>${out.ok&&out.result?'+'+out.result+' credits':'Set complete'}</h3><p>“${h(completed.song.title)}” · ${completed.applause} resident reactions</p></div><div class="button-row"><button id="stageQuests" class="primary">Collect quest rewards</button><button id="stageAgain" class="soft-button">Back to the stage</button></div>`);
-        button('stageQuests',()=>journal());button('stageAgain',stagePanel);return;
+        lastSet={credits:out.ok&&out.result?out.result:0,title:completed.song.title,applause:completed.applause};
+        if(!stageWatched)stagePanel();return;
       }
     }
-    if(get('stageCountdown'))get('stageCountdown').textContent=Math.max(0,Math.ceil((stage.end-now)/1000))+'s '+(stage.started?'remaining':'until your set');
-    if(get('stageProgress'))get('stageProgress').style.width=stage.started?(now-stage.started)/200+'%':'0%';
   }
   function cancelStage(){if(!stage)return;clearInterval(stageTimer);stage=null;stopMusic();toast('You left the stage. Your song is still saved.');}
+  function stageAct(op,id){if(!stageOps[op])return {ok:false,error:'Unknown stage action.'};stageOps[op](id);return {ok:true};}
   function arcade(){
     const cards=[['tiles','Tile Rush','Claim the floor. Keep more tiles than your rival.','45 seconds · keyboard or tap','▦'],['snow','Snow Jam','Dodge, aim, and land five snowball hits.','45 seconds · move + click','✧'],['quiz','Pop Quiz','Eight music questions. How well do you know your sound?','60 seconds · choose an answer','?']];
     panel('Just one more round','AFTERHOURS ARCADE',`<p>Original games inspired by the social-game era. Play against a resident rival, set a personal best, and earn credits.</p><div class="arcade-games">${cards.map(([id,title,description,instructions,icon])=>`<article class="arcade-card ${id}"><span>${icon}</span><small>BEST ${game.state.best[id]||0}</small><h3>${title}</h3><p>${description}</p><em>${instructions}</em><button class="primary" data-game="${id}">Play ${title}</button></article>`).join('')}</div><p class="small-note">Up to eight rewarded rounds each day. Wins earn 30 credits; completed rounds earn 15.</p>`,true);
@@ -635,6 +636,7 @@
     shopImages:()=>[...new Set(Object.keys(Furniture.catalog).map(type=>furnitureArt(type).image))],
     updateHUD,showStudio:studio,studioEdit,playTrack,exportWav,savePlaylist,startPlaylist,
     pressDisc:id=>act('disc',{id},'Pressed onto a collectible disc.'),deleteSong:id=>act('deleteSong',{id}),perform:id=>queueSong(id),
+    stageState,stageAct,openPanel,showJournal:()=>journal(),
     setActiveRoom:id=>{activeRoomId=id;game.state.activeRoom=id;},
     applyState:state=>{game.state=state;activeRoomId=state.activeRoom||state.rooms[0].id;spriteIndex=state.profile.avatar||0;sync();draft=copy(state.draft);$('.profile-art').style.backgroundPosition=(-spriteIndex*35)+'px -4px';resetPet();}
   };
