@@ -56,11 +56,14 @@ const find = async (page, text, ms = 5000) => {
   const shown = (await snapshot(page)).slice(-25).map(n => `${n.type}:${n.text}`).join(' | ');
   throw Error('No visible XAML element with text ' + JSON.stringify(String(text)) + '. Last shown: ' + shown);
 };
-const xamlClick = async (page, text) => { const n = await find(page, text); await page.mouse.click(n.x + n.w / 2, n.y + n.h / 2); };
+// Like a person: move there, then press and release with a short hold (Uno's Skia input can drop an instant click).
+const press = async (page, x, y) => { await page.mouse.move(x, y); await page.waitForTimeout(60); await page.mouse.down(); await page.waitForTimeout(50); await page.mouse.up(); };
+const xamlClick = async (page, text) => { const n = await find(page, text); await press(page, n.x + n.w / 2, n.y + n.h / 2); };
 // Real keystrokes into a TextBox found by its accessible name (Uno's TextBox ignores fill()).
 const typeInto = async (page, name, text, {end = false} = {}) => {
   const n = (await nodes(page, name)).filter(n => n.type === 'TextBox').at(-1) ?? await find(page, name);
-  await page.mouse.click(n.x + n.w - 12, n.y + n.h / 2);
+  await press(page, n.x + n.w - 12, n.y + n.h / 2);
+  await page.waitForTimeout(300); // focus lands a frame later on Skia
   if (end) await page.keyboard.press('End');
   await page.keyboard.type(text, {delay: 15});
 };
@@ -125,17 +128,20 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
 
   if (band === 'wide') {
     // Daily gift through the XAML resident card: the game pays 35 and opens its journal.
+    // The game then opens its journal (a XAML sheet since wave 4).
     await xamlClick(page, 'Daily gift · 35 ✦');
-    await page.waitForTimeout(700);
+    const journal = await waitText(page, 'Your night, your story', 6000);
     const after = await game(page, () => AfterhoursWorld.game.state.coins);
-    await closeGameDialog(page);
-    await page.waitForTimeout(300);
-    record(`${tag}: daily gift pays and the HUD follows`, after === coins + 35 && await visible(page, String(after)) && await visible(page, 'Checked in ✓'), {after});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
+    record(`${tag}: daily gift pays, the HUD follows and the journal opens`, journal && after === coins + 35 && await waitText(page, String(after)) && await visible(page, 'Checked in ✓'), {after, journal});
 
     // Travel from the XAML room list.
     await xamlClick(page, 'Midnight Diner');
-    await page.waitForTimeout(900);
-    record(`${tag}: room list travels`, await waitText(page, 'MIDNIGHT DINER') && await game(page, () => AfterhoursWorld.roomKey()) === 'public:1');
+    let travelled = false;
+    for (const start = Date.now(); !travelled && Date.now() - start < 6000; await page.waitForTimeout(200))
+      travelled = await game(page, () => AfterhoursWorld.roomKey()) === 'public:1';
+    record(`${tag}: room list travels`, travelled && await waitText(page, 'MIDNIGHT DINER'), {travelled});
 
     // Dance toggles and its label follows the game.
     await xamlClick(page, 'Dance');
@@ -281,12 +287,10 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     });
     await page.waitForTimeout(1200);
     const wrapOpen = await waitText(page, 'A small surprise');
-    await xamlClick(page, 'Piece to wrap');
-    await page.waitForTimeout(800);
+    // The plant is the only piece the box can hold. The list sometimes ignores the first click, so open it again if needed.
     const plantName = await game(page, () => AfterhoursFurniture.catalog.plant.name);
-    // The plant is the only piece the box can hold; pick it from the list, or with the keyboard.
-    if (await waitText(page, plantName, 1500)) await xamlClick(page, plantName);
-    else { console.log('DEBUG combo', (await snapshot(page)).slice(-12).map(n => `${n.type}:${n.text}@${n.x},${n.y}`).join(' | ')); await page.keyboard.press('ArrowDown'); await page.keyboard.press('Enter'); }
+    for (let attempt = 0; attempt < 3 && !(await waitText(page, plantName, 1500)); attempt++) await xamlClick(page, 'Piece to wrap');
+    await xamlClick(page, plantName);
     await page.waitForTimeout(400);
     await xamlClick(page, 'Wrap gift');
     await page.waitForTimeout(1000);
@@ -410,6 +414,82 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
     }
+
+    // Wave 4: journal, help, wardrobe and profile (last: restoring a save replaces the world).
+    {
+    const ready = await game(page, () => AfterhoursWorld.journalState().quests.find(q => q.value === q.target && !q.claimed));
+    const coinsBefore = await game(page, () => AfterhoursWorld.game.state.coins);
+    await xamlClick(page, 'Journal');
+    const journalOpen = await waitText(page, 'Your night, your story', 6000);
+    await xamlClick(page, `${ready.reward} ✦`);
+    const claimed = await waitText(page, 'Collected', 3000);
+    const coinsAfter = await game(page, () => AfterhoursWorld.game.state.coins);
+    await page.screenshot({path: path.join(out, `${band}-journal.png`)});
+    record(`${tag}: the journal opens from the rail and a finished quest pays out`, journalOpen && claimed && coinsAfter === coinsBefore + ready.reward, {quest: ready.name, coinsBefore, coinsAfter});
+    const journalUnspoken = await waitSpoken(page, ['Quests', 'Badges', 'Wallet']);
+    await xamlClick(page, 'Badges');
+    const badges = await waitText(page, 'Small keepsakes from nights well spent.', 3000);
+    await xamlClick(page, 'Wallet');
+    const wallet = await waitText(page, `${coinsAfter} ✦`, 3000) && await waitText(page, 'Your credits · earned through play', 1000);
+    record(`${tag}: journal badges and wallet tabs show the game's data`, badges && wallet && !journalUnspoken.length, {badges, wallet, journalUnspoken});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
+
+    await xamlClick(page, 'How to play');
+    record(`${tag}: help opens in XAML`, await waitText(page, 'The night is yours', 5000) && await waitText(page, '01 · Make yourself at home', 2000));
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
+
+    await xamlClick(page, 'My look');
+    const wardrobeOpen = await waitText(page, 'Who’s showing up tonight?', 6000);
+    // The game renders the preview asynchronously.
+    let drawn = 0;
+    for (const start = Date.now(); drawn <= 20 && Date.now() - start < 8000; await page.waitForTimeout(500)) {
+      const preview = (await nodes(page, 'Outfit preview')).at(-1);
+      drawn = preview ? await colours(page, preview) : 0;
+    }
+    record(`${tag}: the wardrobe opens from the rail and the game draws its preview`, wardrobeOpen && drawn > 20, {drawn});
+    await xamlClick(page, 'Blunt bob');
+    await xamlClick(page, 'Silver');
+    await page.waitForTimeout(500);
+    await page.screenshot({path: path.join(out, `${band}-wardrobe.png`)});
+    await xamlClick(page, 'Save look');
+    await page.waitForTimeout(800);
+    const outfit = await game(page, () => AfterhoursWorld.game.state.profile.outfit);
+    record(`${tag}: wardrobe choices save as the outfit`, outfit?.hair === 'bob' && outfit?.hairColor === 'silver' && !(await visible(page, 'Who’s showing up tonight?')), {hair: outfit?.hair, hairColor: outfit?.hairColor});
+
+    await xamlClick(page, 'Your profile');
+    const profileOpen = await waitText(page, 'This is you', 6000);
+    await typeInto(page, 'Display name', 'owl', {end: true});
+    await xamlClick(page, 'Teal');
+    await xamlClick(page, 'Save profile');
+    await page.waitForTimeout(800);
+    const saved = await game(page, () => ({name: AfterhoursWorld.game.state.profile.name, color: AfterhoursWorld.game.state.profile.chatColor}));
+    await page.screenshot({path: path.join(out, `${band}-profile.png`)});
+    record(`${tag}: the profile saves a new name and chat colour`, profileOpen && saved.name === 'daydreamowl' && saved.color === '#0f7a6c', {saved});
+
+    const download = page.waitForEvent('download', {timeout: 5000}).catch(() => null);
+    await xamlClick(page, 'Export save');
+    const file = await download;
+    await xamlClick(page, 'Use last backup');
+    const backupAsked = await waitText(page, /^(Recover your last backup|No previous backup is available yet\.)$/, 3000);
+    if (await visible(page, 'Keep my world')) await xamlClick(page, 'Keep my world');
+    record(`${tag}: export downloads the save and a backup restore asks first`, file?.suggestedFilename() === 'afterhours-save.json' && backupAsked, {file: file?.suggestedFilename(), backupAsked});
+
+    // Restore a save through the file picker (Uno's upload picker is a plain file input).
+    const other = await game(page, () => JSON.stringify({...AfterhoursWorld.game.state, profile: {...AfterhoursWorld.game.state.profile, name: 'restored'}}));
+    const chooser = page.waitForEvent('filechooser', {timeout: 5000}).catch(() => null);
+    await xamlClick(page, 'Restore save');
+    const picker = await chooser;
+    await picker?.setFiles({name: 'afterhours-save.json', mimeType: 'application/json', buffer: Buffer.from(other)});
+    const asked = await waitText(page, 'Restore this world?', 5000);
+    if (asked) await xamlClick(page, 'Restore saved world');
+    await page.waitForTimeout(1000);
+    const restored = await game(page, () => AfterhoursWorld.game.state.profile.name);
+    record(`${tag}: a save file is checked, confirmed and restored`, !!picker && asked && restored === 'restored', {picker: !!picker, asked, restored});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    }
   }
 
   if (band === 'phone') {
@@ -423,6 +503,18 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     record(`${tag}: shop fits the phone`, await waitText(page, 'Room for imagination') && width <= 390, {width});
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
+
+    await game(page, () => window.AfterhoursHost.open('Wardrobe'));
+    const wardrobePhone = await waitText(page, 'Who’s showing up tonight?', 6000);
+    for (const start = Date.now(); Date.now() - start < 8000; await page.waitForTimeout(500)) {
+      const preview = (await nodes(page, 'Outfit preview')).at(-1);
+      if (preview && await colours(page, preview) > 20) break;
+    }
+    const wardrobeRight = Math.max(...(await nodes(page, /^(Save look|Who’s showing up tonight\?|Outfit preview)$/)).map(n => n.x + n.w));
+    await page.screenshot({path: path.join(out, `${band}-wardrobe.png`)});
+    record(`${tag}: the wardrobe fits the phone`, wardrobePhone && wardrobeRight <= 390, {wardrobeRight});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(800);
 
     await xamlClick(page, '\uE8D6');
     // A flyout that just closed can still swallow one click; try once more if needed.
@@ -462,7 +554,7 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     players.push(p);
   }
   const [a, b] = players;
-  record('shared: both players show SHARED WORLD in the XAML top bar', await visible(a.page, 'SHARED WORLD') && await visible(b.page, 'SHARED WORLD'));
+  record('shared: both players show SHARED WORLD in the XAML top bar', await waitText(a.page, 'SHARED WORLD') && await waitText(b.page, 'SHARED WORLD'));
   await typeInto(a.page, 'Room message', 'hi from the other tab');
   await a.page.keyboard.press('Enter');
   await b.page.waitForFunction(() => [...document.querySelectorAll('.ah-root #messages .message p')].some(p => p.textContent.includes('hi from the other tab')), null, {timeout: 20000}).catch(() => {});
@@ -475,7 +567,7 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
   await game(a.page, () => AfterhoursWorld.act('song', {...AfterhoursWorld.game.state.draft, id: '', title: 'Shared sketch'}));
   await a.page.waitForTimeout(1000);
   await xamlClick(a.page, 'Stage');
-  const sharedOpen = await waitText(a.page, 'The room is listening', 6000);
+  const sharedOpen = await waitText(a.page, 'The room is listening', 10000);
   await xamlClick(a.page, 'Shared sketch');
   const queued = await waitText(a.page, /^(UP NEXT|ON STAGE)$/, 8000);
   await xamlClick(b.page, 'Stage');
