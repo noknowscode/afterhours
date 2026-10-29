@@ -15,9 +15,11 @@ const record = (key, pass, detail = {}) => { results.push({key, pass, ...detail}
 // Software GL keeps the Skia renderer drawing in headless Chromium.
 const browser = await chromium.launch({args: ['--autoplay-policy=user-gesture-required', '--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader']});
 
-async function open(width, height) {
-  const context = await browser.newContext({viewport: {width, height}});
+async function open(width, height, setup) {
+  // A stubbed request needs the service worker out of the way (it would answer first).
+  const context = await browser.newContext({viewport: {width, height}, serviceWorkers: setup ? 'block' : 'allow'});
   const page = await context.newPage();
+  await setup?.(page);
   await page.addInitScript(() => {
     const Native = window.AudioContext;
     window.__contexts = [];
@@ -65,11 +67,12 @@ const press = async (page, x, y) => {
 };
 const xamlClick = async (page, text) => { const n = await find(page, text); await press(page, n.x + n.w / 2, n.y + n.h / 2); };
 // Real keystrokes into a TextBox found by its accessible name (Uno's TextBox ignores fill()).
-const typeInto = async (page, name, text, {end = false} = {}) => {
+const typeInto = async (page, name, text, {end = false, replace = false} = {}) => {
   const n = (await nodes(page, name)).filter(n => n.type === 'TextBox').at(-1) ?? await find(page, name);
   await press(page, n.x + n.w - 12, n.y + n.h / 2);
   await page.waitForTimeout(300); // focus lands a frame later on Skia
   if (end) await page.keyboard.press('End');
+  if (replace) { await page.keyboard.press('Control+A'); await page.keyboard.press('Backspace'); }
   await page.keyboard.type(text, {delay: 15});
 };
 // Drags a slider's thumb (placed from its value) by dx pixels.
@@ -104,6 +107,16 @@ const colours = async (page, r) => {
     const d = g.getImageData(0, 0, image.width, image.height).data, seen = new Set();
     for (let i = 0; i < d.length; i += 4) seen.add(((d[i] >> 4) << 8) | ((d[i + 1] >> 4) << 4) | (d[i + 2] >> 4));
     return seen.size;
+  }, png.toString('base64'));
+};
+// The colour of one screen pixel, as [r, g, b].
+const pixel = async (page, x, y) => {
+  const png = await page.screenshot({clip: {x, y, width: 1, height: 1}});
+  return page.evaluate(async b64 => {
+    const image = await createImageBitmap(await (await fetch('data:image/png;base64,' + b64)).blob());
+    const g = new OffscreenCanvas(1, 1).getContext('2d');
+    g.drawImage(image, 0, 0);
+    return [...g.getImageData(0, 0, 1, 1).data.slice(0, 3)];
   }, png.toString('base64'));
 };
 // Uno builds the screen-reader mirror (#uno-semantics-root) once accessibility is switched on.
@@ -219,12 +232,14 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     record(`${tag}: play starts audio and shows pause`, audio.includes('running') && await visible(page, 'Ⅱ'), {audio});
     await xamlClick(page, 'Ⅱ');
 
-    // A game panel opened from XAML (joining the shared world stays a game panel until wave 7).
-    await xamlClick(page, 'JOIN SHARED WORLD');
-    await page.waitForTimeout(500);
-    record(`${tag}: dock opens a game panel`, await game(page, () => document.querySelector('.ah-root #modal').open));
-    await page.screenshot({path: path.join(out, `${band}-game-panel.png`)});
-    await closeGameDialog(page);
+    // Joining the shared world opens the XAML join sheet with your name filled in (wave 7).
+    const joinOpen = await openSheet(page, 'JOIN SHARED WORLD', 'See you after hours');
+    const named = (await nodes(page, 'Your name')).some(n => n.type === 'TextBox' && n.value === 'daydream');
+    const unmanaged = await visible(page, /^(Create|Continue) online character$/) && !(await visible(page, 'Restore account with Google'));
+    await page.screenshot({path: path.join(out, `${band}-join.png`)});
+    record(`${tag}: the join sheet opens from the top bar`, joinOpen && named && unmanaged && !(await game(page, () => document.querySelector('.ah-root #modal').open)), {joinOpen, named, unmanaged});
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(600);
 
     const profile = await find(page, 'Your profile');
     const portrait = await colours(page, {x: profile.x, y: profile.y, w: 40, h: profile.h});
@@ -729,11 +744,12 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
   const players = [];
   for (const name of ['xamlalpha', 'xamlbeta']) {
     const p = await open(1440, 900);
-    await xamlClick(p.page, 'JOIN SHARED WORLD');
-    await p.page.waitForTimeout(500);
-    await p.page.evaluate(n => { document.querySelector('.ah-root #onlineName').value = n; document.querySelector('.ah-root #joinWorldForm').requestSubmit(); }, name);
+    await openSheet(p.page, 'JOIN SHARED WORLD', 'See you after hours');
+    await typeInto(p.page, 'Your name', name, {replace: true});
+    await xamlClick(p.page, /^(Create|Continue) online character$/);
     await p.page.waitForFunction(() => window.AfterhoursOnline?.connected(), null, {timeout: 20000});
-    await closeGameDialog(p.page);
+    // The sheet closes once the shared world's first snapshot (its chat history) has drawn.
+    await waitGone(p.page, 'See you after hours', 10000);
     await p.page.waitForTimeout(1500);
     players.push(p);
   }
@@ -822,6 +838,44 @@ for (const [width, height, band] of [[1440, 900, 'wide'], [1000, 800, 'normal'],
     record('shared: no page errors', !p.errors.length, {errors: p.errors.slice(0, 3)});
     await p.context.close();
   }
+}
+
+// Wave 7: a managed world (accounts on) asks a new guest for the security check inside the join sheet. The service
+// is stubbed as managed and the Turnstile widget replaced by a stand-in (Cloudflare is out of reach here); joining
+// then fails at the account step, and the sheet shows why.
+{
+  const {context, page, errors} = await open(1440, 900, page => page.route('**/api/health', route => route.fulfill({json: {ok: true, accounts: 'supabase'}})));
+  await game(page, () => {
+    window.AfterhoursAccount = {
+      remembered: () => false,
+      challenge: host => new Promise(resolve => {
+        host.innerHTML = '<div style="background:#ff3b30;height:65px;display:flex;align-items:center;justify-content:center"><button id="standInCheck">I am human</button></div>';
+        host.querySelector('#standInCheck').onclick = () => { host.innerHTML = ''; resolve('stand-in-token'); };
+      }),
+      enter: async () => { throw Error('Test world: accounts are not configured.'); },
+      token: async () => '', restore: async () => {}, link: async () => {}, signOut: async () => {},
+    };
+  });
+  const joinOpen = await openSheet(page, 'JOIN SHARED WORLD', 'See you after hours');
+  const managed = await visible(page, 'Play as a guest') && await visible(page, 'Restore account with Google');
+  await xamlClick(page, 'Play as a guest');
+  await page.waitForFunction(() => document.getElementById('standInCheck'), null, {timeout: 5000}).catch(() => {});
+  const check = await page.evaluate(() => { const r = document.getElementById('standInCheck')?.getBoundingClientRect(); return r && {x: r.x, y: r.y, w: r.width, h: r.height}; });
+  const sheet = (await nodes(page, 'See you after hours')).at(-1);
+  const inSheet = !!check && !!sheet && check.x >= sheet.x - 4 && check.y > sheet.y;
+  // The stand-in's red shows beside its button: the native element draws inside the sheet.
+  const [r, g, b] = check ? await pixel(page, Math.max(0, check.x - 20), check.y + check.h / 2) : [0, 0, 0];
+  const drawn = r > 200 && g < 100 && b < 100;
+  await page.screenshot({path: path.join(out, 'managed-join-check.png')});
+  if (check) await press(page, check.x + check.w / 2, check.y + check.h / 2);
+  const why = await waitText(page, 'Test world: accounts are not configured.', 5000);
+  record('managed: the security check draws inside the join sheet and its answer reaches the join', joinOpen && managed && inSheet && drawn && why, {joinOpen, managed, check, inSheet, drawn, why});
+  await clickThrough(page, 'Restore account with Google', 'Welcome back.');
+  const restoreOpen = await visible(page, 'Continue with Google');
+  await clickThrough(page, 'Back', 'See you after hours');
+  record('managed: restore with Google opens from the join sheet and goes back', restoreOpen && await visible(page, 'Play as a guest'), {restoreOpen});
+  record('managed: no page errors', !errors.length, {errors: errors.slice(0, 3)});
+  await context.close();
 }
 
 await browser.close();

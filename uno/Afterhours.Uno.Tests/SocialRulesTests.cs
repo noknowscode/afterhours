@@ -70,4 +70,17 @@ public class SocialRulesTests
         Assert.Empty(SocialRules.Peers(state));
         Assert.Empty(SocialRules.Invites(state));
     }
+
+    [Fact]
+    public void Join_button_and_security_check_follow_the_world()
+    {
+        SocialState Join(bool managed, bool remembered) => SocialState.Empty with { Ready = true, Managed = managed, Join = new("you", remembered, false) };
+        Assert.Equal("Create online character", SocialRules.JoinLabel(Join(false, false)));
+        Assert.Equal("Continue online character", SocialRules.JoinLabel(Join(false, true)));
+        Assert.Equal("Play as a guest", SocialRules.JoinLabel(Join(true, false)));
+        Assert.Equal("Continue my character", SocialRules.JoinLabel(Join(true, true)));
+        Assert.True(SocialRules.NeedsCheck(Join(true, false)));
+        Assert.False(SocialRules.NeedsCheck(Join(true, true)));
+        Assert.False(SocialRules.NeedsCheck(Join(false, false)));
+    }
 }

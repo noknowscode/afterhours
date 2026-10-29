@@ -1,0 +1,542 @@
+{
+  "base": "http://127.0.0.1:4177/",
+  "date": "2026-10-29T06:35:32.119Z",
+  "results": [
+    {
+      "key": "wide 1440px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "wide 1440px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "wide 1440px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": true,
+      "railIcons": true,
+      "chatColumn": true
+    },
+    {
+      "key": "wide 1440px: daily gift pays, the HUD follows and the journal opens",
+      "pass": true,
+      "after": 275,
+      "journal": true
+    },
+    {
+      "key": "wide 1440px: room list travels",
+      "pass": true,
+      "travelled": true
+    },
+    {
+      "key": "wide 1440px: dance runs and relabels",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: room shortcuts ignore XAML focus and work in the room",
+      "pass": true,
+      "before": "✧ Dance",
+      "danceAfter": "✧ Dance",
+      "danceInRoom": "✧ Stop dancing"
+    },
+    {
+      "key": "wide 1440px: chat sends through the game and lists the line",
+      "pass": true,
+      "inGame": true
+    },
+    {
+      "key": "wide 1440px: decorate shows the XAML editor bar and Done closes it",
+      "pass": true,
+      "editing": true,
+      "closed": true
+    },
+    {
+      "key": "wide 1440px: play starts audio and shows pause",
+      "pass": true,
+      "audio": [
+        "running",
+        "running"
+      ]
+    },
+    {
+      "key": "wide 1440px: the join sheet opens from the top bar",
+      "pass": true,
+      "joinOpen": true,
+      "named": true,
+      "unmanaged": true
+    },
+    {
+      "key": "wide 1440px: portrait renders",
+      "pass": true,
+      "portrait": 126
+    },
+    {
+      "key": "wide 1440px: screen readers get the chrome's names",
+      "pass": true,
+      "unspoken": []
+    },
+    {
+      "key": "wide 1440px: shop opens with cards and furniture art",
+      "pass": true,
+      "cardsShown": 12,
+      "art": 163
+    },
+    {
+      "key": "wide 1440px: search filters the cards",
+      "pass": true,
+      "filtered": 2
+    },
+    {
+      "key": "wide 1440px: shop art is clipped to its sprite in the detail",
+      "pass": true,
+      "beside": 1
+    },
+    {
+      "key": "wide 1440px: buying from XAML pays, closes the shop and starts placing",
+      "pass": true,
+      "coinsBefore": 275,
+      "coinsAfter": 195,
+      "placing": true
+    },
+    {
+      "key": "wide 1440px: inventory lists the new piece",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: records tab shows its empty state",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: a failed purchase shows the game's message and keeps credits",
+      "pass": true,
+      "shopError": [
+        "Credits",
+        "✦",
+        "1 / 1 · 20 credits",
+        "You do not have enough credits.",
+        "2 × 1 tiles · 80 ✦"
+      ]
+    },
+    {
+      "key": "wide 1440px: the game opens XAML blueprints; save and restore work",
+      "pass": true,
+      "blueprintsOpen": true,
+      "saved": 1
+    },
+    {
+      "key": "wide 1440px: gift wrap opens from the game and wraps the chosen piece",
+      "pass": true,
+      "wrapOpen": true,
+      "wrapped": "3cafcb18-d97c-480a-ad0f-15bf4cc2b44a",
+      "expected": "3cafcb18-d97c-480a-ad0f-15bf4cc2b44a"
+    },
+    {
+      "key": "wide 1440px: studio opens from the rail; a step toggles and Undo restores it",
+      "pass": true,
+      "toggled": "1100100010001000",
+      "undone": "1000100010001000"
+    },
+    {
+      "key": "wide 1440px: M mutes a lane and S solos one",
+      "pass": true,
+      "muted": "true,false,false,false",
+      "soloed": "true,false,true,true"
+    },
+    {
+      "key": "wide 1440px: tempo and volume apply while their sliders move",
+      "pass": true,
+      "bpm": 128,
+      "volume": 0.64
+    },
+    {
+      "key": "wide 1440px: Play runs the draft and the button follows playback",
+      "pass": true,
+      "audio": [
+        "running",
+        "running"
+      ],
+      "pausing": true
+    },
+    {
+      "key": "wide 1440px: Save track adds it to the XAML library",
+      "pass": true,
+      "songs": [
+        "Untitled afterhours B-side"
+      ]
+    },
+    {
+      "key": "wide 1440px: pressing a disc pays 10 and a repeat shows the game's message",
+      "pass": true,
+      "pressed": {
+        "coins": 425,
+        "discs": 1
+      },
+      "again": true
+    },
+    {
+      "key": "wide 1440px: the game opens the XAML jukebox and its playlist saves",
+      "pass": true,
+      "jukeboxOpen": true,
+      "playlist": true
+    },
+    {
+      "key": "wide 1440px: Delete asks first, then removes the track from the library and playlists",
+      "pass": true,
+      "asked": true,
+      "left": {
+        "songs": 0,
+        "playlist": true
+      },
+      "empty": true
+    },
+    {
+      "key": "wide 1440px: screen readers get the studio's names",
+      "pass": true,
+      "studioUnspoken": []
+    },
+    {
+      "key": "wide 1440px: the dock opens the XAML stage; a song queues, counts down and plays",
+      "pass": true,
+      "stageOpen": true,
+      "next": true,
+      "onStage": true,
+      "audio": [
+        "running",
+        "running"
+      ]
+    },
+    {
+      "key": "wide 1440px: a finished set shows its reward in the stage panel",
+      "pass": true,
+      "done": true,
+      "reward": true,
+      "coinsBefore": 425,
+      "coinsAfter": 465
+    },
+    {
+      "key": "wide 1440px: Leave takes you off the stage",
+      "pass": true,
+      "left": true
+    },
+    {
+      "key": "wide 1440px: the navigator searches and enters a public room",
+      "pass": true,
+      "navigatorOpen": true,
+      "searched": true,
+      "title": "Midnight Diner"
+    },
+    {
+      "key": "wide 1440px: a room is created in the navigator and you arrive in it",
+      "pass": true,
+      "created": [
+        "Your afterhours",
+        "Wave five den"
+      ],
+      "title": "Wave five den"
+    },
+    {
+      "key": "wide 1440px: room tools save the room's settings",
+      "pass": true,
+      "described": "late records"
+    },
+    {
+      "key": "wide 1440px: room logic adds and removes a rule",
+      "pass": true,
+      "logicOpen": true,
+      "ruled": true,
+      "unruled": true
+    },
+    {
+      "key": "wide 1440px: the message board pins a note",
+      "pass": true,
+      "boardOpen": true,
+      "pinned": true
+    },
+    {
+      "key": "wide 1440px: an event is hosted from room tools",
+      "pass": true,
+      "hosting": "Listening party"
+    },
+    {
+      "key": "wide 1440px: a companion is adopted, drawn and trained",
+      "pass": true,
+      "adoptOpen": true,
+      "portraitColours": 429,
+      "adopted": true,
+      "coinsBeforePet": 465,
+      "coinsAfterPet": 415,
+      "trained": true
+    },
+    {
+      "key": "wide 1440px: the arcade picker starts a round in the game",
+      "pass": true,
+      "arcadeOpen": true,
+      "round": true
+    },
+    {
+      "key": "wide 1440px: a room object opens its sheet with art, and an action closes it",
+      "pass": true,
+      "objectOpen": true,
+      "artColours": 254
+    },
+    {
+      "key": "wide 1440px: a portal links to another of your rooms",
+      "pass": true,
+      "portalOpen": true,
+      "linked": true
+    },
+    {
+      "key": "wide 1440px: a resident is added to your circle",
+      "pass": true,
+      "residentOpen": true,
+      "circled": true
+    },
+    {
+      "key": "wide 1440px: your circle lists the resident and opens their card",
+      "pass": true,
+      "blocked": true,
+      "friendsOpen": true,
+      "listed": true,
+      "viewed": true
+    },
+    {
+      "key": "wide 1440px: chat preferences unblock a resident and mute replies",
+      "pass": true,
+      "prefsOpen": true,
+      "unblocked": true,
+      "muted": true
+    },
+    {
+      "key": "wide 1440px: the journal opens from the rail and a finished quest pays out",
+      "pass": true,
+      "quest": "Your first hello",
+      "coinsBefore": 290,
+      "coinsAfter": 310
+    },
+    {
+      "key": "wide 1440px: journal badges and wallet tabs show the game's data",
+      "pass": true,
+      "badges": true,
+      "wallet": true,
+      "journalUnspoken": []
+    },
+    {
+      "key": "wide 1440px: help opens in XAML",
+      "pass": true
+    },
+    {
+      "key": "wide 1440px: the wardrobe opens from the rail and the game draws its preview",
+      "pass": true,
+      "drawn": 148
+    },
+    {
+      "key": "wide 1440px: wardrobe choices save as the outfit",
+      "pass": true,
+      "hair": "bob",
+      "hairColor": "silver"
+    },
+    {
+      "key": "wide 1440px: the profile saves a new name and chat colour",
+      "pass": true,
+      "saved": {
+        "name": "daydreamowl",
+        "color": "#0f7a6c"
+      }
+    },
+    {
+      "key": "wide 1440px: export downloads the save and a backup restore asks first",
+      "pass": true,
+      "file": "afterhours-save.json",
+      "backupAsked": true
+    },
+    {
+      "key": "wide 1440px: a save file is checked, confirmed and restored",
+      "pass": true,
+      "picker": true,
+      "asked": true,
+      "restored": "restored"
+    },
+    {
+      "key": "wide 1440px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "normal 1000px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "normal 1000px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "normal 1000px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": false,
+      "railIcons": true,
+      "chatColumn": false
+    },
+    {
+      "key": "normal 1000px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "narrow 800px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "narrow 800px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "narrow 800px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": false,
+      "railIcons": true,
+      "chatColumn": false
+    },
+    {
+      "key": "narrow 800px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "phone 390px: boot panel gone, coins shown",
+      "pass": true,
+      "coins": 240
+    },
+    {
+      "key": "phone 390px: room heading mirrors the game",
+      "pass": true,
+      "title": "SIDE B"
+    },
+    {
+      "key": "phone 390px: rail labels and chat column follow the breakpoints",
+      "pass": true,
+      "rail": false,
+      "railIcons": true,
+      "chatColumn": false
+    },
+    {
+      "key": "phone 390px: shop fits the phone",
+      "pass": true,
+      "width": 242
+    },
+    {
+      "key": "phone 390px: the wardrobe fits the phone",
+      "pass": true,
+      "wardrobeRight": 366
+    },
+    {
+      "key": "phone 390px: studio opens from the bottom bar and fits the phone",
+      "pass": true,
+      "studioRight": 354
+    },
+    {
+      "key": "phone 390px: chat opens from the bottom bar",
+      "pass": true
+    },
+    {
+      "key": "phone 390px: no page errors or failed requests",
+      "pass": true,
+      "errors": [],
+      "failed": []
+    },
+    {
+      "key": "shared: both players show SHARED WORLD in the XAML top bar",
+      "pass": true
+    },
+    {
+      "key": "shared: a XAML chat line reaches the other player's XAML chat",
+      "pass": true
+    },
+    {
+      "key": "shared: the XAML stage queues a set, plays it to the room and takes applause",
+      "pass": true,
+      "sharedOpen": true,
+      "queued": true,
+      "heard": true,
+      "applauded": true,
+      "counted": true
+    },
+    {
+      "key": "shared: the weekly chart opens from the stage and ranks the applauded track",
+      "pass": true,
+      "over": true,
+      "chartOpen": true,
+      "ranked": true,
+      "back": true
+    },
+    {
+      "key": "shared: the XAML shared world lists the other player",
+      "pass": true,
+      "worldOpen": true,
+      "beta": true
+    },
+    {
+      "key": "shared: a friend request from the player card is accepted in Friends",
+      "pass": true,
+      "asked": true,
+      "befriended": true
+    },
+    {
+      "key": "shared: a trade is offered, accepted and cancelled, and both sheets follow it",
+      "pass": true,
+      "waiting": true,
+      "opened": true,
+      "closed": true
+    },
+    {
+      "key": "shared: the XAML navigator joins a shared public room",
+      "pass": true,
+      "sharedNavigator": true,
+      "joined": "Midnight Diner",
+      "navigatorClosed": true
+    },
+    {
+      "key": "shared: no page errors",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "key": "shared: no page errors",
+      "pass": true,
+      "errors": []
+    },
+    {
+      "key": "managed: the security check draws inside the join sheet and its answer reaches the join",
+      "pass": true,
+      "joinOpen": true,
+      "managed": true,
+      "check": {
+        "x": 1173.78125,
+        "y": 252.296875,
+        "w": 92.421875,
+        "h": 24.390625
+      },
+      "inSheet": true,
+      "drawn": true,
+      "why": true
+    },
+    {
+      "key": "managed: restore with Google opens from the join sheet and goes back",
+      "pass": true,
+      "restoreOpen": true
+    },
+    {
+      "key": "managed: no page errors",
+      "pass": true,
+      "errors": []
+    }
+  ]
+}
