@@ -1,6 +1,6 @@
 # Spec: Afterhours UI in Uno XAML around a JavaScript room
 
-Status: **draft v2; waves 0–2 done, wave 3 next.** Rewritten 2026-10-23 after the migration-scope review.
+Status: **draft v2; waves 0–3 done, Skia spiked (switch pending), wave 4 next.** Rewritten 2026-10-23 after the migration-scope review.
 No app code changed yet.
 
 ## Settled inputs
@@ -147,12 +147,12 @@ names the JS function it replaces; that JS is deleted when the row ships.
 | 2 ✓ | `Catalog` | F | `CatalogRequest(Tab)` | `catalog` "THE FURNITURE SHOP", `showInventory`, item detail "THE AFTERHOURS COLLECTION" |
 | 2 ✓ | `Blueprints` | F | — | `blueprints` |
 | 2 ✓ | `WrapGift` | D | `WrapGiftRequest(ItemId)` | gift panel "WRAP A GIFT" |
-| 3 | `Studio` | F | — | `studio` (Editor / Library tabs) |
-| 3 | `DeleteSong` | D | `SongId` | "Delete this track?" |
-| 3 | `Stage` | F | — | `stagePanel` (solo) and shared stage "SHARED MUSIC STAGE" |
-| 3 | `SetComplete` | D | `SetResult` | "SET COMPLETE" |
-| 3 | `Jukebox` | F | `RoomId` | `playlistPanel` |
-| 3 | `Chart` | F | — | `chartPanel` |
+| 3 ✓ | `Studio` | F | `StudioRequest(Tab)` | `studio` (Editor / Library tabs) |
+| 3 ✓ | (inline in `Studio`) | — | — | "Delete this track?" |
+| 3 ✓ | `Stage` | F | — | `stagePanel` (solo) and shared stage "SHARED MUSIC STAGE" |
+| 3 ✓ | (inline in `Stage`) | — | — | "SET COMPLETE" |
+| 3 ✓ | `Jukebox` | F | — (the current room) | `playlistPanel` |
+| 3 ✓ | `Chart` | F | — | `chartPanel` |
 | 4 | `Wardrobe` | F | — | `look` + `classicLook` |
 | 4 | `Profile` | F | — | `profile` |
 | 4 | `RestoreSave` | D | `GameState` | "Restore this world?" / "Recover your last backup" |
@@ -583,6 +583,104 @@ the app package. (2) Make the drawer scrim transparent (or opaque) so the room n
 `verify-xaml.mjs` to find controls through the semantic DOM by role and name and click their bounds with the
 real mouse (the semantic elements sit under the Skia canvas). The +4.35 MB and +1.3 s are the price; the app
 assembly size on Skia is worth a look first.
+
+## Wave 3 results (2026-10-29)
+
+**Done: studio, song library, jukebox, solo and shared stage, weekly chart in XAML.** 54/54 runtime checks
+(`scripts/verify-xaml.mjs`, screenshots in `docs/screenshots/xaml/wave3/`) at 1440/1000/800/390 px, solo and
+two-player shared; 74 Node tests and 26 xUnit tests pass; the publish passes the warning gate. Built on the
+native renderer.
+
+What shipped: `!Studio` (track name, sound pack, the 4-lane board with ruler, mute/solo/volume, tempo, length,
+undo, clear, play with a moving playhead, save, new, WAV export) and its Song library tab (play, edit, perform,
+press disc, delete with an inline confirm); `!Jukebox` for the current room; `!Stage` for the solo open mic
+(queue, countdown, set, inline reward, leave) and the shared stage (listen together, applause, queue); `!Chart`.
+The game builds none of these panels any more.
+
+Decisions made while building (they amend the wave 3 plan):
+
+- **Set complete and delete confirm are inline**, as in the game's single panels: a navigation message dialog
+  closed the Studio drawer with it, and an extra route would stack drawers.
+- **Stage state is pulled while watched.** `JsGame.WatchStage` counts watchers; the first starts the host's
+  250 ms poll (sent only on change) and tells the game the panel is open, so a finished set opens `!Stage` only
+  when it is closed. `IStage` (`WatchStage`, `Act`) covers solo and shared.
+- **The chart replaces the stage** (and Back reopens it) instead of stacking a second drawer.
+- **The board is not virtualized:** an `ItemsRepeater` realized only its first row inside the phone's
+  horizontal scroller. Steps are buttons in `VariableSizedWrapGrid`s sized to exactly Length cells; the board
+  has a fixed height (ruler plus four 32 px lanes). On phones the volume sliders hide and the lane column narrows.
+- **Lanes are keyed by index** so a volume reply updates a lane in place and never interrupts a drag.
+- **Sliders take the acid accent** (Fluent lightweight keys in `Controls.xaml`).
+
+## Wave 3 plan (2026-10-29): studio, library, jukebox, stage, chart
+
+Built on the native renderer (the renderer switch is pending; the XAML and models carry over unchanged).
+Split into **3a** (Studio with the song library, the delete confirm, the room jukebox) and **3b** (solo and
+shared stage, set complete, weekly chart), each committed and verified on its own.
+
+### Architecture Brief (wave 3)
+
+- **Routes:** `Studio(StudioRequest Tab)` F; `Jukebox` F (the current room); `Stage` F (solo or shared, one
+  page over two sources); `SetComplete(SetResult)` F; `Chart` F. The delete confirm is inline in the library (as in the game), so `DeleteSong` needs no route.
+  *Built:* a navigation message dialog (`ShowMessageDialogAsync`) closed the whole Studio drawer with it.
+- **Draft edits reply with the draft.** `host.mjs` exports `studio(op, a, b)` for `step`, `mute`, `solo`,
+  `volume`, `tempo`, `length`, `pack`, `title`, `undo`, `clear`, `new`, `edit`, `save`; each runs the game's
+  own edit and replies `{ok, error, result: {draft, canUndo}}`. `StudioModel` holds the draft as a local
+  `IState` and replaces it from each reply. Replies are synchronous and ordered, so a dragged slider or typed
+  title is never overwritten by an older echo (the `draft` slice still flows for everything else).
+- **`IMusic`** (new, `JsGame` implements it): `IFeed<Playback>` (running, title, step) from `playback` events
+  sent on start, stop and each step; `Play(songId | draft)`, `Stop()`, `ExportWav()` (render and download stay
+  in JS). The playhead moves one overlay element, so step cells never rebind per tick (≤ 11 steps/s at 160 BPM).
+- **Library writes:** `playSong`, `pressDisc`, `deleteSong`, `perform` (queues for the stage, then the game
+  asks for `!Stage`). **Jukebox:** `savePlaylist(ids)`, `playPlaylist(ids)`.
+- **Stage (3b):** solo stage state lives in `game.js` (`stage`, countdown timer) and shared stage in
+  `online.js`; both push one `stage` event shape (mode, current, queue, own, canApplaud, listening, songs) and
+  expose `queue`, `leave`, `applaud`, `listen`. `SetComplete` arrives as an `open` request with its result.
+  `Chart` reads the `chart` part of the shared snapshot.
+- **Grid model:** a ruler list and one flat list of `StepCell(Key "row:col", Row, Col, On, BarStart)`, each in an
+  `ItemsControl` whose `VariableSizedWrapGrid` (32 px items) is exactly Length cells wide; each step is a button.
+  *Built:* an `ItemsRepeater` realized only the first row inside the phone's horizontal scroller, and the board
+  is at most 128 steps, so it is not virtualized.
+- **Tests:** xUnit for the grid projection, lane state (mute/solo) and the event parsing; Node tests for the
+  host operations (each op changes the draft the way the old buttons did); runtime checks per route.
+
+### Design Brief (wave 3)
+
+- Studio drawer: `Width` Narrowest 360 / Narrow 640 / Normal 900. Header: eyebrow "THE AFTERHOURS STUDIO",
+  title "Find your sound" / "Your discography", tabs Studio / Song library (acid underline, as in Catalog).
+- Editor: track name and sound pack row; the board scrolls horizontally inside the drawer. Lane column (label,
+  M, S, volume) at 168 px; step cells 28 × 28 with 4 px gaps, `SurfaceRaised` off, `Acid` on, a brighter left
+  edge on bar starts; beat ruler above; the playhead is a 2 px acid bar plus a 12 % acid wash on its column.
+- Controls row: tempo slider with numeral readout (`NumeralText`), length combo, Undo, Clear. Transport: Play /
+  Pause (primary), Save track (primary), New track, Export WAV (soft).
+- Library: record cards (sleeve tile with the pack colour, title, "88 BPM · velvet · 16 steps", actions Play,
+  Edit, Perform, Press disc · 10 ✦, Delete as a quiet text button). Empty state copy from the game.
+- Jukebox: checklist of songs ("title" + "88 BPM · velvet"), Save playlist (primary), Play playlist (soft).
+- Stage: now-playing block (disc glyph, eyebrow ON STAGE / UP NEXT / YOU'RE NEXT, title, countdown, progress),
+  lineup, song picker; shared adds Listen together and ♡ Applaud. Chart: ranked rows, own row tinted.
+
+### Interaction Brief (wave 3)
+
+- Rail "Beat studio", the now-playing "Make a beat", `game.studio()` and the shared stage's "Make your first
+  track" all open `!Studio`. Room tools "Playlist" and jukebox/speaker item actions open `!Jukebox`. The dock
+  "Stage", stage furniture and Perform open `!Stage`.
+- Step click toggles at once (the reply re-renders one cell); Undo enables after the first edit. M toggles a
+  lane mute, S solos (again un-solos). Tempo and volume apply while dragging. The track name commits on Enter
+  and on Save. Length change resizes the pattern (the game's rule).
+- Play/Pause mirrors `IMusic.Playback`; the now-playing bar follows too. Save with an empty pattern shows the
+  game's error ("Add a few notes before saving.") in an `InfoBar`; success switches to the library tab.
+- Delete asks "Delete this track?" (Delete track / Keep it). Press disc failures ("You already pressed this
+  version.", credits) show in the `InfoBar`.
+- Empty states: library and jukebox use the game's copy; stage with no songs offers "Make my first track".
+- Keyboard: Tab order lanes → cells → controls; Space/Enter toggle a focused cell; room keys stay ignored while
+  focus is in XAML (wave 1 guard).
+- Runtime checks (3a): open studio from the rail, toggle steps and see the draft change, undo, tempo, play shows
+  the playhead moving and audio running, save → library lists it, press disc pays 10, delete confirm removes
+  it, jukebox saves a playlist; phone width fits; no page errors.
+
+### Wave 3 unresolved questions
+
+- Stage audience reactions and countdown stay timed in JS (they drive chat lines and rewards). OK?
+- The WAV export stays a JS download; a XAML save picker can come with Phase B. OK?
 
 ## Implementation Plan
 
