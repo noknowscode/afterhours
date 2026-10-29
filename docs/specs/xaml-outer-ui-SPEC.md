@@ -177,7 +177,7 @@ names the JS function it replaces; that JS is deleted when the row ships.
 | 6 ✓ | `SharedWorld` | F | — | "SHARED WORLD" / "SHARED SESSIONS" info (joining stays a game panel until wave 7) |
 | 6 ✓ | `ChatPrefs` | D | — | "CHAT PREFERENCES" |
 | 1 ✓ | `Chat` | F | — | chat column on narrow widths (`ChatPanel`, shipped in wave 1) |
-| 7 | `Join` / `Restore` / `SignOut` | D | — | account panels (Turnstile in `CaptchaHost`, Supabase JS unchanged) — **R9 gated** |
+| 7 ✓ | `Join` / `Restore` / `SignOut` | D | — | account panels (Turnstile in a native element inside `Join`, Supabase JS unchanged) |
 
 Wave 1 has no routes: it builds `MainPage` (top bar, rail, room heading, action bar, editor bar, now playing,
 chat column) and the four interfaces.
@@ -632,6 +632,55 @@ Decisions made while switching:
   can lag a bound title, so it is a check, not the driver.
 - **List items have accessible names** (`ToString()` on the records lists show).
 
+## Wave 7 (2026-10-29): joining, restoring and signing out
+
+**Done.** 85/85 runtime checks on Skia (`docs/screenshots/xaml/wave7/`), 78 Node and 43 xUnit tests. No game panel
+is reachable from the chrome any more except an arcade round and its results.
+
+### R9 spike (2026-10-29): go
+
+- **Question.** Can the account panels move, given that the host's security check (Cloudflare Turnstile) draws an
+  iframe into a page element, and Google sign-in leaves the page and comes back?
+- **Done.** A throwaway sheet hosted a `BrowserHtmlElement` (the same `RoomHost` the room uses) with a stand-in
+  widget: a coloured box and a button. It drew inside the sheet at its XAML position (pixel check), and a real click
+  reached the button (`docs/spikes/r9/widget-in-sheet.png`).
+- **Not verified here.** Cloudflare's own script: `challenges.cloudflare.com` is blocked from this container.
+  Turnstile renders an iframe into the element it is given, the case the stand-in covers; confirm it once on the
+  deployed playtest.
+- **Supabase.** The redirect flows (link, restore, sign out) stay in `accounts.js`; the panels only call them, so
+  nothing about them depends on the UI technology.
+
+### Architecture Brief (wave 7)
+
+- `!Join` reads the social state once (`ISocial.Now`, the new host `socialNow`): managed or not, whether this browser
+  already has a character, the invite-only note, your name. Join sends `join` with the name; `online.js` runs the
+  security check first when the world is managed and the guest is new, into the element the page marks with
+  `data-account-challenge`, then `connect`, which now returns its error instead of writing into the old form.
+- `!Restore` and `!SignOut` call `restore` and `confirmSignOut`; Back and Stay here return to the join or shared-world
+  sheet through the game.
+- `online.js` no longer builds any panel (`W.panel` is gone from it).
+
+### Design Brief (wave 7)
+
+- Join: the game's copy, the name field, the security check as a 70 px native element in the sheet's colour (a
+  transparent native element shows the hosted room through it), the join button labelled as the game did
+  (Create / Continue online character, Play as a guest, Continue my character), the account notes and "Restore
+  account with Google" for a managed world.
+- Restore and Sign out: copy, primary action, a soft way back.
+
+### Interaction Brief (wave 7)
+
+- JOIN SHARED WORLD opens `!Join`; joining closes it once the world's first snapshot has drawn (about 3 s with a
+  long chat history), then "While you were away" follows when there is news.
+- The join button stays disabled while the security check waits for the player. A failed check or account step
+  shows its message in the sheet's `InfoBar`.
+- **Runtime check, managed world.** The service's health is stubbed as managed (with the app's service worker
+  blocked, which would otherwise answer first) and the Turnstile widget replaced by a stand-in; the check proves the
+  widget draws inside the sheet, its answer reaches the join, the account error shows, and Restore opens and goes
+  back.
+- **Runtime check data.** The local server now runs on a fresh data folder (`AFTERHOURS_DATA`) for each session of
+  checks: a shared world that keeps every run's chat slows the join until checks time out.
+
 ## Wave 6 (2026-10-29): your circle, residents, the shared world, players, trades
 
 **Done.** 82/82 runtime checks on Skia (`docs/screenshots/xaml/wave6/`), 78 Node and 43 xUnit tests.
@@ -900,9 +949,9 @@ Each wave is one or more conventional commits on its own branch, merged only wit
   (see Unresolved Questions) and the Windows `--in-process` path.
 - **R8 State volume:** full-state push measured too slow at max save size. Wave 1 pushes changed slices and
   re-measures the max save; target under 8 ms per push on the UI thread.
-- **R9 Accounts:** the Turnstile widget inside a XAML dialog's `BrowserHtmlElement`, and Supabase
-  session/redirect flows driven from C#. Wave 7 is gated on a 15-min spike; if it fails, the account panels
-  stay JS dialogs.
+- **R9 Accounts: resolved in wave 7.** A native element inside a sheet draws and takes clicks; the Supabase flows
+  stay in `accounts.js`. Open: confirm Cloudflare's own widget on the deployed playtest (blocked from the build
+  container).
 - **R11 Screen readers: resolved by the Skia switch** (2026-10-29). Open: Uno's mirror reports wrong positions
   for some panel elements and can miss a bound title; report upstream with a repro. Wave 2 spike: `AutomationProperties.Name`
   produces no `aria-label` in the native (DOM) renderer of Uno 6.7.135, and setting
@@ -923,7 +972,7 @@ Each wave is one or more conventional commits on its own branch, merged only wit
 - **Substituted:** wardrobe preview tinting, synth/playhead/WAV export and arcade rounds stay JS behind
   interfaces. OK?
 - **Omitted:** speech bubbles, arrival cues and the room intro card stay drawn on the canvas. OK?
-- **Account panels** (wave 7) depend on R9; they stay JS dialogs if the spike fails. OK?
+- ~~Account panels~~ **Moved in wave 7** (R9 spike passed).
 - **SurfaceRaisedBrush:** take it from the current card CSS in wave 1 (default)?
 - **Phone layout:** bottom tab bar and full-screen flyouts below 700 px. Is the phone a playtest target?
 - **Wave order:** catalog/inventory → studio/stage → wardrobe/profile/journal → rooms/room tools/companion/arcade →

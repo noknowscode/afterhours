@@ -5,10 +5,10 @@ Append only. Milestones, not edits. Decisions live in `docs/specs/xaml-outer-ui-
 | Stat | Value |
 |---|---|
 | Sessions | 1 (single coordinator, no fleet threads) |
-| Milestones logged | 9 |
+| Milestones logged | 10 |
 | Brief → first recognizable XAML chrome | 2 h 35 min (14:35 first spec → 17:10 wave 1 runnable) |
-| Runtime checks | wave 0: 13/13 · wave 1: 30/30 · wave 2: 40/40 · wave 3: 54/54 · Skia: 56/56 · wave 4: 65/65 · wave 5: 76/76 · wave 6: 82/82 |
-| WASM framework download (brotli) | 5.53 MB baseline → 6.49 MB wave 0 → 6.63 MB wave 1 → 6.41 MB wave 2 → 6.51 MB wave 3 → 10.87 MB on Skia → 11.01 MB wave 5 → 11.09 MB wave 6 (sum of `_framework/*.br`) |
+| Runtime checks | wave 0: 13/13 · wave 1: 30/30 · wave 2: 40/40 · wave 3: 54/54 · Skia: 56/56 · wave 4: 65/65 · wave 5: 76/76 · wave 6: 82/82 · wave 7: 85/85 |
+| WASM framework download (brotli) | 5.53 MB baseline → 6.49 MB wave 0 → 6.63 MB wave 1 → 6.41 MB wave 2 → 6.51 MB wave 3 → 10.87 MB on Skia → 11.01 MB wave 5 → 11.09 MB wave 6 → 11.10 MB wave 7 (sum of `_framework/*.br`) |
 
 ## 2026-10-23 15:35 — Wave 0: same-page hosting proven (go)
 
@@ -142,5 +142,20 @@ SharedWorld, ChatPrefs) · 10 game panel titles removed · a two-player friend r
 Shots: docs/screenshots/xaml/wave6/
 Surprises: none new; the social sheets reuse the stage's watch pattern, and the whisper target moved to .NET
 because the game's chat selects no longer drive the XAML chat box.
+Threads: 0 (single session)
+
+## 2026-10-29 06:38 — Wave 7: R9 spike passed; joining, restoring and signing out in XAML
+
+Brief (verbatim):
+> "continue through all waves"
+
+Came back: 1 session, 4 publishes (one for the spike), 4 runtime-check rounds to 85/85.
+Numbers: 85/85 checks · 78 Node + 43 xUnit tests · three routes (Join, Restore, SignOut) · `online.js` builds no
+panel any more · the managed-world join covered with a stubbed service and a stand-in security widget
+Shots: docs/screenshots/xaml/wave7/ · spike: docs/spikes/r9/
+Surprises: Cloudflare is blocked from the container, so the spike proved hosting with a stand-in; a transparent
+native element shows the hosted room through it; Playwright's request stub missed the health call because the
+app's service worker answered it; a shared world that kept every test run's chat made joins slow enough to time
+out, so the check server now starts on a fresh data folder.
 Threads: 0 (single session)
 
