@@ -1,3 +1,5 @@
+> **Moved to uno-lab.** This project now lives in the `afterhours/` folder of [noknowscode/uno-lab](https://github.com/noknowscode/uno-lab/tree/main/afterhours) (private). This repository is archived and kept for its history.
+
 # Afterhours
 
 A social music world inspired by the rituals of Habbo Hotel and Coke Music:
